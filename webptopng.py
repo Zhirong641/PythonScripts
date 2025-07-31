@@ -2,10 +2,10 @@ from PIL import Image, ImageOps
 import os
 
 # 定义源目录和目标目录
-source_dir = "/mnt/shared/data/webp"  # 替换为包含 .webp 图片的根目录
-target_dir = "/mnt/shared/data/128x128_png"  # 替换为保存 .png 图片的根目录
+source_dir = "/mnt/shared/data/data/1317096"  # 替换为包含 .webp 图片的根目录
+target_dir = "/mnt/shared/data/256_256_png"  # 替换为保存 .png 图片的根目录
 list_file = "/mnt/shared/source/WebpToPng/build/failed_files.txt.old"
-target_size = (128, 128)  # 目标输出尺寸，宽和高相等
+target_size = (256, 256)  # 目标输出尺寸，宽和高相等
 
 def convert_images_to_square(source_path, target_path, size):
     # 确保目标目录存在，如果不存在则创建
@@ -80,7 +80,7 @@ def convert_images_from_list(list_file, source_path, target_path, size):
             print(f"❌ 处理 {webp_path} 时出错: {e}")
 
 # 调用函数进行转换
-# convert_images_to_square(source_dir, target_dir, target_size)
-convert_images_from_list(list_file, source_dir, target_dir, target_size)
+convert_images_to_square(source_dir, target_dir, target_size)
+# convert_images_from_list(list_file, source_dir, target_dir, target_size)
 
 print("All images have been converted to square size.")
