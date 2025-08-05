@@ -5,32 +5,32 @@ import deepdanbooru as dd
 import tensorflow as tf
 from PIL import Image
 
-# 配置
-image_dir = '/mnt/shared/webp_250722'               # 图片目录
-output_dir = '/mnt/shared/tag_250722'        # 标签输出目录
-model_dir = '/mnt/shared/deepdanbooru-v3-20211112-sgd-e28'               # DeepDanbooru 模型目录
-threshold = 0.5                   # 阈值
+# Configuration
+image_dir = '/mnt/shared/webp_250722'               # Image directory
+output_dir = '/mnt/shared/tag_250722'               # Tag output directory
+model_dir = '/mnt/shared/deepdanbooru-v3-20211112-sgd-e28'  # DeepDanbooru model directory
+threshold = 0.5                                     # Threshold
 
 os.makedirs(output_dir, exist_ok=True)
 
-# 加载模型
+# Load model
 print('Loading model...')
 model = dd.project.load_model_from_project(model_dir, compile_model=False)
 tags = dd.project.load_tags_from_project(model_dir)
 width = model.input_shape[2]
 height = model.input_shape[1]
 
-# 获取图片列表
+# Get image list
 count = 0
 valid_exts = ['.jpg', '.jpeg', '.png', '.webp', '.bmp']
 
-# 遍历指定目录下的所有图片文件
+# Traverse all image files in the specified directory
 image_files = [
     f for f in glob.glob(os.path.join(image_dir, '**', '*'), recursive=True)
     if os.path.isfile(f) and os.path.splitext(f)[1].lower() in valid_exts
 ]
 
-# 从文件读取image_files列表
+# Read image_files list from file
 # file_list_path = '/mnt/shared/list_no_numbers.txt'
 # if os.path.exists(file_list_path):
 #     with open(file_list_path, 'r', encoding='utf-8') as f:
@@ -53,20 +53,20 @@ for image_path in image_files:
         print(f'{count}. Processing {relative_path}...')
         ext = os.path.splitext(image_path)[1].lower()
         if ext == '.webp':
-            # 使用 PIL 处理 webp 动图，只取第一帧
+            # Use PIL to process webp animation, only take the first frame
             with Image.open(image_path) as im:
-                im.seek(0)  # 只处理第一帧
+                im.seek(0)  # Only process the first frame
                 im = im.convert('RGB')
                 im = im.resize((width, height), Image.LANCZOS)
                 image = tf.keras.preprocessing.image.img_to_array(im) / 255.0
         else:
             image = dd.data.load_image_for_evaluate(image_path, width=width, height=height)
         image = image.reshape((1, height, width, 3))
-        # # 保存处理后的图片为 PNG
+        # # Save the processed image as PNG
         # save_png_path = 'test.png'
         # im_to_save = Image.fromarray((image[0] * 255).astype('uint8'))
         # im_to_save.save(save_png_path)
-        # input("请按回车继续...")
+        # input("Press Enter to continue...")
         # continue
         
         y = model.predict(image)[0]
