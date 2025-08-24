@@ -53,13 +53,13 @@ def make_image_transform(resolution=512):
         img = img.resize((new_w, new_h), Image.BICUBIC)
 
         # Padding 到 resolution×resolution
+        from PIL import ImageOps
         pad_w = (resolution - new_w) // 2
         pad_h = (resolution - new_h) // 2
         pad = (pad_w, pad_h, resolution - new_w - pad_w, resolution - new_h - pad_h)
         img = ImageOps.expand(img, border=pad, fill=(0, 0, 0))
         return img
 
-    from PIL import ImageOps
     return transforms.Compose([
         transforms.Lambda(resize_pad),
         transforms.ToTensor(),
@@ -75,12 +75,17 @@ def save_tensor_image(img_t: torch.Tensor, path: str):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     from PIL import Image
     Image.fromarray(img[0]).save(path)
+
 # -------------------------
 # 实用函数
 # -------------------------
 def seed_everything(seed: int):
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.benchmark = True
+    try:
+        torch.set_float32_matmul_precision('high')
+    except Exception:
+        pass
 
 def sha1(s: str) -> str:
     return hashlib.sha1(s.encode("utf-8")).hexdigest()
@@ -115,7 +120,8 @@ def cmd_encode(args):
         random.shuffle(data)
         data = [row for row in data if not any(exclude in row[1] for exclude in exclude_word_list)]
         print("Excluding rows len:", len(data))
-        print("First row: ", data[0])
+        if len(data) > 0:
+            print("First row: ", data[0])
         for row in data:
             samples.append((row[0], row[1]))
     else:
@@ -155,7 +161,9 @@ def cmd_encode(args):
 
         base = sha1(path) + ".npz"
         npz_path = os.path.join(args.out_dir, base)
+        # 不写 caption 到 npz
         np.savez_compressed(npz_path, latent=lat, text_emb=emb, src=path)
+        # 在 index.jsonl 写入 npz 文件名与 caption
         idxf.write(json.dumps({"npz": base, "src": path, "caption": caption}, ensure_ascii=False) + "\n")
     idxf.close()
     print(">> done. Saved to", args.out_dir)
@@ -209,20 +217,45 @@ def cmd_decode(args):
         decode_one(in_path, out_path)
 
 # -------------------------
-# 训练数据集（读 .npz）
+# 训练数据集（读 .npz + 从 index.jsonl 取 caption）
 # -------------------------
 class LatentCLIPDataset(Dataset):
-    def __init__(self, index_jsonl: str, root_dir: str):
+    """
+    仅把 index.jsonl 读成 (npz_filename, caption) 列表，__getitem__ 时按需读取 .npz。
+    这样既能省内存，也能在保存时获取当前 batch 的 caption。
+    """
+    def __init__(self, index_jsonl: str, root_dir: str, return_caption: bool = True):
         self.root = root_dir
+        self.return_caption = return_caption
+        if not os.path.isfile(index_jsonl):
+            raise FileNotFoundError(f"index file not found: {index_jsonl}")
+        self.items = []
         with open(index_jsonl, "r", encoding="utf-8") as f:
-            self.items = [json.loads(x) for x in f]
+            for line in f:
+                try:
+                    j = json.loads(line)
+                    fname = j["npz"]
+                    cap = j.get("caption", "")
+                    full_path = os.path.join(root_dir, fname)
+                    if os.path.isfile(full_path):
+                        self.items.append((fname, cap))
+                    else:
+                        print(f"[warn] missing file: {full_path}")
+                except Exception:
+                    continue
+
     def __len__(self): return len(self.items)
+
     def __getitem__(self, i):
-        p = os.path.join(self.root, self.items[i]["npz"])
-        z = np.load(p)
+        fname, caption = self.items[i]
+        p = os.path.join(self.root, fname)
+        z = np.load(p, allow_pickle=False)
         lat = z["latent"].astype(np.float16)          # (4,64,64)
         emb = z["text_emb"].astype(np.float16)        # (77,768)
-        return torch.from_numpy(lat), torch.from_numpy(emb)
+        if self.return_caption:
+            return torch.from_numpy(lat), torch.from_numpy(emb), caption
+        else:
+            return torch.from_numpy(lat), torch.from_numpy(emb)
 
 # -------------------------
 # EMA
@@ -238,7 +271,7 @@ class EMA:
     @torch.no_grad()
     def update(self, model: nn.Module):
         for n, p in model.named_parameters():
-            if not p.requires_grad: 
+            if not p.requires_grad:
                 continue
             assert n in self.shadow
             self.shadow[n].mul_(self.decay).add_(p.data, alpha=1.0 - self.decay)
@@ -258,7 +291,7 @@ class EMA:
             if n in sh:
                 self.shadow[n] = sh[n].to(p.device, dtype=p.dtype)
 
-def save_train_state(path, unet, optimizer, lr_sched, ema: EMA, global_step, epoch, prediction_type, scaler=None):
+def save_train_state(path, unet, optimizer, lr_sched, ema: EMA, global_step, epoch, prediction_type, scaler=None, opt_step=0):
     pkg = {
         "model": {k: v.detach().cpu() for k, v in unet.state_dict().items()},
         "optimizer": optimizer.state_dict(),
@@ -267,9 +300,11 @@ def save_train_state(path, unet, optimizer, lr_sched, ema: EMA, global_step, epo
         "global_step": global_step,
         "epoch": epoch,
         "prediction_type": prediction_type,
+        "opt_step": opt_step,
         "scaler": (scaler.state_dict() if (scaler is not None and hasattr(scaler, "state_dict")) else None),
     }
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    os.makedirs(os.path.dirname(path), exist_ok=True
+    )
     torch.save(pkg, path)
     print(f">> saved train state: {path}")
 
@@ -296,10 +331,10 @@ def try_load_train_state(resume_path, unet, optimizer, lr_sched, ema: EMA, scale
                 scaler.load_state_dict(pkg["scaler"])
             except Exception as e:
                 print(f"[warn] scaler state not restored: {e}")
-        return int(pkg.get("global_step", 0)), int(pkg.get("epoch", 0)), pkg.get("prediction_type", "epsilon")
+        return int(pkg.get("global_step", 0)), int(pkg.get("epoch", 0)), pkg.get("prediction_type", "epsilon"), int(pkg.get("opt_step", 0))
 
     if resume_path is None:
-        return 0, 0, None
+        return 0, 0, None, 0
 
     if os.path.isdir(resume_path):
         cands = [os.path.join(resume_path, x) for x in os.listdir(resume_path) if x.endswith(".pth") or x.endswith(".pt")]
@@ -318,7 +353,7 @@ def try_load_train_state(resume_path, unet, optimizer, lr_sched, ema: EMA, scale
             print(">> resume file is raw model only; loading UNet weights")
             sd = torch.load(resume_path, map_location="cpu")
             unet.load_state_dict(sd, strict=False)
-            return 0, 0, None
+            return 0, 0, None, 0
 
     raise FileNotFoundError(resume_path)
 
@@ -362,19 +397,21 @@ class CosineLRScheduler:
 def cmd_train(args):
     seed_everything(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    use_amp = (device.type == "cuda")
 
     os.makedirs(args.out_dir, exist_ok=True)
 
-    # ====== 新增：日志与绘图配置（可在 argparse 里配，也可用 getattr 提供默认）======
-    plot_interval   = getattr(args, "plot_interval", 500)     # 每隔多少 step 存一次图
-    ema_alpha       = getattr(args, "loss_ema", 0.98)          # EMA 平滑系数（0~1，越大越平滑；=1 关闭）
+    # ====== 日志与绘图配置 ======
+    plot_interval   = getattr(args, "plot_interval", 500)
+    ema_alpha       = getattr(args, "loss_ema", 0.98)
     csv_path        = os.path.join(args.out_dir, "loss.csv")
     png_path        = os.path.join(args.out_dir, "loss.png")
 
-    # ====== 新增：损失历史 ======
-    loss_steps: list[int] = []
-    loss_vals:  list[float] = []
-    ema_vals:   list[float] = []
+    # ====== 损失历史（固定最多 200000 点）======
+    MAX_POINTS = 200000
+    loss_steps: deque[int] = deque(maxlen=MAX_POINTS)
+    loss_vals:  deque[float] = deque(maxlen=MAX_POINTS)
+    ema_vals:   deque[float] = deque(maxlen=MAX_POINTS)
     ema_state = None
 
     def read_y_range(file_path="range.txt"):
@@ -408,7 +445,6 @@ def cmd_train(args):
             ema_vals.append(ema_state)
 
     def flush_csv():
-        # 追加写入或覆盖保存都可以；这里用覆盖，保证是“最新全集”
         with open(csv_path, "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
             w.writerow(["step", "loss", f"loss_ema(alpha={ema_alpha})"])
@@ -420,9 +456,9 @@ def cmd_train(args):
             return
         y_range = read_y_range("range.txt")
         plt.figure(figsize=(8,4.5), dpi=150)
-        plt.plot(loss_steps, loss_vals, label="loss", linewidth=1)
+        plt.plot(list(loss_steps), list(loss_vals), label="loss", linewidth=1)
         if ema_vals and (ema_alpha < 1.0):
-            plt.plot(loss_steps, ema_vals, label=f"loss EMA (α={ema_alpha})", linewidth=1)
+            plt.plot(list(loss_steps), list(ema_vals), label=f"loss EMA (α={ema_alpha})", linewidth=1)
         plt.xlabel("step")
         plt.ylabel("loss")
         plt.title("Training Loss")
@@ -434,12 +470,22 @@ def cmd_train(args):
         plt.savefig(png_path)
         plt.close()
 
-    # 数据
-    dataset = LatentCLIPDataset(os.path.join(args.data_dir, "index.jsonl"), args.data_dir)
+    # 数据（从 index.jsonl 读 npz 文件名 + caption）
+    index_path = os.path.join(args.data_dir, "index.jsonl")
+    dataset = LatentCLIPDataset(index_path, args.data_dir, return_caption=True)
     uncond_emb = torch.from_numpy(np.load(os.path.join(args.data_dir, "uncond_emb.npy"))).to(torch.float16)  # (1,77,768)
     print(">> dataset size:", len(dataset))
 
-    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=True, drop_last=True)
+    loader = DataLoader(
+        dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=args.workers,
+        pin_memory=(device.type == "cuda"),
+        drop_last=True,
+        persistent_workers=(args.workers > 0),
+        prefetch_factor=2 if args.workers > 0 else None
+    )
 
     # UNet
     print(">> building UNet (SD1.x config)…")
@@ -462,37 +508,87 @@ def cmd_train(args):
     )
 
     # 优化器 & EMA & AMP
-    optimizer = torch.optim.AdamW(unet.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=1e-2)
+    base_lr = args.lr
+    optimizer = torch.optim.AdamW(unet.parameters(), lr=base_lr, betas=(0.9, 0.999), weight_decay=1e-2)
     ema = EMA(unet, decay=args.ema)
-    scaler = torch.amp.GradScaler('cuda', enabled=True)
+    scaler = torch.amp.GradScaler('cuda', enabled=use_amp)
 
-    # LR schedule
-    # total_steps = args.epochs * (len(loader))
-    # lr_sched = CosineLRScheduler(optimizer, max_steps=total_steps, warmup_steps=args.warmup)
+    # LR schedule —— 按“优化器步”计数
     micro_steps_per_epoch = len(loader)
     opt_steps_per_epoch   = math.ceil(micro_steps_per_epoch / max(1, args.grad_accum))
     total_opt_steps       = args.epochs * opt_steps_per_epoch
     warmup_opt_steps = args.warmup if args.warmup > 0 else max(100, int(0.03 * total_opt_steps))
     lr_sched = CosineLRScheduler(
         optimizer,
-        max_steps     = total_opt_steps,   # 现在是“优化器步”总数
+        max_steps     = total_opt_steps,
         warmup_steps  = warmup_opt_steps,
         min_lr_ratio  = 0.1
     )
 
+    # ===== 预览图管线（只构建一次） =====
+    from diffusers import StableDiffusionPipeline
+    dtype = torch.float16 if device.type == "cuda" else torch.float32
+    pipe = StableDiffusionPipeline.from_pretrained(SD15_REPO, torch_dtype=dtype).to(device)
+    pipe.safety_checker = None
+    pipe.enable_attention_slicing()
+    try:
+        pipe.enable_xformers_memory_efficient_attention()
+    except Exception:
+        pass
+    pipe.scheduler.config.prediction_type = prediction_type
+
+    @torch.no_grad()
+    def save_preview_image(prompt_text: str, step: int, use_ema: bool = False):
+        if not prompt_text:
+            return
+        print(f"DBG: saving preview images for step {step}, prompt: {prompt_text}")
+        # 选择用 EMA 还是原始 UNet
+        if use_ema:
+            tmp_unet = UNet2DConditionModel.from_config(unet.config).to(device, dtype=dtype)
+            ema.copy_to(tmp_unet)  # 把 EMA 权重复制到临时模型
+        else:
+            tmp_unet = UNet2DConditionModel.from_config(unet.config).to(device, dtype=dtype)
+            tmp_unet.load_state_dict(unet.state_dict(), strict=True)
+
+        pipe.unet = tmp_unet
+
+        g = torch.Generator(device=device.type)
+        if args.preview_seed is not None:
+            g = g.manual_seed(args.preview_seed)
+
+        image = pipe(
+            prompt=prompt_text,
+            negative_prompt=getattr(args, "preview_negative", ""),
+            num_inference_steps=args.preview_steps,
+            guidance_scale=args.preview_scale,
+            width=args.preview_size,
+            height=args.preview_size,
+            generator=g
+        ).images[0]
+
+        out_dir = os.path.join(args.out_dir, "preview")
+        os.makedirs(out_dir, exist_ok=True)
+        prefix = "ema" if use_ema else "raw"
+        out_path = os.path.join(out_dir, f"step_{step:08d}_{prefix}.png")
+        image.save(out_path)
+        print(f">> saved preview: {out_path}")
+
     # ===== 恢复训练（如果传了 --resume）=====
-    start_step, start_epoch, pt_from_state = try_load_train_state(args.resume, unet, optimizer, lr_sched, ema, scaler)
+    start_step, start_epoch, pt_from_state, start_opt_step = try_load_train_state(args.resume, unet, optimizer, lr_sched, ema, scaler)
     if pt_from_state is not None and pt_from_state != prediction_type:
         print(f"[warn] resume checkpoint pred_type={pt_from_state} != current {prediction_type}")
 
     # 训练循环
-    global_step = 0
-    opt_step = 0
+    global_step = start_step  # 微步
+    opt_step = start_opt_step
     unet.train()
+    optimizer.zero_grad(set_to_none=True)
 
     for epoch in range(args.epochs):
         pbar = tqdm(loader, desc=f"epoch {epoch+1}/{args.epochs}")
-        for lat, emb in pbar:
+        for batch in pbar:
+            # DataLoader 返回 (lat, emb, cap)
+            lat, emb, cap = batch
             lat = lat.to(device, dtype=torch.float16)                 # [B,4,64,64], 已含 0.18215 缩放
             emb = emb.to(device, dtype=torch.float16)                 # [B,77,768]
 
@@ -507,7 +603,7 @@ def cmd_train(args):
             # 采样 t 与噪声
             t = torch.randint(0, noise_sched.config.num_train_timesteps, (B,), device=device)
             noise = torch.randn_like(lat)
-            with torch.amp.autocast('cuda', dtype=torch.float16):
+            with torch.amp.autocast('cuda', enabled=use_amp, dtype=torch.float16):
                 noisy = noise_sched.add_noise(lat, noise, t)
 
                 # 前向
@@ -517,7 +613,6 @@ def cmd_train(args):
                 if prediction_type == "epsilon":
                     target = noise
                 else:
-                    # v = alpha^0.5 * noise - (1-alpha)^0.5 * x0  => diffusers提供转换API
                     target = noise_sched.get_velocity(lat, noise, t)
 
                 loss = F.mse_loss(pred, target, reduction="none")
@@ -530,8 +625,8 @@ def cmd_train(args):
                     loss = (loss * w).mean()
                 else:
                     loss = loss.mean()
-            
-            # ====== 新增：记录 loss & 画图 ======
+
+            # ====== 记录 loss & 画图 ======
             loss_scalar = float(loss.detach().cpu())
             log_loss(global_step + 1, loss_scalar)
             if (global_step + 1) % plot_interval == 0:
@@ -539,13 +634,11 @@ def cmd_train(args):
                 save_plot()
 
             scaler.scale(loss / args.grad_accum).backward()
-            # (loss / args.grad_accum).backward()
 
-            # 梯度累积
+            # 梯度累积 -> 优化器步
             if (global_step + 1) % args.grad_accum == 0:
                 nn.utils.clip_grad_norm_(unet.parameters(), 1.0)
                 scaler.step(optimizer); scaler.update()
-                # optimizer.step()
                 optimizer.zero_grad(set_to_none=True)
                 lr_sched.step()
                 ema.update(unet)
@@ -554,18 +647,33 @@ def cmd_train(args):
             global_step += 1
             pbar.set_postfix({"loss": float(loss.detach().cpu()), "lr": optimizer.param_groups[0]["lr"]})
 
-            # 保存
+            # 保存（按微步 step 命名）
             if args.save_steps and (global_step % args.save_steps == 0):
                 save_ckpt(args, unet, ema, step=global_step, prediction_type=prediction_type)
+                # 同步保存预览图（使用当前 batch 的第一个 caption）
+                if getattr(args, "preview_every_ckpt", False):
+                    if isinstance(cap, (list, tuple)):
+                        prompt_text = cap[0]
+                    else:
+                        prompt_text = cap
+                    # 原始 UNet
+                    save_preview_image(prompt_text, global_step, use_ema=False)
+                    # EMA 权重
+                    save_preview_image(prompt_text, global_step, use_ema=True)
 
         # 每个 epoch 结束也保存一次
         if args.save_epochs and (epoch + 1) % args.save_epochs == 0:
             save_ckpt(args, unet, ema, step=global_step, prediction_type=prediction_type)
+            if getattr(args, "preview_every_ckpt", False):
+                # 尝试重复使用最近一次的 prompt（若有）
+                if 'prompt_text' in locals() and prompt_text:
+                    save_preview_image(prompt_text, global_step, use_ema=False)
+                    save_preview_image(prompt_text, global_step, use_ema=True)
 
     print(">> training done.")
 
 def save_ckpt(args, unet, ema: EMA, step: int, prediction_type: str):
-    # 保存当前权重
+    # 保存当前 raw 权重
     raw_dir = os.path.join(args.out_dir, f"step_{step}_raw")
     os.makedirs(raw_dir, exist_ok=True)
     torch.save(unet.state_dict(), os.path.join(raw_dir, "unet_raw.pt"))
@@ -580,12 +688,44 @@ def save_ckpt(args, unet, ema: EMA, step: int, prediction_type: str):
     state = {k: v.detach().cpu() for k, v in ema_model.state_dict().items()}
     safetensors_save(state, os.path.join(ema_dir, "unet_ema.safetensors"))
 
-    # 也存一下 config 和一个简单的元数据（包含prediction_type）
+    # 保存 config 和 meta.json
     with open(os.path.join(ema_dir, "config.json"), "w", encoding="utf-8") as f:
         json.dump(unet.config, f, indent=2)
     with open(os.path.join(ema_dir, "meta.json"), "w", encoding="utf-8") as f:
         json.dump({"prediction_type": prediction_type, "step": step}, f, indent=2)
+
     print(f">> saved ckpt @ {ema_dir}")
+
+    # ⛏️ 自动清理旧的 checkpoint（只保留最近10个）
+    ckpt_dirs = sorted(
+        glob.glob(os.path.join(args.out_dir, "step_*_ema")),
+        key=os.path.getmtime
+    )
+    max_keep = 3
+    if len(ckpt_dirs) > max_keep:
+        for old_dir in ckpt_dirs[:-max_keep]:
+            try:
+                # 删除整个 EMA ckpt 文件夹
+                for file in glob.glob(os.path.join(old_dir, "*")):
+                    os.remove(file)
+                os.rmdir(old_dir)
+                print(f"🗑️ deleted old ema ckpt: {old_dir}")
+            except Exception as e:
+                print(f"❌ failed to delete {old_dir}: {e}")
+
+        # 可选：也清理对应的 raw_ckpt
+        raw_dirs = sorted(
+            glob.glob(os.path.join(args.out_dir, "step_*_raw")),
+            key=os.path.getmtime
+        )
+        for old_dir in raw_dirs[:-max_keep]:
+            try:
+                for file in glob.glob(os.path.join(old_dir, "*")):
+                    os.remove(file)
+                os.rmdir(old_dir)
+                print(f"🗑️ deleted old raw ckpt: {old_dir}")
+            except Exception as e:
+                print(f"❌ failed to delete {old_dir}: {e}")
 
 # -------------------------
 # 推理子命令（diffusers 管线，替换 UNet）
@@ -679,11 +819,19 @@ def build_parser():
 
     pt.add_argument("--resume", type=str, default=None, help="从保存的训练状态恢复（.pth/.pt 或目录）")
 
+    # 预览图相关参数
+    pt.add_argument("--preview_every_ckpt", action="store_true", help="保存权重时同时保存预览图")
+    pt.add_argument("--preview_steps", type=int, default=30, help="预览图推理步数")
+    pt.add_argument("--preview_scale", type=float, default=7.5, help="CFG scale")
+    pt.add_argument("--preview_seed", type=int, default=12345, help="预览图随机种子")
+    pt.add_argument("--preview_size", type=int, default=512, help="预览图边长(正方形)")
+    pt.add_argument("--preview_negative", type=str, default="", help="预览图的负面提示词")
+
     pt.set_defaults(func=cmd_train)
 
     # infer
     pi = sub.add_parser("infer", help="替换管线 UNet 推理出图")
-    pi.add_argument("--unet_path", type=str, required=True, help="训练产出的 EMA 权重（.safetensors 或 .pt）")
+    pi.add_argument("--unet_path", type=str, required=True, help="训练产出的 EMA/RAW 权重（.safetensors 或 .pt）")
     pi.add_argument("--prompt", type=str, required=True)
     pi.add_argument("--negative_prompt", type=str, default="")
     pi.add_argument("--steps", type=int, default=30)
@@ -711,7 +859,7 @@ def main():
     if not hasattr(args, "func"):
         print("Use one of subcommands: encode | train | infer. Example:\n"
               "  python sd15_unet_train_infer.py encode --csv data.csv --out_dir ./latent_db\n"
-              "  python sd15_unet_train_infer.py train --data_dir ./latent_db --out_dir ./ckpts --vpred --min_snr_gamma 5\n"
+              "  python sd15_unet_train_infer.py train --data_dir ./latent_db --out_dir ./ckpts --vpred --min_snr_gamma 5 --preview_every_ckpt\n"
               "  python sd15_unet_train_infer.py infer --unet_path ./ckpts/step_20000_ema/unet_ema.safetensors "
               "--prompt 'best quality, 1girl, miko' --vpred --out sample.png")
         return
