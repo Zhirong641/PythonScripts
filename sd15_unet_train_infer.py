@@ -107,10 +107,16 @@ def cmd_encode(args):
     if args.csv:
         # CSV 文件；必须包含 path, caption 列
         processor = CSVProcessor(args.csv)
-        rows = processor.get_rows_by_value("path", "webp/2588678", False)
-        rows = rows[0:1]
-        print("Matching rows len:", len(rows))
-        for row in rows:
+        data = processor.get_data()
+        print("Original rows len:", len(data))
+        exclude_word_list = ["no humans", "chibi", "character profile", "lineart",
+                             "sketch", "monochrome", "comic", "text focus", "1990s", "1980s",
+                             "retro artstyle", "abstract"]
+        random.shuffle(data)
+        data = [row for row in data if not any(exclude in row[1] for exclude in exclude_word_list)]
+        print("Excluding rows len:", len(data))
+        print("First row: ", data[0])
+        for row in data:
             samples.append((row[0], row[1]))
     else:
         # 图像目录；caption 置空
@@ -371,6 +377,26 @@ def cmd_train(args):
     ema_vals:   list[float] = []
     ema_state = None
 
+    def read_y_range(file_path="range.txt"):
+        """
+        尝试从文件读取 y 轴范围，格式要求：
+        min max
+        如果文件不存在或格式错误，返回 None
+        """
+        if not os.path.isfile(file_path):
+            return None
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                parts = f.read().strip().split()
+                if len(parts) != 2:
+                    return None
+                ymin, ymax = float(parts[0]), float(parts[1])
+                if ymin >= ymax:
+                    return None
+                return (ymin, ymax)
+        except Exception:
+            return None
+
     def log_loss(step: int, val: float):
         nonlocal ema_state
         loss_steps.append(step)
@@ -392,6 +418,7 @@ def cmd_train(args):
     def save_plot():
         if not loss_steps:
             return
+        y_range = read_y_range("range.txt")
         plt.figure(figsize=(8,4.5), dpi=150)
         plt.plot(loss_steps, loss_vals, label="loss", linewidth=1)
         if ema_vals and (ema_alpha < 1.0):
@@ -401,6 +428,8 @@ def cmd_train(args):
         plt.title("Training Loss")
         plt.legend(loc="best")
         plt.grid(True, linewidth=0.3)
+        if y_range is not None:
+            plt.ylim(*y_range)
         plt.tight_layout()
         plt.savefig(png_path)
         plt.close()
@@ -438,8 +467,18 @@ def cmd_train(args):
     scaler = torch.amp.GradScaler('cuda', enabled=True)
 
     # LR schedule
-    total_steps = args.epochs * (len(loader))
-    lr_sched = CosineLRScheduler(optimizer, max_steps=total_steps, warmup_steps=args.warmup)
+    # total_steps = args.epochs * (len(loader))
+    # lr_sched = CosineLRScheduler(optimizer, max_steps=total_steps, warmup_steps=args.warmup)
+    micro_steps_per_epoch = len(loader)
+    opt_steps_per_epoch   = math.ceil(micro_steps_per_epoch / max(1, args.grad_accum))
+    total_opt_steps       = args.epochs * opt_steps_per_epoch
+    warmup_opt_steps = args.warmup if args.warmup > 0 else max(100, int(0.03 * total_opt_steps))
+    lr_sched = CosineLRScheduler(
+        optimizer,
+        max_steps     = total_opt_steps,   # 现在是“优化器步”总数
+        warmup_steps  = warmup_opt_steps,
+        min_lr_ratio  = 0.1
+    )
 
     # ===== 恢复训练（如果传了 --resume）=====
     start_step, start_epoch, pt_from_state = try_load_train_state(args.resume, unet, optimizer, lr_sched, ema, scaler)
@@ -448,6 +487,7 @@ def cmd_train(args):
 
     # 训练循环
     global_step = 0
+    opt_step = 0
     unet.train()
 
     for epoch in range(args.epochs):
@@ -509,6 +549,7 @@ def cmd_train(args):
                 optimizer.zero_grad(set_to_none=True)
                 lr_sched.step()
                 ema.update(unet)
+                opt_step += 1
 
             global_step += 1
             pbar.set_postfix({"loss": float(loss.detach().cpu()), "lr": optimizer.param_groups[0]["lr"]})

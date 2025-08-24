@@ -41,6 +41,12 @@ class CSVProcessor:
         """
         return len(self.headers)
 
+    def get_data(self):
+        """
+        获取所有行的数据
+        """
+        return self.data
+
     def get_row(self, row_index):
         """
         获取指定行的所有数据
