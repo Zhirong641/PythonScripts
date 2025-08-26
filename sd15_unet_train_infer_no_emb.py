@@ -594,14 +594,18 @@ def cmd_train(args):
     CACHE_CAP = getattr(args, "embed_cache_size", 50000)
     cache = OrderedDict()
     def get_emb_cached(s: str) -> torch.Tensor:
+        if CACHE_CAP <= 0:
+            return encode_texts([s])  # 禁用缓存
+
         if s in cache:
-            e = cache.pop(s); cache[s] = e
-            return e
-        e = encode_texts([s])  # [1,77,768]
-        if len(cache) >= CACHE_CAP:
-            cache.popitem(last=False)
-        cache[s] = e
-        return e
+            e_cpu = cache.pop(s); cache[s] = e_cpu
+        else:
+            e = encode_texts([s])         # on device
+            e_cpu = e.detach().cpu()      # 移到 CPU
+            if len(cache) >= CACHE_CAP:
+                cache.popitem(last=False)
+            cache[s] = e_cpu
+        return cache[s].to(device, non_blocking=True)  # 用时再搬回 GPU
 
     def sample_variant_index5(mask_i: np.ndarray) -> int:
         p = PROBS_5 * mask_i.astype(np.float64)
@@ -632,7 +636,7 @@ def cmd_train(args):
                 texts_i, mask_i, _ = _build_variants_from_cap_author(caps[i], auths[i])
                 idx = sample_variant_index5(mask_i)
                 s = texts_i[idx] if (idx < len(texts_i) and mask_i[idx]) else ""
-                print(f"DBG {epoch} chosen idx {idx}: {s}")
+                # print(f"DBG {epoch} chosen idx {idx}: {s}")
                 chosen_texts.append(s)
 
             # —— 批量/缓存编码
@@ -859,7 +863,7 @@ def build_parser():
     pi.add_argument("--height", type=int, default=512)
     pi.add_argument("--seed", type=int, default=None)
     pi.add_argument("--vpred", action="store_true", help="推理用 v-prediction（需与训练对齐）")
-    pi.add_argument("--out", type=str, default="out.png")
+    pi.add_argument("--out", type=str, default="./out.png")
     pi.set_defaults(func=cmd_infer)
 
     # decode
