@@ -118,7 +118,7 @@ def _build_variants_from_cap_author(caption: str, author: str):
                 mask[j] = False
 
     mask = np.array(mask, dtype=np.bool_)
-    preview_text = both_fwd if mask[3] else (tags_fwd if mask[0] else (author_s if mask[2] else ""))
+    preview_text = random.choice([texts[i] for i in range(len(texts)) if mask[i]]) if any(mask) else ""
 
     return texts, mask, preview_text
 
@@ -252,6 +252,14 @@ class LatentCapAuthorDataset(Dataset):
                     fname = j["npz"]
                     cap = j.get("caption", "")
                     auth = j.get("author", "")
+                    exclude_word_list = []
+                    found = False
+                    for tag in exclude_word_list:
+                        if tag in cap:
+                            found = True
+                            break
+                    if found:
+                        continue
                     full_path = os.path.join(root_dir, fname)
                     if not os.path.isfile(full_path):
                         continue
@@ -696,7 +704,7 @@ def cmd_train(args):
                 save_ckpt(args, unet, ema, step=global_step, prediction_type=prediction_type)
 
             # 预览图（用 batch 内第一条的 preview_text）
-            if getattr(args, "preview_every_ckpt", False) and global_step % args.preview_save_steps == 0:
+            if getattr(args, "preview_every_ckpt", False) and (global_step % args.preview_save_steps == 0 or global_step == 1):
                 ptxt = preview_texts[0] if isinstance(preview_texts, list) and len(preview_texts) > 0 else ""
                 save_preview_image(ptxt, global_step, use_ema=False)
                 save_preview_image(ptxt, global_step, use_ema=True)
@@ -733,7 +741,7 @@ def save_ckpt(args, unet, ema: EMA, step: int, prediction_type: str):
 
     # ⛏️ 自动清理旧的 checkpoint（只保留最近10个）
     ckpt_dirs = sorted(glob.glob(os.path.join(args.out_dir, "step_*_ema")), key=os.path.getmtime)
-    max_keep = 10
+    max_keep = 2
     if len(ckpt_dirs) > max_keep:
         for old_dir in ckpt_dirs[:-max_keep]:
             try:
@@ -789,6 +797,8 @@ def cmd_infer(args):
     g = torch.Generator(device=device.type)
     if args.seed is not None:
         g = g.manual_seed(args.seed)
+    else:
+        g = g.manual_seed(torch.seed())
 
     image = pipe(
         prompt=args.prompt,
@@ -846,7 +856,7 @@ def build_parser():
     pt.add_argument("--preview_save_steps", type=int, default=2000, help="每 N 个 step 保存一次预览图")
     pt.add_argument("--preview_steps", type=int, default=30, help="预览图推理步数")
     pt.add_argument("--preview_scale", type=float, default=7.5, help="CFG scale")
-    pt.add_argument("--preview_seed", type=int, default=12345, help="预览图随机种子")
+    pt.add_argument("--preview_seed", type=int, default=None, help="预览图随机种子")
     pt.add_argument("--preview_size", type=int, default=512, help="预览图边长(正方形)")
     pt.add_argument("--preview_negative", type=str, default="", help="预览图的负面提示词")
 
