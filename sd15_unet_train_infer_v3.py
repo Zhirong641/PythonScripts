@@ -390,42 +390,134 @@ def save_train_state(path, unet, optimizer, lr_sched, ema: EMA, global_step, epo
     torch.save(pkg, path)
     print(f">> saved train state: {path}")
 
-def try_load_train_state(resume_path, unet, optimizer, lr_sched, ema: EMA, scaler=None):
-    def _load_pkg(p):
-        print(f">> resume from: {p}")
-        pkg = torch.load(p, map_location="cpu")
-        unet.load_state_dict(pkg["model"], strict=True)
-        if "optimizer" in pkg and len(pkg["optimizer"]) > 0:
-            optimizer.load_state_dict(pkg["optimizer"])
-        if "lr_sched_step" in pkg:
-            lr_sched.step_idx = pkg["lr_sched_step"]
-        if "ema" in pkg:
-            ema.load_state_dict(pkg["ema"])
-        if scaler is not None and pkg.get("scaler") is not None:
-            try:
-                scaler.load_state_dict(pkg["scaler"])
-            except Exception as e:
-                print(f"[warn] scaler state not restored: {e}")
-        return int(pkg.get("global_step", 0)), int(pkg.get("epoch", 0)), pkg.get("prediction_type", "epsilon"), int(pkg.get("opt_step", 0))
+def try_load_train_state(resume_path, unet, optimizer, lr_sched, ema: "EMA", scaler=None):
+    """
+    支持以下几种情况：
+    1) .pt/.pth：包含 {model, optimizer, lr_sched_step, ema, scaler, global_step, epoch, prediction_type, opt_step}
+       或者是“纯 state_dict”（只有模型权重）
+    2) .safetensors：纯权重（state_dict）；可选旁车元数据 <file>.state.json
+       如果 safetensors 中含有以 'ema.' 开头的键，会自动喂给 ema。
+    3) 目录：挑选其中扩展名为 .pt/.pth/.safetensors 的最新文件（按名字排序取最后一个）
+    返回: (global_step, epoch, prediction_type, opt_step)
+    """
+    # ---- 内部工具 ----
+    def _try_import_safetensors():
+        try:
+            from safetensors.torch import load_file as safetensors_load
+            return safetensors_load
+        except Exception:
+            return None
 
+    def _load_pkg_from_pt(path):
+        print(f">> resume from: {path}")
+        pkg = torch.load(path, map_location="cpu")
+        # 情况A：是打包的“训练快照”
+        if isinstance(pkg, dict) and "model" in pkg:
+            unet.load_state_dict(pkg["model"], strict=True)
+            if "optimizer" in pkg and pkg["optimizer"]:
+                optimizer.load_state_dict(pkg["optimizer"])
+            if "lr_sched_step" in pkg:
+                lr_sched.step_idx = pkg["lr_sched_step"]
+            if "ema" in pkg:
+                ema.load_state_dict(pkg["ema"])
+            if scaler is not None and pkg.get("scaler") is not None:
+                try:
+                    scaler.load_state_dict(pkg["scaler"])
+                except Exception as e:
+                    print(f"[warn] scaler state not restored: {e}")
+            return (int(pkg.get("global_step", 0)),
+                    int(pkg.get("epoch", 0)),
+                    pkg.get("prediction_type", "epsilon"),
+                    int(pkg.get("opt_step", 0)))
+        # 情况B：是“纯 state_dict”
+        print(">> resume file is raw model only; loading UNet weights")
+        unet.load_state_dict(pkg, strict=False)
+        return 0, 0, None, 0
+
+    def _maybe_load_sidecar_metadata(base_path_no_ext):
+        """
+        读取旁车元数据：<file>.state.json（若存在）
+        期望字段：global_step, epoch, prediction_type, opt_step, lr_sched_step
+        """
+        meta_path = base_path_no_ext + ".state.json"
+        if os.path.isfile(meta_path):
+            try:
+                with open(meta_path, "r", encoding="utf-8") as f:
+                    meta = json.load(f)
+                # lr_sched_step
+                if "lr_sched_step" in meta:
+                    lr_sched.step_idx = int(meta["lr_sched_step"])
+                # scaler（可选：很少有人把它放 json；通常不能恢复）
+                return (int(meta.get("global_step", 0)),
+                        int(meta.get("epoch", 0)),
+                        meta.get("prediction_type", "epsilon"),
+                        int(meta.get("opt_step", 0)))
+            except Exception as e:
+                print(f"[warn] failed to read sidecar state json: {e}")
+        return 0, 0, None, 0
+
+    def _load_pkg_from_safetensors(path):
+        safetensors_load = _try_import_safetensors()
+        if safetensors_load is None:
+            raise RuntimeError("safetensors not installed. `pip install safetensors`")
+
+        print(f">> resume from: {path}")
+        # 读取所有张量
+        tensor_dict = safetensors_load(path, device="cpu")
+
+        # 拆分 ema 和 model（如果有）
+        model_sd = {}
+        ema_sd = {}
+        for k, v in tensor_dict.items():
+            if k.startswith("ema."):
+                ema_sd[k[len("ema."):]] = v
+            else:
+                model_sd[k] = v
+
+        # 加载 UNet 权重
+        missing, unexpected = unet.load_state_dict(model_sd, strict=False)
+        if missing:
+            print(f"[info] missing keys for UNet: {len(missing)} (showing up to 10): {missing[:10]}")
+        if unexpected:
+            print(f"[info] unexpected keys for UNet: {len(unexpected)} (showing up to 10): {unexpected[:10]}")
+
+        # 加载 EMA（如果 safetensors 里有）
+        if ema_sd:
+            try:
+                ema.load_state_dict(ema_sd)
+            except Exception as e:
+                print(f"[warn] EMA state not restored from safetensors: {e}")
+
+        # 读取旁车元数据（如果存在）
+        base_no_ext = os.path.splitext(path)[0]
+        g, e, p, o = _maybe_load_sidecar_metadata(base_no_ext)
+        return g, e, p, o
+
+    # ---- 主流程 ----
     if resume_path is None:
         return 0, 0, None, 0
 
     if os.path.isdir(resume_path):
-        cands = [os.path.join(resume_path, x) for x in os.listdir(resume_path) if x.endswith(".pth") or x.endswith(".pt")]
+        cands = [os.path.join(resume_path, x) for x in os.listdir(resume_path)
+                 if x.endswith((".pth", ".pt", ".safetensors"))]
         if not cands:
-            raise FileNotFoundError(f"No *.pth found in {resume_path}")
+            raise FileNotFoundError(f"No *.pth/*.pt/*.safetensors found in {resume_path}")
         cands.sort()
-        return _load_pkg(cands[-1])
+        resume_path = cands[-1]  # 取最新
 
-    if resume_path.endswith(".pth") or resume_path.endswith(".pt"):
+    ext = os.path.splitext(resume_path)[1].lower()
+
+    if ext in (".pth", ".pt"):
         try:
-            return _load_pkg(resume_path)
-        except Exception:
-            print(">> resume file is raw model only; loading UNet weights")
+            return _load_pkg_from_pt(resume_path)
+        except Exception as e:
+            print(f"[warn] failed to load packaged .pt/.pth: {e}\n>> fallback to raw state_dict")
             sd = torch.load(resume_path, map_location="cpu")
             unet.load_state_dict(sd, strict=False)
             return 0, 0, None, 0
+
+    if ext == ".safetensors":
+        return _load_pkg_from_safetensors(resume_path)
 
     raise FileNotFoundError(resume_path)
 
@@ -600,7 +692,7 @@ def cmd_train(args):
         """
         if not prompt_text:
             return
-        print(f"DBG: saving preview images for step {step}, prompt: {prompt_text}")
+        # print(f"DBG: saving preview images for step {step}, prompt: {prompt_text}")
 
         # 1) 用 RAW / EMA 权重构建临时 UNet 并挂到 pipe 上
         tmp_unet = UNet2DConditionModel.from_config(unet.config).to(device, dtype=dtype)
@@ -713,7 +805,7 @@ def cmd_train(args):
                 texts_i, mask_i, _ = _build_variants_from_cap_author(cap_tags[i], cap_nls[i], auths[i])
                 idx = sample_variant_index(mask_i)
                 s = texts_i[idx] if (idx < len(texts_i) and mask_i[idx]) else ""
-                print(f"DBG {epoch} chosen idx {idx}: {s}")
+                # print(f"DBG {epoch} chosen idx {idx}: {s}")
                 chosen_texts.append(s)
 
             # —— 批量/缓存编码
@@ -774,9 +866,22 @@ def cmd_train(args):
 
             # 预览图（用 batch 内第一条的 preview_text）
             if getattr(args, "preview_every_ckpt", False) and (global_step % args.preview_save_steps == 0 or global_step == 1):
-                ptxt = preview_texts[0] if isinstance(preview_texts, list) and len(preview_texts) > 0 else ""
-                save_preview_image(ptxt, global_step, use_ema=False)
-                save_preview_image(ptxt, global_step, use_ema=True)
+                texts_0, mask_0, _ = _build_variants_from_cap_author(cap_tags[0], cap_nls[0], auths[0])
+                for i in range(len(texts_0)):
+                    if mask_0[i]:
+                        save_preview_image(texts_0[i], global_step + i, use_ema=False)
+                        save_preview_image(texts_0[i], global_step + i, use_ema=True)
+                        out_dir = os.path.join(args.out_dir, "preview")
+                        os.makedirs(out_dir, exist_ok=True)
+                        out_path = os.path.join(out_dir, f"prompt_{global_step + i:08d}.txt")
+                        with open(out_path, "w", encoding="utf-8") as f:
+                            f.write(texts_0[i])
+                # ptxt = preview_texts[0] if isinstance(preview_texts, list) and len(preview_texts) > 0 else ""
+                # out_dir = os.path.join(args.out_dir, "preview")
+                # os.makedirs(out_dir, exist_ok=True)
+                # out_path = os.path.join(out_dir, f"prompt_{global_step:08d}.txt")
+                # with open(out_path, "w", encoding="utf-8") as f:
+                #     f.write(ptxt)
 
         # 每个 epoch 结束也保存一次
         if args.save_epochs and ((epoch + 1) % args.save_epochs == 0):
@@ -785,6 +890,29 @@ def cmd_train(args):
     print(">> training done.")
 
 def save_ckpt(args, unet, ema: EMA, step: int, prediction_type: str):
+    # ⛏️ 自动清理旧的 checkpoint（只保留最近10个）
+    ckpt_dirs = sorted(glob.glob(os.path.join(args.out_dir, "step_*_ema")), key=os.path.getmtime)
+    max_keep = 2
+    if len(ckpt_dirs) > max_keep:
+        for old_dir in ckpt_dirs[:-max_keep]:
+            try:
+                for file in glob.glob(os.path.join(old_dir, "*")):
+                    os.remove(file)
+                os.rmdir(old_dir)
+                print(f"🗑️ deleted old ema ckpt: {old_dir}")
+            except Exception as e:
+                print(f"❌ failed to delete {old_dir}: {e}")
+
+        raw_dirs = sorted(glob.glob(os.path.join(args.out_dir, "step_*_raw")), key=os.path.getmtime)
+        for old_dir in raw_dirs[:-max_keep]:
+            try:
+                for file in glob.glob(os.path.join(old_dir, "*")):
+                    os.remove(file)
+                os.rmdir(old_dir)
+                print(f"🗑️ deleted old raw ckpt: {old_dir}")
+            except Exception as e:
+                print(f"❌ failed to delete {old_dir}: {e}")
+
     # 保存当前 raw 权重
     raw_dir = os.path.join(args.out_dir, f"step_{step}_raw")
     os.makedirs(raw_dir, exist_ok=True)
@@ -807,29 +935,6 @@ def save_ckpt(args, unet, ema: EMA, step: int, prediction_type: str):
         json.dump({"prediction_type": prediction_type, "step": step}, f, indent=2)
 
     print(f">> saved ckpt @ {ema_dir}")
-
-    # ⛏️ 自动清理旧的 checkpoint（只保留最近10个）
-    ckpt_dirs = sorted(glob.glob(os.path.join(args.out_dir, "step_*_ema")), key=os.path.getmtime)
-    max_keep = 10
-    if len(ckpt_dirs) > max_keep:
-        for old_dir in ckpt_dirs[:-max_keep]:
-            try:
-                for file in glob.glob(os.path.join(old_dir, "*")):
-                    os.remove(file)
-                os.rmdir(old_dir)
-                print(f"🗑️ deleted old ema ckpt: {old_dir}")
-            except Exception as e:
-                print(f"❌ failed to delete {old_dir}: {e}")
-
-        raw_dirs = sorted(glob.glob(os.path.join(args.out_dir, "step_*_raw")), key=os.path.getmtime)
-        for old_dir in raw_dirs[:-max_keep]:
-            try:
-                for file in glob.glob(os.path.join(old_dir, "*")):
-                    os.remove(file)
-                os.rmdir(old_dir)
-                print(f"🗑️ deleted old raw ckpt: {old_dir}")
-            except Exception as e:
-                print(f"❌ failed to delete {old_dir}: {e}")
 
 # -------------------------
 # 推理（替换 UNet）
