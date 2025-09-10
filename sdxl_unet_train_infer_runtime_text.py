@@ -389,6 +389,7 @@ def save_ckpt(args, unet, ema, step: int, prediction_type: str, lr_sched_step: i
     # EMA
     ema_model = UNet2DConditionModel.from_config(unet.config).to(unet.device, dtype=next(unet.parameters()).dtype)
     ema.copy_to(ema_model)
+    ema_model = ema_model.to(dtype=torch.float16)
     ema_dir = os.path.join(args.out_dir, f"step_{step}_ema"); os.makedirs(ema_dir, exist_ok=True)
     safetensors_save({k: v.detach().cpu() for k,v in ema_model.state_dict().items()}, os.path.join(ema_dir, "unet_ema.safetensors"))
     with open(os.path.join(ema_dir, "config.json"), "w", encoding="utf-8") as f:
@@ -412,9 +413,15 @@ def save_ckpt(args, unet, ema, step: int, prediction_type: str, lr_sched_step: i
 # - caption_tags: 原 CSV 的标签串（保持不变）
 # - caption_nl:   用 BLIP2 批量生成的自然语言描述（可选；未开启则写空串）
 # - author:       原 CSV 的作者字段
-# 支持 --blip_batch 批量推理 / --gen_caption_nl 开关
+# 仅对 caption_nl 批处理；VAE 单张处理
 # -------------------------
 def cmd_encode(args):
+    import json, os, random
+    from PIL import Image
+    import numpy as np
+    import torch
+    from diffusers import AutoencoderKL
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     os.makedirs(args.out_dir, exist_ok=True)
     tfm = make_image_transform(args.size)
@@ -429,7 +436,7 @@ def cmd_encode(args):
     scaling_factor = float(getattr(vae.config, "scaling_factor", 0.13025))
     print(f">> VAE scaling_factor={scaling_factor}")
 
-    # ====== BLIP2（可选：仅当 --gen_caption_nl 时加载） ======
+    # ====== BLIP2（可选：仅当 --gen_caption_nl 时加载；批处理仅用于 caption 生成） ======
     blip_enabled = bool(getattr(args, "gen_caption_nl", False))
     blip_model_name = getattr(args, "blip_model", "Salesforce/blip2-opt-2.7b")
     blip_bs = int(getattr(args, "blip_batch", 64))
@@ -449,6 +456,8 @@ def cmd_encode(args):
         except Exception as e:
             print(f"[warn] BLIP2 init failed ({e}); fallback to empty caption_nl.")
             blip_enabled = False
+            blip_processor = None
+            blip_model = None
 
     # ------- 读取 CSV -------
     if not args.csv:
@@ -460,7 +469,7 @@ def cmd_encode(args):
     if data:
         print("First row:", data[0])
 
-    # 可选过滤（与原版一致）
+    # 可选过滤
     exclude_word_list = [
         "no humans", "chibi", "character profile", "lineart", "sketch",
         "monochrome", "comic", "text focus", "1990s", "1980s",
@@ -476,87 +485,114 @@ def cmd_encode(args):
             if any(ex in caption_tags for ex in exclude_word_list):
                 continue
             samples.append((path, caption_tags, author))
-            # if len(samples) >= 16:
-            #     break
         except Exception:
             continue
-    random.shuffle(samples)
+    # random.shuffle(samples)
 
     index_path = os.path.join(args.out_dir, "index.jsonl")
     idxf = open(index_path, "w", encoding="utf-8")
 
-    imgs_batch = []
-    metas_batch = []  # (path, caption_tags, author)
+    imgs_batch = []      # 仅用于 BLIP 批处理的 PIL 图像
+    metas_batch = []     # (path, caption_tags, author)
 
-    print(f">> encoding {len(samples)} samples… (BLIP enabled={blip_enabled}, batch={blip_bs})")
+    print(f">> encoding {len(samples)} samples… (BLIP enabled={blip_enabled}, blip_batch={blip_bs}; VAE per-image)")
+
+    def _gen_captions_for_batch(pil_list):
+        """仅对 caption 做批处理；失败或未启用时返回空串列表。"""
+        if not blip_enabled or not pil_list:
+            return [""] * len(pil_list)
+
+        try:
+            with torch.inference_mode():
+                blip_inputs = blip_processor(
+                    images=pil_list, return_tensors="pt", padding=True
+                ).to(device)
+                gen_ids = blip_model.generate(
+                    **blip_inputs,
+                    max_new_tokens=64,
+                    # 需要更强质量可加（更慢）：
+                    # no_repeat_ngram_size=3,
+                    # repetition_penalty=1.1,
+                    # do_sample=True, temperature=0.7, top_p=0.9,
+                )
+                captions = blip_processor.batch_decode(gen_ids, skip_special_tokens=True)
+            # 释放 BLIP 中间张量，避免影响后续 VAE
+            del blip_inputs, gen_ids
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            return [c.strip() for c in captions]
+        except torch.cuda.OutOfMemoryError:
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            print("[warn] BLIP2 OOM on batch; fallback to per-image.")
+        except Exception as e:
+            print(f"[warn] BLIP2 batch failed: {e}")
+
+        # 回退到逐张生成 caption（仍然不影响后续 VAE 的逐张处理）
+        out = []
+        for im in pil_list:
+            try:
+                with torch.inference_mode():
+                    inp1 = blip_processor(images=im, return_tensors="pt").to(device)
+                    ids1 = blip_model.generate(**inp1, max_new_tokens=64)
+                    cap1 = blip_processor.decode(ids1[0], skip_special_tokens=True).strip()
+                del inp1, ids1
+            except Exception as e:
+                print(f"[warn] BLIP2 single failed: {e}")
+                cap1 = ""
+            out.append(cap1)
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        return out
 
     def flush_batch():
-        """对当前 batch 运行（可选）BLIP2，并写出 index 行。"""
+        """仅对当前 batch 批量生成 caption；随后逐张做 VAE 编码并写 index。"""
         nonlocal imgs_batch, metas_batch
         if not imgs_batch:
             return
 
-        # 1) 生成 caption_nl（若启用；否则全空串）
-        if blip_enabled:
+        # 1) 批量生成 caption（只在这里用到 batch）
+        captions = _gen_captions_for_batch(imgs_batch)
+
+        # 2) 逐张 VAE 编码 + 写 index.jsonl（严格单张，不做 batch）
+        for (im, (path, caption_tags, author), cap) in zip(imgs_batch, metas_batch, captions):
             try:
-                with torch.inference_mode():
-                    blip_inputs = blip_processor(
-                        images=imgs_batch, return_tensors="pt", padding=True
-                    ).to(device)
-                    gen_ids = blip_model.generate(
-                        **blip_inputs,
-                        max_new_tokens=64,
-                        # 需要更强的质量可加这些（会更慢）：
-                        # no_repeat_ngram_size=3,
-                        # repetition_penalty=1.1,
-                        # do_sample=True, temperature=0.7, top_p=0.9,
-                    )
-                    captions = blip_processor.batch_decode(gen_ids, skip_special_tokens=True)
-            except torch.cuda.OutOfMemoryError:
-                torch.cuda.empty_cache()
-                print("[warn] BLIP2 OOM on batch; fallback to per-image.")
-                captions = []
-                for im in imgs_batch:
-                    try:
-                        with torch.inference_mode():
-                            inp1 = blip_processor(images=im, return_tensors="pt").to(device)
-                            ids1 = blip_model.generate(**inp1, max_new_tokens=64)
-                            cap1 = blip_processor.decode(ids1[0], skip_special_tokens=True).strip()
-                    except Exception as e:
-                        print(f"[warn] BLIP2 single failed: {e}")
-                        cap1 = ""
-                    captions.append(cap1)
+                pixel = tfm(im).unsqueeze(0).to(
+                    device,
+                    dtype=(torch.float16 if device.type == "cuda" else torch.float32)
+                )
+                with torch.no_grad():
+                    lat = vae.encode(pixel).latent_dist.sample() * scaling_factor
+                base = sha1(path) + ".npz"
+                np.savez_compressed(
+                    os.path.join(args.out_dir, base),
+                    latent=lat[0].detach().cpu().to(torch.float16).numpy(),
+                    src=np.bytes_(path)
+                )
+                meta = {
+                    "npz": base,
+                    "src": path,
+                    "caption_tags": caption_tags,
+                    "caption_nl": cap if cap else "",
+                    "author": author
+                }
+                idxf.write(json.dumps(meta, ensure_ascii=False) + "\n")
             except Exception as e:
-                print(f"[warn] BLIP2 batch failed: {e}")
-                captions = [""] * len(imgs_batch)
-        else:
-            captions = [""] * len(imgs_batch)
+                print(f"[skip] encode {path}: {e}")
+            finally:
+                # 逐张及时释放
+                del pixel
+                if 'lat' in locals():
+                    del lat
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
 
-        # 2) 写 index.jsonl（latent 如需恢复，解开下方注释）
-        for (path, caption_tags, author), cap in zip(metas_batch, captions):
-            base = sha1(path) + ".npz"
-
-            # 如需把 latent 也一起保存，请解注以下三行
-            pixel = tfm(Image.open(path).convert("RGB")).unsqueeze(0).to(device)
-            with torch.no_grad(), torch.amp.autocast(device_type=device.type, dtype=pixel.dtype, enabled=(device.type=="cuda")):
-                lat = vae.encode(pixel).latent_dist.sample() * scaling_factor
-            np.savez_compressed(os.path.join(args.out_dir, base),
-                                latent=lat[0].detach().cpu().to(torch.float16).numpy(),
-                                src=np.bytes_(path))
-
-            meta = {
-                "npz": base,
-                "src": path,
-                "caption_tags": caption_tags,
-                "caption_nl": (cap.strip() if cap else ""),  # 未启用/失败时为空串
-                "author": author
-            }
-            idxf.write(json.dumps(meta, ensure_ascii=False) + "\n")
-
+        # 3) 清空 batch 容器（保证下一批 caption 生成仍然只占用必要内存）
         imgs_batch.clear()
         metas_batch.clear()
 
-    # --------- 主循环：装批 & 刷批 ----------
+    # --------- 主循环：装批（用于 caption） & 刷批（caption 批 + VAE 单张） ----------
+    from tqdm import tqdm
     for (path, caption_tags, author) in tqdm(samples):
         try:
             img = Image.open(path).convert("RGB")
@@ -564,16 +600,17 @@ def cmd_encode(args):
             print(f"[skip] open {path}: {e}")
             continue
 
-        imgs_batch.append(img)
+        imgs_batch.append(img)                       # 只为 BLIP 批处理收集
         metas_batch.append((path, caption_tags, author))
 
         if len(imgs_batch) >= blip_bs:
-            flush_batch()
+            flush_batch()                            # caption 批量、VAE 单张
 
     # 收尾
     flush_batch()
     idxf.close()
     print(">> done. Saved to", args.out_dir)
+
 
 
 # -------------------------
