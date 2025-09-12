@@ -705,7 +705,7 @@ def cmd_train(args):
     def _assert_all_fp32(named_params, who=""):
         for n, p in named_params:
             if p.requires_grad and p.dtype != torch.float32:
-                raise TypeErr
+                raise TypeError(f"{who} param {n} dtype={p.dtype} (need float32 when using GradScaler)")
 
     # —— 优化器/EMA/AMP —— #
     unet_params = [p for p in unet.parameters() if p.requires_grad]
