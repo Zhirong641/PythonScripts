@@ -78,7 +78,7 @@ def make_image_transform(resolution=1024):
     return transforms.Compose([
         transforms.Lambda(resize_pad),
         transforms.ToTensor(),
-        transforms.Normalize([0.5],[0.5])
+        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
     ])
 
 def _split_clean_comma_list(s: str) -> List[str]:
@@ -693,17 +693,24 @@ def cmd_train(args):
         train_te=args.train_text_encoder,
     )
 
-    # 优化器/EMA/AMP
-    # 记录所有需要训练的参数，以便后续进行梯度裁剪
-    train_params = list(unet.parameters())
-    param_groups = [{"params": train_params, "lr": args.lr}]
+    # —— 优化器/EMA/AMP —— #
+    unet_params = [p for p in unet.parameters() if p.requires_grad]
+    param_groups = [{"params": unet_params, "lr": args.lr}]
+
+    te_params = []
     if args.train_text_encoder:
-        te_params = list(txt.text_encoder_1.parameters()) + list(txt.text_encoder_2.parameters())
-        train_params += te_params
+        te_params = [p for p in itertools.chain(
+            txt.text_encoder_1.parameters(),
+            txt.text_encoder_2.parameters()
+        ) if p.requires_grad]
         param_groups.append({"params": te_params, "lr": args.text_encoder_lr})
-    optimizer = torch.optim.AdamW(param_groups, betas=(0.9,0.999), weight_decay=1e-2)
+
+    optimizer = torch.optim.AdamW(param_groups, betas=(0.9, 0.999), weight_decay=1e-2)
     ema = EMA(unet, decay=args.ema)
     scaler = torch.amp.GradScaler('cuda', enabled=use_amp)
+
+    # 合并列表仅用于梯度裁剪（避免重复，用 id 去重）
+    train_params_for_clip = list({id(p): p for p in itertools.chain(unet_params, te_params)}.values())
 
     # LR 调度
     micro_steps_per_epoch = len(loader)
@@ -1030,7 +1037,7 @@ def cmd_train(args):
             scaler.scale(loss / args.grad_accum).backward()
 
             if ((global_step + 1) % args.grad_accum) == 0:
-                nn.utils.clip_grad_norm_(train_params, 1.0)
+                nn.utils.clip_grad_norm_(train_params_for_clip, 1.0)
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad(set_to_none=True)
