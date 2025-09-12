@@ -694,9 +694,12 @@ def cmd_train(args):
     )
 
     # 优化器/EMA/AMP
-    param_groups = [{"params": unet.parameters(), "lr": args.lr}]
+    # 记录所有需要训练的参数，以便后续进行梯度裁剪
+    train_params = list(unet.parameters())
+    param_groups = [{"params": train_params, "lr": args.lr}]
     if args.train_text_encoder:
         te_params = list(txt.text_encoder_1.parameters()) + list(txt.text_encoder_2.parameters())
+        train_params += te_params
         param_groups.append({"params": te_params, "lr": args.text_encoder_lr})
     optimizer = torch.optim.AdamW(param_groups, betas=(0.9,0.999), weight_decay=1e-2)
     ema = EMA(unet, decay=args.ema)
