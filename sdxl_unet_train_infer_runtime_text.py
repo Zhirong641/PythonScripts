@@ -707,26 +707,41 @@ def cmd_train(args):
             if p.requires_grad and p.dtype != torch.float32:
                 raise TypeError(f"{who} param {n} dtype={p.dtype} (need float32 when using GradScaler)")
 
-    # —— 优化器/EMA/AMP —— #
-    unet_params = [p for p in unet.parameters() if p.requires_grad]
-    _assert_all_fp32(unet_params, "UNet")
-    param_groups = [{"params": unet_params, "lr": args.lr}]
+    # —— 优化器 / EMA / AMP —— #
+    # 统一用 (name, param) 形式收集需要训练的权重
+    unet_named = [(n, p) for n, p in unet.named_parameters() if p.requires_grad]
 
-    te_params = []
+    te_named = []
     if args.train_text_encoder:
-        te_params = [p for p in itertools.chain(
-            txt.text_encoder_1.parameters(),
-            txt.text_encoder_2.parameters()
-        ) if p.requires_grad]
-        _assert_all_fp32(te_params, "TextEncoder")
-        param_groups.append({"params": te_params, "lr": args.text_encoder_lr})
+        te_named += [(f"te1.{n}", p) for n, p in txt.text_encoder_1.named_parameters() if p.requires_grad]
+        te_named += [(f"te2.{n}", p) for n, p in txt.text_encoder_2.named_parameters() if p.requires_grad]
+
+    def _assert_all_fp32(named, who):
+        bad = [(n, p.dtype) for n, p in named if p.dtype != torch.float32]
+        if bad:
+            preview = "\n".join([f" - {n}: {dt}" for n, dt in bad[:10]])
+            raise TypeError(
+                f"{who} has non-fp32 params (GradScaler requires fp32 master weights):\n{preview}"
+            )
+
+    # 确保所有要训练的权重是 FP32（配合 GradScaler）
+    _assert_all_fp32(unet_named, "UNet")
+    if te_named:
+        _assert_all_fp32(te_named, "TextEncoder")
+
+    # 构建优化器参数组（注意：这里放“tensor 本体”，不要重复/混杂）
+    param_groups = [
+        {"params": [p for _, p in unet_named], "lr": args.lr},
+    ]
+    if te_named:
+        param_groups.append({"params": [p for _, p in te_named], "lr": args.text_encoder_lr})
 
     optimizer = torch.optim.AdamW(param_groups, betas=(0.9, 0.999), weight_decay=1e-2)
     ema = EMA(unet, decay=args.ema)
     scaler = torch.amp.GradScaler('cuda', enabled=use_amp)
 
-    # 合并列表仅用于梯度裁剪（避免重复，用 id 去重）
-    train_params_for_clip = list({id(p): p for p in itertools.chain(unet_params, te_params)}.values())
+    # 仅用于梯度裁剪的参数列表（去重）
+    train_params_for_clip = [p for _, p in itertools.chain(unet_named, te_named)]
 
     # LR 调度
     micro_steps_per_epoch = len(loader)
