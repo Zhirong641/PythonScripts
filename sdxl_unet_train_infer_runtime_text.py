@@ -632,6 +632,9 @@ def cmd_train(args):
     use_amp = (device.type == "cuda")
     os.makedirs(args.out_dir, exist_ok=True)
 
+    if args.train_text_encoder and not (args.text_encoder_lr < args.lr):
+        raise ValueError("--text_encoder_lr must be smaller than --lr")
+
     # 数据
     index_path = os.path.join(args.data_dir, "index.jsonl")
     dataset = LatentCapAuthorDataset(index_path, args.data_dir)
@@ -664,10 +667,11 @@ def cmd_train(args):
     )
 
     # 优化器/EMA/AMP
-    train_params = list(unet.parameters())
+    param_groups = [{"params": unet.parameters(), "lr": args.lr}]
     if args.train_text_encoder:
-        train_params += list(txt.text_encoder_1.parameters()) + list(txt.text_encoder_2.parameters())
-    optimizer = torch.optim.AdamW(train_params, lr=args.lr, betas=(0.9,0.999), weight_decay=1e-2)
+        te_params = list(txt.text_encoder_1.parameters()) + list(txt.text_encoder_2.parameters())
+        param_groups.append({"params": te_params, "lr": args.text_encoder_lr})
+    optimizer = torch.optim.AdamW(param_groups, betas=(0.9,0.999), weight_decay=1e-2)
     ema = EMA(unet, decay=args.ema)
     scaler = torch.amp.GradScaler('cuda', enabled=use_amp)
 
@@ -1171,6 +1175,8 @@ def build_parser():
     pt.add_argument("--workers", type=int, default=4)
     pt.add_argument("--epochs", type=int, default=1)
     pt.add_argument("--lr", type=float, default=1e-4)
+    pt.add_argument("--text_encoder_lr", type=float, default=1e-5,
+                    help="text encoder learning rate (must be < --lr)")
     pt.add_argument("--warmup", type=int, default=1000)
     pt.add_argument("--grad_accum", type=int, default=1)
     pt.add_argument("--ema", type=float, default=0.999)
