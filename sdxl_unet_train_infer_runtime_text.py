@@ -24,6 +24,7 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from tqdm import tqdm
+import itertools
 
 from diffusers import (
     UNet2DConditionModel,
@@ -204,9 +205,17 @@ class SDXLTextEnc:
         self.tokenizer_1 = CLIPTokenizer.from_pretrained(base_repo, subfolder="tokenizer")
         self.tokenizer_2 = CLIPTokenizer.from_pretrained(base_repo, subfolder="tokenizer_2")
 
-        dtype = torch.float16 if device.type=="cuda" else torch.float32
-        self.text_encoder_1 = CLIPTextModel.from_pretrained(base_repo, subfolder="text_encoder", torch_dtype=dtype).to(device)
-        self.text_encoder_2 = CLIPTextModelWithProjection.from_pretrained(base_repo, subfolder="text_encoder_2", torch_dtype=dtype).to(device)
+        # dtype = torch.float16 if device.type=="cuda" else torch.float32
+        # self.text_encoder_1 = CLIPTextModel.from_pretrained(base_repo, subfolder="text_encoder", torch_dtype=dtype).to(device)
+        # self.text_encoder_2 = CLIPTextModelWithProjection.from_pretrained(base_repo, subfolder="text_encoder_2", torch_dtype=dtype).to(device)
+        dtype_te = (torch.float32 if train_te else
+                   (torch.float16 if device.type == "cuda" else torch.float32))
+        self.text_encoder_1 = CLIPTextModel.from_pretrained(
+            base_repo, subfolder="text_encoder", dtype=dtype_te
+        ).to(device)
+        self.text_encoder_2 = CLIPTextModelWithProjection.from_pretrained(
+            base_repo, subfolder="text_encoder_2", dtype=dtype_te
+        ).to(device)
         if self.train_te:
             self.text_encoder_1.train().requires_grad_(True)
             self.text_encoder_2.train().requires_grad_(True)
@@ -693,8 +702,14 @@ def cmd_train(args):
         train_te=args.train_text_encoder,
     )
 
+    def _assert_all_fp32(named_params, who=""):
+        for n, p in named_params:
+            if p.requires_grad and p.dtype != torch.float32:
+                raise TypeErr
+
     # —— 优化器/EMA/AMP —— #
     unet_params = [p for p in unet.parameters() if p.requires_grad]
+    _assert_all_fp32(unet_params, "UNet")
     param_groups = [{"params": unet_params, "lr": args.lr}]
 
     te_params = []
@@ -703,6 +718,7 @@ def cmd_train(args):
             txt.text_encoder_1.parameters(),
             txt.text_encoder_2.parameters()
         ) if p.requires_grad]
+        _assert_all_fp32(te_params, "TextEncoder")
         param_groups.append({"params": te_params, "lr": args.text_encoder_lr})
 
     optimizer = torch.optim.AdamW(param_groups, betas=(0.9, 0.999), weight_decay=1e-2)
