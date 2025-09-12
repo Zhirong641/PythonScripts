@@ -93,7 +93,11 @@ def _build_variants_from_cap_author(caption_tags: str, caption_nl: str, author: 
     tags = _split_clean_comma_list(caption_tags)
     auth = _split_clean_comma_list(author)
     tags_fwd = _join_with_comma(tags) if tags else ""
+    if random.random() < 0.5 and auth:
+        tags_fwd = f"artist:{random.choice(auth)}, {tags_fwd}"
     tags_rev = _join_with_comma(list(reversed(tags))) if tags else ""
+    if random.random() < 0.5 and auth:
+        tags_rev = f"artist:{random.choice(auth)}, {tags_rev}"
     if auth:
         caption_auth_nl = f"{caption_nl}, by artist {random.choice(auth)}" if caption_nl else f"by artist {random.choice(auth)}"
     else:
@@ -1037,7 +1041,6 @@ def cmd_train(args):
             # 保存 ckpt + 训练快照 + 预览
             if args.save_steps and (global_step % args.save_steps == 0):
                 snap_dir = os.path.join(args.out_dir, f"step_{global_step:08d}_state")
-                os.makedirs(snap_dir, exist_ok=True)
                 # 仅保存推理用 ckpt（你之前注释掉了 state 保存）
                 save_ckpt(
                     args, unet, ema, txt,
@@ -1045,11 +1048,12 @@ def cmd_train(args):
                     prediction_type=prediction_type,
                     lr_sched_step=lr_sched.step_idx
                 )
-                # save_train_state(os.path.join(snap_dir, "state.pt"),
-                #                  unet, txt, optimizer, lr_sched, ema,
-                #                  global_step=global_step, epoch=epoch,
-                #                  prediction_type=prediction_type,
-                #                  scaler=scaler, opt_step=opt_step)
+                os.makedirs(snap_dir, exist_ok=True)
+                save_train_state(os.path.join(snap_dir, "state.pt"),
+                                 unet, txt, optimizer, lr_sched, ema,
+                                 global_step=global_step, epoch=epoch,
+                                 prediction_type=prediction_type,
+                                 scaler=scaler, opt_step=opt_step)
 
             if getattr(args, "preview_every_ckpt", False) and (global_step % args.preview_save_steps == 0):
                 texts0, mask0, _ = _build_variants_from_cap_author(cap_tags[0], cap_nls[0], auths[0])
