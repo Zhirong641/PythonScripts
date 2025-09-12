@@ -280,8 +280,9 @@ def save_train_state(path, unet, txt, optimizer, lr_sched, ema, global_step, epo
         "prediction_type": prediction_type,
         "opt_step": int(opt_step),
         "scaler": (scaler.state_dict() if (scaler is not None and hasattr(scaler, "state_dict")) else None),
+        "train_text_encoder": bool(getattr(txt, "train_te", False)),
     }
-    if getattr(txt, "train_te", False):
+    if pkg["train_text_encoder"]:
         pkg["text_encoder_1"] = {k: v.detach().cpu() for k, v in txt.text_encoder_1.state_dict().items()}
         pkg["text_encoder_2"] = {k: v.detach().cpu() for k, v in txt.text_encoder_2.state_dict().items()}
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -291,7 +292,7 @@ def save_train_state(path, unet, txt, optimizer, lr_sched, ema, global_step, epo
     os.replace(tmp_path, path)
     print(f">> saved train state: {path}")
 
-def try_load_train_state(resume_path, unet, optimizer, lr_sched, ema, scaler=None):
+def try_load_train_state(resume_path, unet, txt, optimizer, lr_sched, ema, scaler=None):
     """
     resume_path:
       - 目录：自动选择最新的 .pt/.pth/.safetensors
@@ -316,6 +317,11 @@ def try_load_train_state(resume_path, unet, optimizer, lr_sched, ema, scaler=Non
         print(f">> resume from packaged: {resume_path}")
         pkg = torch.load(resume_path, map_location="cpu")
         unet.load_state_dict(pkg["model"], strict=True)
+        if pkg.get("train_text_encoder"):
+            if "text_encoder_1" in pkg:
+                txt.text_encoder_1.load_state_dict(pkg["text_encoder_1"], strict=True)
+            if "text_encoder_2" in pkg:
+                txt.text_encoder_2.load_state_dict(pkg["text_encoder_2"], strict=True)
         if "optimizer" in pkg and pkg["optimizer"]:
             optimizer.load_state_dict(pkg["optimizer"])
         if "lr_sched_step" in pkg:
@@ -340,6 +346,13 @@ def try_load_train_state(resume_path, unet, optimizer, lr_sched, ema, scaler=Non
         missing, unexpected = unet.load_state_dict(sd, strict=False)
         if missing:    print(f"[info] missing keys: {len(missing)} (show up to 10) {missing[:10]}")
         if unexpected: print(f"[info] unexpected: {len(unexpected)} (show up to 10) {unexpected[:10]}")
+        dir_path = os.path.dirname(resume_path)
+        te1_path = os.path.join(dir_path, "text_encoder_1.safetensors")
+        te2_path = os.path.join(dir_path, "text_encoder_2.safetensors")
+        if os.path.isfile(te1_path):
+            txt.text_encoder_1.load_state_dict(safetensors_load(te1_path), strict=False)
+        if os.path.isfile(te2_path):
+            txt.text_encoder_2.load_state_dict(safetensors_load(te2_path), strict=False)
         base_no_ext = os.path.splitext(resume_path)[0]
         meta_path = base_no_ext + ".state.json"
         if os.path.isfile(meta_path):
@@ -851,7 +864,7 @@ def cmd_train(args):
 
     # —— 恢复（可选）
     global_step, start_epoch, pt_pred_type, opt_step = try_load_train_state(
-        args.resume, unet, optimizer, lr_sched, ema, scaler
+        args.resume, unet, txt, optimizer, lr_sched, ema, scaler
     )
     if pt_pred_type and pt_pred_type != prediction_type:
         print(f"[warn] resume pred_type={pt_pred_type} != current {prediction_type}")
