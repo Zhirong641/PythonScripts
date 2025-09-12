@@ -16,6 +16,7 @@ import numpy as np
 from PIL import Image
 from pathlib import Path
 from collections import deque, OrderedDict
+import contextlib
 
 import torch
 import torch.nn.functional as F
@@ -189,11 +190,12 @@ class SDXLTextEnc:
       - pooled_prompt_embeds: TE2 的 pooled/text_embeds -> [B,1280]
     支持 LRU 缓存（按文本串）
     """
-    def __init__(self, base_repo: str, device, use_amp=True, cache_cap: int = 0):
+    def __init__(self, base_repo: str, device, use_amp=True, cache_cap: int = 0, train_te: bool = False):
         self.device = device
         self.use_amp = use_amp
         self.cache_cap = int(cache_cap)
         self.cache: "OrderedDict[str, Tuple[torch.Tensor, torch.Tensor]]" = OrderedDict()
+        self.train_te = bool(train_te)
 
         self.tokenizer_1 = CLIPTokenizer.from_pretrained(base_repo, subfolder="tokenizer")
         self.tokenizer_2 = CLIPTokenizer.from_pretrained(base_repo, subfolder="tokenizer_2")
@@ -201,11 +203,18 @@ class SDXLTextEnc:
         dtype = torch.float16 if device.type=="cuda" else torch.float32
         self.text_encoder_1 = CLIPTextModel.from_pretrained(base_repo, subfolder="text_encoder", torch_dtype=dtype).to(device)
         self.text_encoder_2 = CLIPTextModelWithProjection.from_pretrained(base_repo, subfolder="text_encoder_2", torch_dtype=dtype).to(device)
-        self.text_encoder_1.eval().requires_grad_(False)
-        self.text_encoder_2.eval().requires_grad_(False)
+        if self.train_te:
+            self.text_encoder_1.train().requires_grad_(True)
+            self.text_encoder_2.train().requires_grad_(True)
+        else:
+            self.text_encoder_1.eval().requires_grad_(False)
+            self.text_encoder_2.eval().requires_grad_(False)
 
         # 预计算无条件
-        self.uncond_prompt_embeds, self.uncond_pooled = self.encode_prompts([""])
+        if not self.train_te:
+            self.uncond_prompt_embeds, self.uncond_pooled = self.encode_prompts([""])
+        else:
+            self.uncond_prompt_embeds, self.uncond_pooled = None, None
 
     def _encode_no_cache(self, texts: List[str]) -> Tuple[torch.Tensor, torch.Tensor]:
         ids1 = self.tokenizer_1(texts, padding="max_length", max_length=77,
@@ -220,13 +229,14 @@ class SDXLTextEnc:
         prompt_embeds = torch.cat([z1, z2_hidden], dim=-1)          # [B,77,2048]
         return prompt_embeds, z2_pooled
 
-    @torch.no_grad()
     def encode_prompts(self, texts: List[str]) -> Tuple[torch.Tensor, torch.Tensor]:
-        return self._encode_no_cache(texts)
+        if self.train_te:
+            return self._encode_no_cache(texts)
+        with torch.no_grad():
+            return self._encode_no_cache(texts)
 
-    @torch.no_grad()
     def encode_cached(self, text: str) -> Tuple[torch.Tensor, torch.Tensor]:
-        if self.cache_cap <= 0:
+        if self.train_te or self.cache_cap <= 0:
             return self._encode_no_cache([text])
         if text in self.cache:
             pe_cpu, pooled_cpu = self.cache.pop(text)
@@ -622,6 +632,9 @@ def cmd_train(args):
     use_amp = (device.type == "cuda")
     os.makedirs(args.out_dir, exist_ok=True)
 
+    if args.train_text_encoder and not (args.text_encoder_lr < args.lr):
+        raise ValueError("--text_encoder_lr must be smaller than --lr")
+
     # 数据
     index_path = os.path.join(args.data_dir, "index.jsonl")
     dataset = LatentCapAuthorDataset(index_path, args.data_dir)
@@ -645,10 +658,20 @@ def cmd_train(args):
                                 prediction_type=prediction_type)
 
     # 文本编码器（带 LRU 缓存）
-    txt = SDXLTextEnc(base_repo, device, use_amp=True, cache_cap=args.embed_cache_size)
+    txt = SDXLTextEnc(
+        base_repo,
+        device,
+        use_amp=True,
+        cache_cap=(0 if args.train_text_encoder else args.embed_cache_size),
+        train_te=args.train_text_encoder,
+    )
 
     # 优化器/EMA/AMP
-    optimizer = torch.optim.AdamW(unet.parameters(), lr=args.lr, betas=(0.9,0.999), weight_decay=1e-2)
+    param_groups = [{"params": unet.parameters(), "lr": args.lr}]
+    if args.train_text_encoder:
+        te_params = list(txt.text_encoder_1.parameters()) + list(txt.text_encoder_2.parameters())
+        param_groups.append({"params": te_params, "lr": args.text_encoder_lr})
+    optimizer = torch.optim.AdamW(param_groups, betas=(0.9,0.999), weight_decay=1e-2)
     ema = EMA(unet, decay=args.ema)
     scaler = torch.amp.GradScaler('cuda', enabled=use_amp)
 
@@ -742,14 +765,14 @@ def cmd_train(args):
         negative = getattr(args, "preview_negative", None)
         do_cfg = float(args.preview_scale) > 1.0
 
-        pe, neg_pe, pooled, neg_pooled = pipe.encode_prompt(
-            prompt=[prompt],
-            negative_prompt=[negative] if (do_cfg and negative) else None,
-            device=device,
-            num_images_per_prompt=1,
-            do_classifier_free_guidance=do_cfg,
-            # 注意：这里不要传 dtype=...
-        )
+        pe, pooled = txt.encode_prompts([prompt])
+        if do_cfg:
+            if negative:
+                neg_pe, neg_pooled = txt.encode_prompts([negative])
+            else:
+                neg_pe, neg_pooled = txt.encode_prompts([""])
+        else:
+            neg_pe = neg_pooled = None
 
         # 统一 dtype/device
         pe       = pe.to(device=device, dtype=tmp_dtype)
@@ -757,8 +780,6 @@ def cmd_train(args):
         if do_cfg and neg_pe is not None and neg_pooled is not None:
             neg_pe    = neg_pe.to(device=device, dtype=tmp_dtype)
             neg_pooled= neg_pooled.to(device=device, dtype=tmp_dtype)
-        else:
-            neg_pe = neg_pooled = None
 
         # 3) add_time_ids（与尺寸一致；按 batch 扩展）
         try:
@@ -900,9 +921,9 @@ def cmd_train(args):
             pe_list, pooled_list = [], []
             for s in chosen:
                 if (args.cfg_drop > 0.0) and (random.random() < args.cfg_drop):
-                    pe, pooled = txt.uncond_prompt_embeds, txt.uncond_pooled
+                    pe, pooled = txt.encode_cached("")
                 else:
-                    pe, pooled = txt.encode_cached(s) if s else (txt.uncond_prompt_embeds, txt.uncond_pooled)
+                    pe, pooled = txt.encode_cached(s)
                 pe_list.append(pe)
                 pooled_list.append(pooled)
 
@@ -979,7 +1000,7 @@ def cmd_train(args):
             scaler.scale(loss / args.grad_accum).backward()
 
             if ((global_step + 1) % args.grad_accum) == 0:
-                nn.utils.clip_grad_norm_(unet.parameters(), 1.0)
+                nn.utils.clip_grad_norm_(train_params, 1.0)
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad(set_to_none=True)
@@ -1154,6 +1175,8 @@ def build_parser():
     pt.add_argument("--workers", type=int, default=4)
     pt.add_argument("--epochs", type=int, default=1)
     pt.add_argument("--lr", type=float, default=1e-4)
+    pt.add_argument("--text_encoder_lr", type=float, default=1e-5,
+                    help="text encoder learning rate (must be < --lr)")
     pt.add_argument("--warmup", type=int, default=1000)
     pt.add_argument("--grad_accum", type=int, default=1)
     pt.add_argument("--ema", type=float, default=0.999)
@@ -1177,6 +1200,7 @@ def build_parser():
     pt.add_argument("--plot_interval", type=int, default=500, help="每隔多少 step 刷新一次 loss.csv/loss.png")
     pt.add_argument("--loss_ema", type=float, default=0.98, help="loss EMA 平滑系数，1.0 表示关闭平滑")
     pt.add_argument("--embed_cache_size", type=int, default=50000, help="文本嵌入 LRU 缓存上限（按不同文本条目数）")
+    pt.add_argument("--train_text_encoder", action="store_true", help="同时训练 Text Encoder")
 
     pt.set_defaults(func=cmd_train)
 
