@@ -267,7 +267,7 @@ def build_time_ids(width: int, height: int, crop_w=0, crop_h=0, target_w=None, t
 # -------------------------
 # 断点保存/恢复
 # -------------------------
-def save_train_state(path, unet, optimizer, lr_sched, ema, global_step, epoch,
+def save_train_state(path, unet, txt, optimizer, lr_sched, ema, global_step, epoch,
                      prediction_type, scaler=None, opt_step=0):
     pkg = {
         "model": {k: v.detach().cpu() for k, v in unet.state_dict().items()},
@@ -281,6 +281,9 @@ def save_train_state(path, unet, optimizer, lr_sched, ema, global_step, epoch,
         "opt_step": int(opt_step),
         "scaler": (scaler.state_dict() if (scaler is not None and hasattr(scaler, "state_dict")) else None),
     }
+    if getattr(txt, "train_te", False):
+        pkg["text_encoder_1"] = {k: v.detach().cpu() for k, v in txt.text_encoder_1.state_dict().items()}
+        pkg["text_encoder_2"] = {k: v.detach().cpu() for k, v in txt.text_encoder_2.state_dict().items()}
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tmp_fd, tmp_path = tempfile.mkstemp(suffix=".pt", dir=os.path.dirname(path))
     os.close(tmp_fd)
@@ -358,7 +361,7 @@ def try_load_train_state(resume_path, unet, optimizer, lr_sched, ema, scaler=Non
 # -------------------------
 # 保存推理用权重（EMA）+ 旁车 json
 # -------------------------
-def save_ckpt(args, unet, ema, step: int, prediction_type: str, lr_sched_step: int):
+def save_ckpt(args, unet, ema, txt, step: int, prediction_type: str, lr_sched_step: int):
     # ⛏️ 自动清理旧的 checkpoint（只保留最近10个）
     ckpt_dirs = sorted(glob.glob(os.path.join(args.out_dir, "step_*_ema")), key=os.path.getmtime)
     max_keep = 1
@@ -404,8 +407,15 @@ def save_ckpt(args, unet, ema, step: int, prediction_type: str, lr_sched_step: i
     safetensors_save({k: v.detach().cpu() for k,v in ema_model.state_dict().items()}, os.path.join(ema_dir, "unet_ema.safetensors"))
     with open(os.path.join(ema_dir, "config.json"), "w", encoding="utf-8") as f:
         json.dump(unet.config, f, indent=2)
+    meta = {"prediction_type": prediction_type, "step": step}
+    if getattr(args, "train_text_encoder", False):
+        safetensors_save({k: v.detach().cpu() for k, v in txt.text_encoder_1.state_dict().items()},
+                         os.path.join(ema_dir, "text_encoder_1.safetensors"))
+        safetensors_save({k: v.detach().cpu() for k, v in txt.text_encoder_2.state_dict().items()},
+                         os.path.join(ema_dir, "text_encoder_2.safetensors"))
+        meta["text_encoder_saved"] = True
     with open(os.path.join(ema_dir, "meta.json"), "w", encoding="utf-8") as f:
-        json.dump({"prediction_type": prediction_type, "step": step}, f, indent=2)
+        json.dump(meta, f, indent=2)
     # 旁车 state.json（便于从 safetensors 恢复）
     with open(os.path.join(ema_dir, "unet_ema.state.json"), "w", encoding="utf-8") as f:
         json.dump({
@@ -1017,13 +1027,13 @@ def cmd_train(args):
                 os.makedirs(snap_dir, exist_ok=True)
                 # 仅保存推理用 ckpt（你之前注释掉了 state 保存）
                 save_ckpt(
-                    args, unet, ema,
+                    args, unet, ema, txt,
                     step=global_step,
                     prediction_type=prediction_type,
                     lr_sched_step=lr_sched.step_idx
                 )
                 # save_train_state(os.path.join(snap_dir, "state.pt"),
-                #                  unet, optimizer, lr_sched, ema,
+                #                  unet, txt, optimizer, lr_sched, ema,
                 #                  global_step=global_step, epoch=epoch,
                 #                  prediction_type=prediction_type,
                 #                  scaler=scaler, opt_step=opt_step)
@@ -1042,7 +1052,7 @@ def cmd_train(args):
 
         if args.save_epochs and ((epoch + 1) % args.save_epochs == 0):
             save_ckpt(
-                args, unet, ema,
+                args, unet, ema, txt,
                 step=global_step,
                 prediction_type=prediction_type,
                 lr_sched_step=lr_sched.step_idx
