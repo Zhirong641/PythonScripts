@@ -101,7 +101,7 @@ def _build_variants_from_cap_author(caption_tags: str, caption_nl: str, author: 
         tags_rev = f"artist:{random.choice(auth)}, {tags_rev}" if tags_rev else f"artist:{random.choice(auth)}"
     if auth:
         caption_auth_nl = (
-            f"{caption_nl}, by artist {random.choice(auth)}" if caption_nl else f"by artist {random.choice(auth)}"
+            f"{caption_nl}, artist:{random.choice(auth)}" if caption_nl else f"artist:{random.choice(auth)}"
         )
     else:
         caption_auth_nl = caption_nl
@@ -1281,17 +1281,21 @@ def main(args):
                             pass
                         if args.plot_interval and (global_step % int(args.plot_interval) == 0):
                             _save_plot()
-                        if args.preview_save_steps and (global_step % int(args.preview_save_steps) == 0):
+                        if args.preview_save_steps and (global_step % int(args.preview_save_steps) == 0 or global_step == 1):
                             # Use a random preview prompt from current batch
                             prev_prompt = random.choice(chosen) if chosen else ""
                             try:
                                 # EMA preview if available
                                 if args.use_ema:
                                     ema_unet.store(unet.parameters()); ema_unet.copy_to(unet.parameters())
-                                save_preview(global_step, prev_prompt)
-                                os.makedirs(os.path.join(args.output_dir, "preview"), exist_ok=True)
-                                with open(os.path.join(args.output_dir, "preview", f"prompt-{global_step}.txt"), "w") as f:
-                                    f.write(prev_prompt)
+                                texts_0, mask_0, _ = _build_variants_from_cap_author(cap_tags[0], cap_nls[0], authors[0])
+                                for i in range(len(texts_0)):
+                                    if mask_0[i]:
+                                        prev_prompt = texts_0[i]
+                                        save_preview(global_step + i, prev_prompt)
+                                        os.makedirs(os.path.join(args.output_dir, "preview"), exist_ok=True)
+                                        with open(os.path.join(args.output_dir, "preview", f"prompt-{global_step + i}.txt"), "w") as f:
+                                            f.write(prev_prompt)
                             finally:
                                 if args.use_ema:
                                     ema_unet.restore(unet.parameters())
