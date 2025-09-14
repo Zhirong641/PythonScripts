@@ -25,6 +25,7 @@ import random
 import shutil
 from contextlib import nullcontext
 from pathlib import Path
+import json
 
 import accelerate
 import datasets
@@ -53,6 +54,12 @@ from diffusers.utils.hub_utils import load_or_create_model_card, populate_model_
 from diffusers.utils.import_utils import is_torch_npu_available, is_xformers_available
 from diffusers.utils.torch_utils import is_compiled_module
 
+# plotting (offscreen)
+import csv as _pycsv
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
 
 # Will error if the minimal version of diffusers is not installed. Remove at your own risks.
 check_min_version("0.36.0.dev0")
@@ -66,6 +73,88 @@ if is_torch_npu_available():
 DATASET_NAME_MAPPING = {
     "lambdalabs/naruto-blip-captions": ("image", "text"),
 }
+
+
+# ===== Helpers for dynamic text variants =====
+def _split_clean_comma_list(s: str):
+    if not s:
+        return []
+    return [x.strip() for x in s.replace("，", ",").split(",") if x.strip()]
+
+
+def _join_with_comma(items):
+    return ", ".join(items)
+
+
+def _build_variants_from_cap_author(caption_tags: str, caption_nl: str, author: str):
+    """
+    Build several prompt variants using tags / natural caption / author info.
+    Returns (texts: list[str], mask: np.ndarray[bool], preview_text: str)
+    """
+    tags = _split_clean_comma_list(caption_tags)
+    auth = _split_clean_comma_list(author)
+    tags_fwd = _join_with_comma(tags) if tags else ""
+    if random.random() < 0.8 and auth:
+        tags_fwd = f"artist:{random.choice(auth)}, {tags_fwd}" if tags_fwd else f"artist:{random.choice(auth)}"
+    tags_rev = _join_with_comma(list(reversed(tags))) if tags else ""
+    if random.random() < 0.8 and auth:
+        tags_rev = f"artist:{random.choice(auth)}, {tags_rev}" if tags_rev else f"artist:{random.choice(auth)}"
+    if auth:
+        caption_auth_nl = (
+            f"{caption_nl}, by artist {random.choice(auth)}" if caption_nl else f"by artist {random.choice(auth)}"
+        )
+    else:
+        caption_auth_nl = caption_nl
+    texts = [tags_fwd, tags_rev, caption_nl, caption_auth_nl]
+    mask = [bool(t) for t in texts]
+    # remove duplicates
+    for j in range(len(texts)):
+        for k in range(j):
+            if mask[j] and mask[k] and texts[j] == texts[k]:
+                mask[j] = False
+    mask = np.array(mask, dtype=np.bool_)
+    preview_text = random.choice([texts[i] for i in range(len(texts)) if mask[i]]) if any(mask) else ""
+    return texts, mask, preview_text
+
+
+# ===== Latent dataset (index.jsonl + .npz) =====
+class LatentCapAuthorDataset(torch.utils.data.Dataset):
+    def __init__(self, data_dir: str):
+        self.root = data_dir
+        index_path = os.path.join(data_dir, "index.jsonl")
+        if not os.path.isfile(index_path):
+            raise FileNotFoundError(f"index.jsonl not found in {data_dir}")
+        self.items = []
+        with open(index_path, "r", encoding="utf-8") as f:
+            for line in f:
+                try:
+                    j = json.loads(line)
+                except Exception:
+                    continue
+                fname = j.get("npz")
+                if not fname:
+                    continue
+                fp = os.path.join(data_dir, fname)
+                if os.path.isfile(fp):
+                    self.items.append(
+                        (
+                            fname,
+                            j.get("caption_tags", ""),
+                            j.get("caption_nl", ""),
+                            j.get("author", ""),
+                        )
+                    )
+        if len(self.items) == 0:
+            raise RuntimeError(f"No valid items in {index_path}")
+
+    def __len__(self):
+        return len(self.items)
+
+    def __getitem__(self, i):
+        fname, cap_tags, cap_nl, auth = self.items[i]
+        z = np.load(os.path.join(self.root, fname), allow_pickle=False)
+        lat = z["latent"].astype(np.float16)  # already scaled
+        return torch.from_numpy(lat), cap_tags, cap_nl, auth
 
 
 def save_model_card(
@@ -185,6 +274,15 @@ def parse_args(input_args=None):
             "A folder containing the training data. Folder contents must follow the structure described in"
             " https://huggingface.co/docs/datasets/image_dataset#imagefolder. In particular, a `metadata.jsonl` file"
             " must exist to provide the captions for the images. Ignored if `dataset_name` is specified."
+        ),
+    )
+    parser.add_argument(
+        "--dataset_dir",
+        type=str,
+        default=None,
+        help=(
+            "Use a latent dataset directory (contains index.jsonl + .npz latents) instead of raw images."
+            " Example: ../latent_db"
         ),
     )
     parser.add_argument(
@@ -479,6 +577,37 @@ def parse_args(input_args=None):
         ],
         help="The image interpolation method to use for resizing images.",
     )
+    # Plot/preview controls
+    parser.add_argument(
+        "--plot_interval",
+        type=int,
+        default=0,
+        help="If >0, save loss.csv and loss.png every N optimization steps.",
+    )
+    parser.add_argument(
+        "--preview_save_steps",
+        type=int,
+        default=0,
+        help="If >0, save a preview image every N optimization steps.",
+    )
+    parser.add_argument(
+        "--preview_steps",
+        type=int,
+        default=25,
+        help="Preview sampling steps when saving previews.",
+    )
+    parser.add_argument(
+        "--preview_scale",
+        type=float,
+        default=5.5,
+        help="CFG scale when saving previews.",
+    )
+    parser.add_argument(
+        "--preview_seed",
+        type=int,
+        default=None,
+        help="Optional fixed seed for previews.",
+    )
 
     if input_args is not None:
         args = parser.parse_args(input_args)
@@ -490,8 +619,8 @@ def parse_args(input_args=None):
         args.local_rank = env_local_rank
 
     # Sanity checks
-    if args.dataset_name is None and args.train_data_dir is None:
-        raise ValueError("Need either a dataset name or a training folder.")
+    if args.dataset_dir is None and args.dataset_name is None and args.train_data_dir is None:
+        raise ValueError("Need either a latent dataset_dir or a dataset name or a training folder.")
     if args.proportion_empty_prompts < 0 or args.proportion_empty_prompts > 1:
         raise ValueError("`--proportion_empty_prompts` must be in the range [0, 1].")
 
@@ -824,27 +953,418 @@ def main(args):
         eps=args.adam_epsilon,
     )
 
-    # Get the datasets: you can either provide your own training and evaluation files (see below)
-    # or specify a Dataset from the hub (the dataset will be downloaded automatically from the datasets Hub).
+    # Branch A: latent dataset directory (index.jsonl + .npz latents)
+    using_latent_db = args.dataset_dir is not None
 
-    # In distributed training, the load_dataset function guarantees that only one local process can concurrently
-    # download the dataset.
-    if args.dataset_name is not None:
-        # Downloading and loading a dataset from the hub.
-        dataset = load_dataset(
-            args.dataset_name, args.dataset_config_name, cache_dir=args.cache_dir, data_dir=args.train_data_dir
+    if using_latent_db:
+        latent_dataset = LatentCapAuthorDataset(args.dataset_dir)
+        # simple collate
+        def collate_latent(examples):
+            latents = torch.stack([ex[0] for ex in examples])
+            cap_tags = [ex[1] for ex in examples]
+            cap_nls = [ex[2] for ex in examples]
+            authors = [ex[3] for ex in examples]
+            return {
+                "model_input": latents,
+                "caption_tags": cap_tags,
+                "caption_nls": cap_nls,
+                "authors": authors,
+            }
+
+        train_dataloader = torch.utils.data.DataLoader(
+            latent_dataset,
+            shuffle=True,
+            collate_fn=collate_latent,
+            batch_size=args.train_batch_size,
+            num_workers=args.dataloader_num_workers,
         )
+
+        # No precomputation, keep text encoders for runtime encoding
+        precomputed_dataset = None
+
+        # ====== Scheduler/Accelerate prepare (latent path) ======
+        overrode_max_train_steps = False
+        num_update_steps_per_epoch = math.ceil(len(train_dataloader) / args.gradient_accumulation_steps)
+        if args.max_train_steps is None:
+            args.max_train_steps = args.num_train_epochs * num_update_steps_per_epoch
+            overrode_max_train_steps = True
+
+        lr_scheduler = get_scheduler(
+            args.lr_scheduler,
+            optimizer=optimizer,
+            num_warmup_steps=args.lr_warmup_steps * args.gradient_accumulation_steps,
+            num_training_steps=args.max_train_steps * args.gradient_accumulation_steps,
+        )
+
+        # Prepare modules
+        unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
+            unet, optimizer, train_dataloader, lr_scheduler
+        )
+        if args.use_ema:
+            ema_unet.to(accelerator.device)
+
+        # Recalculate steps after prepare
+        num_update_steps_per_epoch = math.ceil(len(train_dataloader) / args.gradient_accumulation_steps)
+        if overrode_max_train_steps:
+            args.max_train_steps = args.num_train_epochs * num_update_steps_per_epoch
+        args.num_train_epochs = math.ceil(args.max_train_steps / num_update_steps_per_epoch)
+
+        # Trackers
+        if accelerator.is_main_process:
+            accelerator.init_trackers("text2image-finetune-sdxl-latent", config=vars(args))
+
+        # Unwrap helper
+        def unwrap_model(model):
+            model = accelerator.unwrap_model(model)
+            model = model._orig_mod if is_compiled_module(model) else model
+            return model
+
+        if torch.backends.mps.is_available() or "playground" in args.pretrained_model_name_or_path:
+            autocast_ctx = nullcontext()
+        else:
+            autocast_ctx = torch.autocast(accelerator.device.type)
+
+        # ====== Loss logging & plotting ======
+        loss_csv = os.path.join(args.output_dir, "loss.csv")
+        loss_png = os.path.join(args.output_dir, "loss.png")
+        os.makedirs(args.output_dir, exist_ok=True)
+        loss_steps, loss_vals = [], []
+
+        def read_y_range(file_path="range.txt"):
+            if not os.path.isfile(file_path):
+                return None
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    parts = f.read().strip().split()
+                    if len(parts) != 2:
+                        return None
+                    ymin, ymax = float(parts[0]), float(parts[1])
+                    if ymin >= ymax:
+                        return None
+                    return (ymin, ymax)
+            except Exception:
+                return None
+
+        def _save_plot():
+            if not loss_steps:
+                return
+            y_range = read_y_range("range.txt")
+            plt.figure(figsize=(8, 4.5), dpi=150)
+            plt.plot(loss_steps, loss_vals, label="loss", linewidth=1.0)
+            plt.xlabel("step"); plt.ylabel("loss"); plt.title("Training Loss")
+            plt.grid(True, linewidth=0.3); plt.legend(loc="best")
+            if y_range is not None:
+                plt.ylim(*y_range)
+            plt.tight_layout(); plt.savefig(loss_png); plt.close()
+
+        # ====== Preview helper ======
+        preview_pipe = None
+
+        @torch.no_grad()
+        def save_preview(step: int, prompt: str):
+            nonlocal preview_pipe
+            if not prompt:
+                return
+            if preview_pipe is None:
+                vae_local = AutoencoderKL.from_pretrained(
+                    vae_path,
+                    subfolder="vae" if args.pretrained_vae_model_name_or_path is None else None,
+                    revision=args.revision,
+                    variant=args.variant,
+                    torch_dtype=weight_dtype,
+                )
+                preview_pipe = StableDiffusionXLPipeline.from_pretrained(
+                    args.pretrained_model_name_or_path,
+                    vae=vae_local,
+                    unet=unwrap_model(unet),
+                    revision=args.revision,
+                    variant=args.variant,
+                    torch_dtype=weight_dtype,
+                ).to(accelerator.device)
+                preview_pipe.set_progress_bar_config(disable=True)
+            else:
+                # refresh UNet weights
+                preview_pipe.unet = unwrap_model(unet)
+
+            generator = (
+                torch.Generator(device=accelerator.device).manual_seed(args.preview_seed)
+                if args.preview_seed is not None else None
+            )
+            # Build added cond kwargs (time_ids + pooled)
+            pe, pooled = encode_texts_runtime([prompt])
+            add_time_ids = torch.tensor(
+                [[args.resolution, args.resolution, 0, 0, args.resolution, args.resolution]],
+                device=accelerator.device, dtype=weight_dtype
+            )
+            add_kw = {"text_embeds": pooled, "time_ids": add_time_ids}
+
+            out = preview_pipe(
+                prompt_embeds=pe,
+                pooled_prompt_embeds=pooled,
+                num_inference_steps=int(args.preview_steps),
+                guidance_scale=float(args.preview_scale),
+                width=args.resolution,
+                height=args.resolution,
+                generator=generator,
+                added_cond_kwargs=add_kw,
+            ).images[0]
+            out_dir = os.path.join(args.output_dir, "preview"); os.makedirs(out_dir, exist_ok=True)
+            out.save(os.path.join(out_dir, f"step_{step:08d}.png"))
+
+        # ====== Text encode helper ======
+        def encode_texts_runtime(texts):
+            with torch.no_grad():
+                # encoder 1
+                inputs1 = tokenizer_one(
+                    texts, padding="max_length", max_length=tokenizer_one.model_max_length,
+                    truncation=True, return_tensors="pt"
+                ).input_ids.to(text_encoder_one.device)
+                out1 = text_encoder_one(inputs1, output_hidden_states=True, return_dict=False)
+                # encoder 2
+                inputs2 = tokenizer_two(
+                    texts, padding="max_length", max_length=tokenizer_two.model_max_length,
+                    truncation=True, return_tensors="pt"
+                ).input_ids.to(text_encoder_two.device)
+                out2 = text_encoder_two(inputs2, output_hidden_states=True, return_dict=False)
+                pooled = out2[0]
+                hid1 = out1[-1][-2]
+                hid2 = out2[-1][-2]
+                bs, L, _ = hid2.shape
+                pe = torch.cat([hid1, hid2], dim=-1).view(bs, L, -1)
+                return pe.to(accelerator.device, dtype=weight_dtype), pooled.to(accelerator.device, dtype=weight_dtype)
+
+        # ====== Train (latent path) ======
+        total_batch_size = args.train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
+        logger.info("***** Running training (latent) *****")
+        logger.info(f"  Num examples = {len(latent_dataset)}")
+        logger.info(f"  Num Epochs = {args.num_train_epochs}")
+        logger.info(f"  Instantaneous batch size per device = {args.train_batch_size}")
+        logger.info(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}")
+        logger.info(f"  Gradient Accumulation steps = {args.gradient_accumulation_steps}")
+        logger.info(f"  Total optimization steps = {args.max_train_steps}")
+
+        global_step = 0
+        first_epoch = 0
+
+        # resume (built-in accelerate)
+        if args.resume_from_checkpoint:
+            if args.resume_from_checkpoint != "latest":
+                path = os.path.basename(args.resume_from_checkpoint)
+            else:
+                dirs = os.listdir(args.output_dir)
+                dirs = [d for d in dirs if d.startswith("checkpoint")]
+                dirs = sorted(dirs, key=lambda x: int(x.split("-")[1]))
+                path = dirs[-1] if len(dirs) > 0 else None
+            if path is None:
+                accelerator.print(
+                    f"Checkpoint '{args.resume_from_checkpoint}' does not exist. Starting a new training run."
+                )
+                args.resume_from_checkpoint = None
+                initial_global_step = 0
+            else:
+                accelerator.print(f"Resuming from checkpoint {path}")
+                accelerator.load_state(os.path.join(args.output_dir, path))
+                global_step = int(path.split("-")[1])
+                initial_global_step = global_step
+                first_epoch = global_step // num_update_steps_per_epoch
+        else:
+            initial_global_step = 0
+
+        progress_bar = tqdm(
+            range(0, args.max_train_steps),
+            initial=initial_global_step,
+            desc="Steps",
+            disable=not accelerator.is_local_main_process,
+        )
+
+        VARIANT_PROBS = np.array([0.4, 0.2, 0.1, 0.3], dtype=np.float64)
+
+        for epoch in range(first_epoch, args.num_train_epochs):
+            train_loss = 0.0
+            for step, batch in enumerate(train_dataloader):
+                with accelerator.accumulate(unet):
+                    model_input = batch["model_input"].to(accelerator.device)
+                    noise = torch.randn_like(model_input)
+                    if args.noise_offset:
+                        noise += args.noise_offset * torch.randn(
+                            (model_input.shape[0], model_input.shape[1], 1, 1), device=model_input.device
+                        )
+                    bsz = model_input.shape[0]
+                    if args.timestep_bias_strategy == "none":
+                        timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (bsz,), device=model_input.device)
+                    else:
+                        weights = generate_timestep_weights(args, noise_scheduler.config.num_train_timesteps).to(model_input.device)
+                        timesteps = torch.multinomial(weights, bsz, replacement=True).long()
+                    noisy_model_input = noise_scheduler.add_noise(model_input, noise, timesteps).to(dtype=weight_dtype)
+
+                    # time ids (all 1024 and no crop)
+                    add_time_ids = torch.tensor(
+                        [[args.resolution, args.resolution, 0, 0, args.resolution, args.resolution]],
+                        device=accelerator.device, dtype=weight_dtype
+                    ).repeat(bsz, 1)
+
+                    # Build dynamic prompts per-sample
+                    cap_tags = batch["caption_tags"]; cap_nls = batch["caption_nls"]; authors = batch["authors"]
+                    chosen = []
+                    for i in range(bsz):
+                        texts_i, mask_i, _ = _build_variants_from_cap_author(cap_tags[i], cap_nls[i], authors[i])
+                        p = VARIANT_PROBS * mask_i.astype(np.float64)
+                        s = p.sum()
+                        if s <= 0:
+                            chosen.append("")
+                        else:
+                            p = p / s
+                            idx = int(np.random.choice(4, p=p))
+                            chosen.append(texts_i[idx] if mask_i[idx] else "")
+
+                    prompt_embeds, pooled_prompt_embeds = encode_texts_runtime(chosen)
+
+                    unet_added_conditions = {"time_ids": add_time_ids, "text_embeds": pooled_prompt_embeds}
+                    model_pred = unet(
+                        noisy_model_input,
+                        timesteps,
+                        prompt_embeds,
+                        added_cond_kwargs=unet_added_conditions,
+                        return_dict=False,
+                    )[0]
+
+                    if args.prediction_type is not None:
+                        noise_scheduler.register_to_config(prediction_type=args.prediction_type)
+                    if noise_scheduler.config.prediction_type == "epsilon":
+                        target = noise
+                    elif noise_scheduler.config.prediction_type == "v_prediction":
+                        target = noise_scheduler.get_velocity(model_input, noise, timesteps)
+                    elif noise_scheduler.config.prediction_type == "sample":
+                        target = model_input
+                        model_pred = model_pred - noise
+                    else:
+                        raise ValueError(f"Unknown prediction type {noise_scheduler.config.prediction_type}")
+
+                    if args.snr_gamma is None:
+                        loss = F.mse_loss(model_pred.float(), target.float(), reduction="mean")
+                    else:
+                        snr = compute_snr(noise_scheduler, timesteps)
+                        mse_loss_weights = torch.stack([snr, args.snr_gamma * torch.ones_like(timesteps)], dim=1).min(dim=1)[0]
+                        if noise_scheduler.config.prediction_type == "epsilon":
+                            mse_loss_weights = mse_loss_weights / snr
+                        elif noise_scheduler.config.prediction_type == "v_prediction":
+                            mse_loss_weights = mse_loss_weights / (snr + 1)
+                        loss = F.mse_loss(model_pred.float(), target.float(), reduction="none")
+                        loss = loss.mean(dim=list(range(1, len(loss.shape)))) * mse_loss_weights
+                        loss = loss.mean()
+
+                    avg_loss = accelerator.gather(loss.repeat(args.train_batch_size)).mean()
+                    train_loss += avg_loss.item() / args.gradient_accumulation_steps
+
+                    accelerator.backward(loss)
+                    if accelerator.sync_gradients:
+                        params_to_clip = unet.parameters()
+                        accelerator.clip_grad_norm_(params_to_clip, args.max_grad_norm)
+                    optimizer.step(); lr_scheduler.step(); optimizer.zero_grad()
+
+                if accelerator.sync_gradients:
+                    if args.use_ema:
+                        ema_unet.step(unet.parameters())
+                    progress_bar.update(1)
+                    global_step += 1
+                    accelerator.log({"train_loss": train_loss}, step=global_step)
+                    if accelerator.is_main_process:
+                        loss_steps.append(global_step); loss_vals.append(train_loss)
+                        # write csv
+                        try:
+                            with open(loss_csv, "w", newline="", encoding="utf-8") as f:
+                                w = _pycsv.writer(f)
+                                w.writerow(["step", "loss"]) 
+                                for s,v in zip(loss_steps, loss_vals):
+                                    w.writerow([s, f"{v:.6f}"])
+                        except Exception:
+                            pass
+                        if args.plot_interval and (global_step % int(args.plot_interval) == 0):
+                            _save_plot()
+                        if args.preview_save_steps and (global_step % int(args.preview_save_steps) == 0):
+                            # Use a random preview prompt from current batch
+                            prev_prompt = random.choice(chosen) if chosen else ""
+                            try:
+                                # EMA preview if available
+                                if args.use_ema:
+                                    ema_unet.store(unet.parameters()); ema_unet.copy_to(unet.parameters())
+                                save_preview(global_step, prev_prompt)
+                                os.makedirs(os.path.join(args.output_dir, "preview"), exist_ok=True)
+                                with open(os.path.join(args.output_dir, "preview", f"prompt-{global_step}.txt"), "w") as f:
+                                    f.write(prev_prompt)
+                            finally:
+                                if args.use_ema:
+                                    ema_unet.restore(unet.parameters())
+                    train_loss = 0.0
+
+                    # checkpointing
+                    if accelerator.distributed_type == DistributedType.DEEPSPEED or accelerator.is_main_process:
+                        if global_step % args.checkpointing_steps == 0:
+                            if args.checkpoints_total_limit is not None:
+                                checkpoints = os.listdir(args.output_dir)
+                                checkpoints = [d for d in checkpoints if d.startswith("checkpoint")]
+                                checkpoints = sorted(checkpoints, key=lambda x: int(x.split("-")[1]))
+                                if len(checkpoints) >= args.checkpoints_total_limit:
+                                    num_to_remove = len(checkpoints) - args.checkpoints_total_limit + 1
+                                    removing_checkpoints = checkpoints[0:num_to_remove]
+                                    for removing_checkpoint in removing_checkpoints:
+                                        removing_checkpoint = os.path.join(args.output_dir, removing_checkpoint)
+                                        shutil.rmtree(removing_checkpoint)
+                            save_path = os.path.join(args.output_dir, f"checkpoint-{global_step}")
+                            accelerator.save_state(save_path)
+                            logger.info(f"Saved state to {save_path}")
+
+                if global_step >= args.max_train_steps:
+                    break
+
+        accelerator.wait_for_everyone()
+        if accelerator.is_main_process:
+            # Save pipeline
+            u = unwrap_model(unet)
+            if args.use_ema:
+                ema_unet.copy_to(u.parameters())
+            vae_local = AutoencoderKL.from_pretrained(
+                vae_path,
+                subfolder="vae" if args.pretrained_vae_model_name_or_path is None else None,
+                revision=args.revision,
+                variant=args.variant,
+                torch_dtype=weight_dtype,
+            )
+            pipe = StableDiffusionXLPipeline.from_pretrained(
+                args.pretrained_model_name_or_path,
+                unet=u,
+                vae=vae_local,
+                revision=args.revision,
+                variant=args.variant,
+                torch_dtype=weight_dtype,
+            )
+            if args.prediction_type is not None:
+                scheduler_args = {"prediction_type": args.prediction_type}
+                pipe.scheduler = pipe.scheduler.from_config(pipe.scheduler.config, **scheduler_args)
+            pipe.save_pretrained(args.output_dir)
+
+        accelerator.end_training()
+        return
     else:
-        data_files = {}
-        if args.train_data_dir is not None:
-            data_files["train"] = os.path.join(args.train_data_dir, "**")
-        dataset = load_dataset(
-            "imagefolder",
-            data_files=data_files,
-            cache_dir=args.cache_dir,
-        )
-        # See more about loading custom images at
-        # https://huggingface.co/docs/datasets/v2.4.0/en/image_load#imagefolder
+        # Branch B: raw image dataset via datasets/imagefolder
+        # In distributed training, the load_dataset function guarantees that only one local process can concurrently
+        # download the dataset.
+        if args.dataset_name is not None:
+            # Downloading and loading a dataset from the hub.
+            dataset = load_dataset(
+                args.dataset_name, args.dataset_config_name, cache_dir=args.cache_dir, data_dir=args.train_data_dir
+            )
+        else:
+            data_files = {}
+            if args.train_data_dir is not None:
+                data_files["train"] = os.path.join(args.train_data_dir, "**")
+            dataset = load_dataset(
+                "imagefolder",
+                data_files=data_files,
+                cache_dir=args.cache_dir,
+            )
+            # See more about loading custom images at
+            # https://huggingface.co/docs/datasets/v2.4.0/en/image_load#imagefolder
 
     # Preprocessing the datasets.
     # We need to tokenize inputs and targets.
