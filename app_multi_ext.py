@@ -1,6 +1,7 @@
 # app_multi_ext.py
 # -*- coding: utf-8 -*-
 import os, json, csv, torch, gradio as gr
+from functools import lru_cache
 from typing import Optional, Dict, Any, List, Tuple
 from dataclasses import dataclass
 from PIL import Image
@@ -27,10 +28,11 @@ except Exception:
 
 # Transformers (for BLIP2)
 try:
-    from transformers import Blip2Processor, Blip2ForConditionalGeneration
+    from transformers import Blip2Processor, Blip2ForConditionalGeneration, CLIPTokenizer
 except Exception:
     Blip2Processor = None
     Blip2ForConditionalGeneration = None
+    CLIPTokenizer = None
 
 DTYPE = torch.float16 if torch.cuda.is_available() else torch.float32
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -602,6 +604,132 @@ def img2text_handle(img: Image.Image, th_general: float, th_character: float,
     md_table = r_tbl + "### general/character\n| tag | score |\n|---|---|\n" + "\n".join([f"| {t} | {s:.3f} |" for t, s in wd_pairs[:topk]])
     return wd_sentence, nl, md_table
 
+# =========================
+# 6) Token counting helpers
+# =========================
+SD15_TOKEN_LIMIT = 77
+SDXL_TOKEN_LIMIT = 77
+
+
+@lru_cache(maxsize=1)
+def _get_sd15_tokenizer():
+    if CLIPTokenizer is None:
+        raise RuntimeError("transformers not installed; please pip install transformers")
+    tok = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
+    tok.model_max_length = 100000
+    return tok
+
+
+@lru_cache(maxsize=1)
+def _get_sdxl_tokenizer_primary():
+    if CLIPTokenizer is None:
+        raise RuntimeError("transformers not installed; please pip install transformers")
+    tok = CLIPTokenizer.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0", subfolder="tokenizer")
+    tok.model_max_length = 100000
+    return tok
+
+
+@lru_cache(maxsize=1)
+def _get_sdxl_tokenizer_secondary():
+    if CLIPTokenizer is None:
+        raise RuntimeError("transformers not installed; please pip install transformers")
+    tok = CLIPTokenizer.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0", subfolder="tokenizer_2")
+    tok.model_max_length = 100000
+    return tok
+
+
+def _extract_ids(tokenizer, text: str) -> List[int]:
+    encoded = tokenizer(
+        text,
+        add_special_tokens=True,
+        padding=False,
+        truncation=False,
+        return_attention_mask=False,
+    )["input_ids"]
+    if encoded and isinstance(encoded[0], list):
+        return encoded[0]
+    return encoded
+
+
+LANG_CHOICES = {
+    "日本語": "ja",
+    "English": "en",
+}
+
+
+TOKEN_LIMIT_INFO_MD = {
+    "en": (
+        "### Text Encoder Basics\n"
+        "- SD1.5 uses a single CLIP text encoder and only reads the first 77 tokens (≈75 prompt tokens). Anything beyond that is truncated.\n"
+        "- SDXL feeds the same prompt into two CLIP text encoders, but each still keeps only the first 77 tokens, so extra tokens past 77 are dropped."
+    ),
+    "ja": (
+        "### テキストエンコーダの基本\n"
+        "- SD1.5はCLIPテキストエンコーダを1つだけ使い、先頭から77トークン（実質約75語）までしか読みません。これを超えた部分は切り捨てられます。\n"
+        "- SDXLは同じプロンプトを2種類のテキストエンコーダに流しますが、どちらも77トークンまでしか処理しないため、超過分は同様に切り捨てられます。"
+    ),
+}
+
+
+def _resolve_lang(lang_choice: str) -> str:
+    return LANG_CHOICES.get(lang_choice, "en")
+
+
+def token_count_handle(text: str, lang_choice: str) -> str:
+    lang = _resolve_lang(lang_choice)
+    if CLIPTokenizer is None:
+        return (
+            "transformers/CLIPTokenizer unavailable. Install transformers to enable token counting."
+            if lang == "en"
+            else "transformers/CLIPTokenizerが見つかりません。token countingを使うにはtransformersをインストールしてください。"
+        )
+
+    prompt = (text or "").strip()
+    if not prompt:
+        return "Please enter text to analyze." if lang == "en" else "テキストを入力してください。"
+
+    try:
+        sd15_ids = _extract_ids(_get_sd15_tokenizer(), prompt)
+    except Exception as exc:
+        return (
+            f"Failed to load SD1.5 tokenizer: {exc}"
+            if lang == "en"
+            else f"SD1.5トークナイザの読み込みに失敗しました: {exc}"
+        )
+
+    try:
+        sdxl_ids_primary = _extract_ids(_get_sdxl_tokenizer_primary(), prompt)
+        sdxl_ids_secondary = _extract_ids(_get_sdxl_tokenizer_secondary(), prompt)
+    except Exception as exc:
+        return (
+            f"Failed to load SDXL tokenizers: {exc}"
+            if lang == "en"
+            else f"SDXLトークナイザの読み込みに失敗しました: {exc}"
+        )
+
+    def _format_line(label_en: str, label_ja: str, length: int, limit: int) -> str:
+        over = max(0, length - limit)
+        blocks = max(1, (length + limit - 1) // limit)
+        effective = min(length, limit)
+        usable = max(effective - 2, 0)
+        if over > 0:
+            status_en = f"truncates {over} token(s)"
+            status_ja = f"超過分{over}トークンが切り捨てられます"
+        else:
+            status_en = "fits within the limit"
+            status_ja = "制限内に収まります"
+        if lang == "en":
+            return f"- {label_en}: **{length}** tokens (usable {usable}/{limit}, blocks {blocks}) – {status_en}."
+        return f"- {label_ja}: トークン数{length}（有効{usable}/{limit}・ブロック{blocks}） – {status_ja}。"
+
+    header = "### Token counts" if lang == "en" else "### トークン数"
+    lines = [header]
+    lines.append(_format_line("SD1.5 CLIP", "SD1.5のCLIP", len(sd15_ids), SD15_TOKEN_LIMIT))
+    lines.append(_format_line("SDXL text encoder 1", "SDXLテキストエンコーダ1", len(sdxl_ids_primary), SDXL_TOKEN_LIMIT))
+    lines.append(_format_line("SDXL text encoder 2", "SDXLテキストエンコーダ2", len(sdxl_ids_secondary), SDXL_TOKEN_LIMIT))
+
+    return "\n".join(lines)
+
 # ============ UI: 6) Components & wiring ============
 model_keys = list(MODEL_REGISTRY.keys())
 model_names = [MODEL_REGISTRY[k]['name'] for k in model_keys]
@@ -622,9 +750,12 @@ def on_model_change(model_name: str):
     )
 
 with gr.Blocks(title='Generate & Describe Images (SD/SDXL, WD-EVA02, BLIP2)') as demo:
-    gr.Markdown("# Generate and Describe Images\n"
-                f"- Text-to-image device: **{DEVICE}**; Image description device: **{IMG2TEXT_DEVICE}**\n"
-                "- Enter a prompt to generate an image, then automatically get tags and a caption.\n- Or use the second tab to describe an uploaded image.")
+    gr.Markdown(
+        "# Stable Diffusion Toolkit\n"
+        f"- Text-to-image device: **{DEVICE}** · Image-to-text device: **{IMG2TEXT_DEVICE}**\n"
+        "- Generate images, auto-tag them, or run BLIP2 captions in one place.\n"
+        "- Use other tabs for image description, Danbooru tag lookup, and prompt token counts."
+    )
 
     with gr.Tabs():
         with gr.Tab("Generate Image"):
@@ -745,6 +876,41 @@ with gr.Blocks(title='Generate & Describe Images (SD/SDXL, WD-EVA02, BLIP2)') as
             tag_max.change(_on_tag_query, inputs=[tag_query, tag_max], outputs=[tag_table, tag_choices])
             tag_add.click(_on_tag_add, inputs=[tag_choices, tag_prompt_box], outputs=[tag_prompt_box, tag_choices])
             tag_clear.click(_on_tag_clear, inputs=[], outputs=[tag_prompt_box, tag_choices])
+
+        with gr.Tab("Token Counter / トークンカウンター"):
+            token_lang = gr.Radio(
+                choices=list(LANG_CHOICES.keys()),
+                value="日本語",
+                label="Language / 言語",
+            )
+            token_info = gr.Markdown(TOKEN_LIMIT_INFO_MD["ja"])
+            token_input = gr.Textbox(
+                label="入力テキスト",
+                lines=6,
+                placeholder="プロンプトまたはネガティブプロンプトを入力してください…",
+            )
+            token_button = gr.Button("トークン数を計算")
+            token_output = gr.Markdown()
+
+            token_button.click(token_count_handle, inputs=[token_input, token_lang], outputs=[token_output])
+            token_input.submit(token_count_handle, inputs=[token_input, token_lang], outputs=[token_output])
+
+            def _on_token_lang_change(lang_choice: str, current_text: str):
+                lang = _resolve_lang(lang_choice)
+                info = TOKEN_LIMIT_INFO_MD.get(lang, TOKEN_LIMIT_INFO_MD["en"])
+                textbox_update = gr.update(
+                    label="Input text" if lang == "en" else "入力テキスト",
+                    placeholder="Type your prompt or negative prompt here..." if lang == "en" else "プロンプトまたはネガティブプロンプトを入力してください…",
+                )
+                button_update = gr.update(value="Count tokens" if lang == "en" else "トークン数を計算")
+                output = token_count_handle(current_text, lang_choice) if (current_text or "").strip() else ""
+                return gr.update(value=info), textbox_update, button_update, output
+
+            token_lang.change(
+                _on_token_lang_change,
+                inputs=[token_lang, token_input],
+                outputs=[token_info, token_input, token_button, token_output],
+            )
 
 if __name__ == '__main__':
     # Allow lazy loading (download/load on first use), or warm up:

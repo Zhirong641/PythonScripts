@@ -14,7 +14,7 @@ SDXL UNet Train & Infer (IllustriousEmberveilmix_v10_repo)
 import os, io, math, json, glob, argparse, random, hashlib, tempfile
 from typing import List, Tuple, Optional
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps, ImageFilter
 from pathlib import Path
 from collections import deque, OrderedDict
 
@@ -63,22 +63,96 @@ def save_tensor_image(img_t: torch.Tensor, path: str):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     Image.fromarray(img[0]).save(path)
 
-def make_image_transform(resolution=1024):
+def make_image_transform(
+    resolution=1024,
+    pad_mode="auto",            # "auto" | "blur" | "gray"
+    gray=128,                   # 中性灰基准
+    gray_jitter=10,             # 灰色抖动范围 ±n
+    pad_blur_ratio_thr=0.40,    # 填充面积比例 < 该阈值时优先用模糊
+    blur_sigma_factor=1/40,     # 模糊半径 = resolution * 该系数
+    edge_jitter_prob=0.5,       # 进行边缘轻微抖动的概率
+    edge_jitter_pct=0.02,       # 抖动最大比例（相对分辨率）
+    randomize=True              # 是否随机选择/抖动（设 False 可完全确定性）
+):
+    """
+    说明：
+    - pad_mode="auto"：小填充 → 模糊，大填充 → 中性灰；
+      其他模式固定。
+    - 轻微边缘抖动用于打破“边框总在画布边缘”的先验（默认 2% 以内）。
+    """
+    assert pad_mode in ("auto", "blur", "gray")
+
+    def _to_rgb_with_gray_bg(img: Image.Image) -> Image.Image:
+        # 透明通道用中性灰（或抖动后的灰）合成
+        if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+            rgba = img.convert("RGBA")
+            g = gray + (random.randint(-gray_jitter, gray_jitter) if randomize and gray_jitter > 0 else 0)
+            g = max(0, min(255, g))
+            bg = Image.new("RGB", rgba.size, (g, g, g))
+            bg.paste(rgba, mask=rgba.split()[-1])
+            return bg
+        return img.convert("RGB")
+
     def resize_pad(img: Image.Image) -> Image.Image:
+        # 1) 方向纠正
+        img = ImageOps.exif_transpose(img)
+        # 2) 透明→灰底合成，统一到 RGB
+        img = _to_rgb_with_gray_bg(img)
+
         w, h = img.size
-        scale = resolution / max(w, h)
-        new_w, new_h = int(w * scale), int(h * scale)
-        img = img.resize((new_w, new_h), Image.BICUBIC)
-        from PIL import ImageOps
-        pad_w = (resolution - new_w) // 2
-        pad_h = (resolution - new_h) // 2
-        pad = (pad_w, pad_h, resolution - new_w - pad_w, resolution - new_h - pad_h)
-        img = ImageOps.expand(img, border=pad, fill=(0,0,0))
-        return img
+
+        # 快捷路径：已是目标正方形
+        if w == h and w == resolution:
+            out = img
+
+        else:
+            # 3) 等比缩放到最长边=resolution
+            scale = resolution / max(w, h)
+            new_w, new_h = int(round(w * scale)), int(round(h * scale))
+            fg = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+            # 计算填充面积占比
+            pad_ratio = 1.0 - (new_w * new_h) / float(resolution * resolution)
+
+            # 4) 选择背景
+            use_blur = False
+            if pad_mode == "blur":
+                use_blur = True
+            elif pad_mode == "gray":
+                use_blur = False
+            else:  # "auto"
+                # 小填充更适合模糊，大填充用灰色更稳
+                use_blur = (pad_ratio < pad_blur_ratio_thr)
+
+            if use_blur:
+                # 背景：整图拉伸铺满 + 高斯模糊
+                bg = img.resize((resolution, resolution), Image.Resampling.LANCZOS)
+                radius = max(1, int(round(resolution * blur_sigma_factor)))
+                bg = bg.filter(ImageFilter.GaussianBlur(radius=radius))
+            else:
+                g = gray + (random.randint(-gray_jitter, gray_jitter) if randomize and gray_jitter > 0 else 0)
+                g = max(0, min(255, g))
+                bg = Image.new("RGB", (resolution, resolution), (g, g, g))
+
+            # 居中贴前景
+            x = (resolution - new_w) // 2
+            y = (resolution - new_h) // 2
+            bg.paste(fg, (x, y))
+            out = bg
+
+        # 5) 轻微边缘抖动（可选）：缩放/裁一点再还原，打破固定边框位置
+        if randomize and random.random() < edge_jitter_prob and edge_jitter_pct > 0:
+            max_m = int(resolution * edge_jitter_pct)
+            if max_m > 0:
+                m = random.randint(1, max_m)
+                out = out.crop((m, m, resolution - m, resolution - m)).resize((resolution, resolution), Image.Resampling.LANCZOS)
+
+        return out
+
     return transforms.Compose([
         transforms.Lambda(resize_pad),
         transforms.ToTensor(),
-        transforms.Normalize([0.5],[0.5])
+        transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
     ])
 
 def _split_clean_comma_list(s: str) -> List[str]:
@@ -441,29 +515,6 @@ def cmd_encode(args):
     scaling_factor = float(getattr(vae.config, "scaling_factor", 0.13025))
     print(f">> VAE scaling_factor={scaling_factor}")
 
-    # ====== BLIP2（可选：仅当 --gen_caption_nl 时加载；批处理仅用于 caption 生成） ======
-    blip_enabled = bool(getattr(args, "gen_caption_nl", False))
-    blip_model_name = getattr(args, "blip_model", "Salesforce/blip2-opt-2.7b")
-    blip_bs = int(getattr(args, "blip_batch", 64))
-    blip_processor = None
-    blip_model = None
-
-    if blip_enabled:
-        try:
-            print(f">> loading BLIP2 ({blip_model_name})…")
-            from transformers import Blip2Processor, Blip2ForConditionalGeneration
-            blip_dtype = torch.float16 if device.type == "cuda" else torch.float32
-            blip_processor = Blip2Processor.from_pretrained(blip_model_name)
-            blip_model = Blip2ForConditionalGeneration.from_pretrained(
-                blip_model_name, torch_dtype=blip_dtype
-            ).to(device)
-            blip_model.eval()
-        except Exception as e:
-            print(f"[warn] BLIP2 init failed ({e}); fallback to empty caption_nl.")
-            blip_enabled = False
-            blip_processor = None
-            blip_model = None
-
     # ------- 读取 CSV -------
     if not args.csv:
         raise ValueError("请使用 --csv data.csv，并保证列为 path,caption,author")
@@ -476,20 +527,26 @@ def cmd_encode(args):
 
     # 可选过滤
     exclude_word_list = [
-        "no humans", "chibi", "character profile", "lineart", "sketch",
-        "monochrome", "comic", "text focus", "1990s", "1980s",
-        "retro artstyle", "abstract"
+        # "no humans", "chibi", "character profile", "lineart", "sketch",
+        # "monochrome", "comic", "text focus", "1990s", "1980s",
+        # "retro artstyle", "abstract"
     ]
 
     samples = []
     for row in data:
         try:
+            # path,general,rating,meta,year,character,artist,copyright
             path = row[0]
-            caption_tags = row[1] if len(row) > 1 else ""
-            author = row[2] if len(row) > 2 else ""
-            if any(ex in caption_tags for ex in exclude_word_list):
+            general = row[1] if len(row) > 1 else ""
+            rating = row[2] if len(row) > 2 else ""
+            meta = row[3] if len(row) > 3 else ""
+            year = row[4] if len(row) > 4 else ""
+            character = row[5] if len(row) > 5 else ""
+            artist = row[6] if len(row) > 6 else ""
+            copyright = row[7] if len(row) > 7 else ""
+            if any(ex in general for ex in exclude_word_list):
                 continue
-            samples.append((path, caption_tags, author))
+            samples.append((path, general, rating, meta, year, character, artist, copyright))
         except Exception:
             continue
     # random.shuffle(samples)
@@ -497,122 +554,32 @@ def cmd_encode(args):
     index_path = os.path.join(args.out_dir, "index.jsonl")
     idxf = open(index_path, "w", encoding="utf-8")
 
-    imgs_batch = []      # 仅用于 BLIP 批处理的 PIL 图像
-    metas_batch = []     # (path, caption_tags, author)
+    print(f">> encoding {len(samples)} samples…")
 
-    print(f">> encoding {len(samples)} samples… (BLIP enabled={blip_enabled}, blip_batch={blip_bs}; VAE per-image)")
-
-    def _gen_captions_for_batch(pil_list):
-        """仅对 caption 做批处理；失败或未启用时返回空串列表。"""
-        if not blip_enabled or not pil_list:
-            return [""] * len(pil_list)
-
+    for (path, general, rating, meta, year, character, artist, copyright) in tqdm(samples):
         try:
-            with torch.inference_mode():
-                blip_inputs = blip_processor(
-                    images=pil_list, return_tensors="pt", padding=True
-                ).to(device)
-                gen_ids = blip_model.generate(
-                    **blip_inputs,
-                    max_new_tokens=64,
-                    # 需要更强质量可加（更慢）：
-                    # no_repeat_ngram_size=3,
-                    # repetition_penalty=1.1,
-                    # do_sample=True, temperature=0.7, top_p=0.9,
-                )
-                captions = blip_processor.batch_decode(gen_ids, skip_special_tokens=True)
-            # 释放 BLIP 中间张量，避免影响后续 VAE
-            del blip_inputs, gen_ids
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-            return [c.strip() for c in captions]
-        except torch.cuda.OutOfMemoryError:
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-            print("[warn] BLIP2 OOM on batch; fallback to per-image.")
-        except Exception as e:
-            print(f"[warn] BLIP2 batch failed: {e}")
-
-        # 回退到逐张生成 caption（仍然不影响后续 VAE 的逐张处理）
-        out = []
-        for im in pil_list:
-            try:
-                with torch.inference_mode():
-                    inp1 = blip_processor(images=im, return_tensors="pt").to(device)
-                    ids1 = blip_model.generate(**inp1, max_new_tokens=64)
-                    cap1 = blip_processor.decode(ids1[0], skip_special_tokens=True).strip()
-                del inp1, ids1
-            except Exception as e:
-                print(f"[warn] BLIP2 single failed: {e}")
-                cap1 = ""
-            out.append(cap1)
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-        return out
-
-    def flush_batch():
-        """仅对当前 batch 批量生成 caption；随后逐张做 VAE 编码并写 index。"""
-        nonlocal imgs_batch, metas_batch
-        if not imgs_batch:
-            return
-
-        # 1) 批量生成 caption（只在这里用到 batch）
-        captions = _gen_captions_for_batch(imgs_batch)
-
-        # 2) 逐张 VAE 编码 + 写 index.jsonl（严格单张，不做 batch）
-        for (im, (path, caption_tags, author), cap) in zip(imgs_batch, metas_batch, captions):
-            try:
-                pixel = tfm(im).unsqueeze(0).to(
-                    device,
-                    dtype=(torch.float16 if device.type == "cuda" else torch.float32)
-                )
-                with torch.no_grad():
-                    lat = vae.encode(pixel).latent_dist.sample() * scaling_factor
-                base = sha1(path) + ".npz"
-                np.savez_compressed(
-                    os.path.join(args.out_dir, base),
-                    latent=lat[0].detach().cpu().to(torch.float16).numpy(),
-                    src=np.bytes_(path)
-                )
-                meta = {
-                    "npz": base,
-                    "src": path,
-                    "caption_tags": caption_tags,
-                    "caption_nl": cap if cap else "",
-                    "author": author
-                }
-                idxf.write(json.dumps(meta, ensure_ascii=False) + "\n")
-            except Exception as e:
-                print(f"[skip] encode {path}: {e}")
-            finally:
-                # 逐张及时释放
-                del pixel
-                if 'lat' in locals():
-                    del lat
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-
-        # 3) 清空 batch 容器（保证下一批 caption 生成仍然只占用必要内存）
-        imgs_batch.clear()
-        metas_batch.clear()
-
-    # --------- 主循环：装批（用于 caption） & 刷批（caption 批 + VAE 单张） ----------
-    from tqdm import tqdm
-    for (path, caption_tags, author) in tqdm(samples):
-        try:
-            img = Image.open(path).convert("RGB")
+            img = Image.open(path)
+            if img.mode != "RGBA":
+                img = img.convert("RGBA")
+            canvas = Image.new("RGBA", img.size, (255, 255, 255, 255))
+            canvas.alpha_composite(img)
+            img = canvas.convert("RGB")
         except Exception as e:
             print(f"[skip] open {path}: {e}")
             continue
 
-        imgs_batch.append(img)                       # 只为 BLIP 批处理收集
-        metas_batch.append((path, caption_tags, author))
+        pixel = tfm(img).unsqueeze(0).to(device)  # [1,3,1024,1024]
+        with torch.no_grad(), torch.amp.autocast('cuda', dtype=torch.float16, enabled=(device.type=="cuda")):
+            lat = vae.encode(pixel).latent_dist.sample() * scaling_factor  # [1,4,128,128]
 
-        if len(imgs_batch) >= blip_bs:
-            flush_batch()                            # caption 批量、VAE 单张
+        lat = lat[0].detach().cpu().to(torch.float16).numpy()
+        base = sha1(path) + ".npz"
+        np.savez_compressed(os.path.join(args.out_dir, base), latent=lat, src=np.bytes_(path))
 
-    # 收尾
-    flush_batch()
+        # 仅写原始 caption/author（不写任何变体）
+        meta = {"npz": base, "src": path, "general": general, "artist": artist}
+        idxf.write(json.dumps(meta, ensure_ascii=False) + "\n")
+
     idxf.close()
     print(">> done. Saved to", args.out_dir)
 
