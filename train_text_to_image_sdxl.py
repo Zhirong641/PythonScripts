@@ -1236,8 +1236,9 @@ def main(args):
                     chosen = []
                     for i in range(bsz):
                         text = generate_variants_with_nl_list(
-                            general_tags[i], artist_tags[i], k=5, token_budget=74,
-                            max_general_per_variant=30, characters=character_tags[i]
+                            general_tags[i], artist_tags[i], k=1, token_budget=74,
+                            max_general_per_variant=30, characters=character_tags[i],
+                            rating=rating_tags[i], year=year_tags[i]
                         )
                         chosen.append(text[0])
 
@@ -1313,8 +1314,9 @@ def main(args):
                                 if args.use_ema:
                                     ema_unet.store(unet.parameters()); ema_unet.copy_to(unet.parameters())
                                 prev_prompts = generate_variants_with_nl_list(
-                                    general_tags[0], artist_tags[0], k=5, token_budget=70,
-                                    max_general_per_variant=30, characters=character_tags[0]
+                                    general_tags[0], artist_tags[0], k=5, token_budget=74,
+                                    max_general_per_variant=30, characters=character_tags[0],
+                                    rating=rating_tags[0], year=year_tags[0]
                                 )
                                 for i, prev_prompt in enumerate(prev_prompts):
                                     save_preview(global_step + i, prev_prompt)

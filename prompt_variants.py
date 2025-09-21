@@ -405,11 +405,11 @@ def generate_phrase_variants(
         if char_phrase:
             parts.append(char_phrase)
         rating_phrase = _rating_phrase(ratings or [], max_ratings=1)
-        if rating_phrase:
-            parts.append(rating_phrase)
         artist = _artist_phrase(artists)
         if artist:
             parts.append(artist)
+        if rating_phrase:
+            parts.append(rating_phrase)
 
         anchor_parts = parts[:]
         current = ", ".join(anchor_parts)
@@ -516,12 +516,12 @@ def generate_variants_with_nl_list(
             char_anchor = _character_phrase(characters or [], max_chars=1)
             if char_anchor:
                 anchors.append(char_anchor)
-            rating_anchor = _rating_phrase(ratings or [], max_ratings=1)
-            if rating_anchor:
-                anchors.append(rating_anchor)
             art = _artist_phrase(artists)
             if art:
                 anchors.append(art)
+            rating_anchor = _rating_phrase(ratings or [], max_ratings=1)
+            if rating_anchor:
+                anchors.append(rating_anchor)
             if anchors:
                 anchor_str = ", ".join(anchors)
                 s = f"{anchor_str}, {s}" if random.random() < 0.5 else f"{s}, {anchor_str}"
@@ -565,12 +565,12 @@ if __name__ == "__main__":
     ]
     years = ["year_2021","year_2020","year_2019","year_2018","year_2017"]
     nl_list = [
-        "a girl with long hair in a white sundress, looking at the viewer, gentle expression",
-        "full-body illustration, ribbon details and sandals, summer vibe",
-        "standing pose with braided hair, subtle blush and purple eyes"
+        # "a girl with long hair in a white sundress, looking at the viewer, gentle expression",
+        # "full-body illustration, ribbon details and sandals, summer vibe",
+        # "standing pose with braided hair, subtle blush and purple eyes"
     ]
     caps = generate_variants_with_nl_list(
-        general, artists, k=1, phrase_ratio=1, token_budget=70, max_general_per_variant=20,
+        general, artists, k=10, phrase_ratio=1, token_budget=70, max_general_per_variant=20,
         characters=characters, ratings=rating, years=years
     )
     for i, c in enumerate(caps, 1):
