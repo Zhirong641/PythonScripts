@@ -24,6 +24,7 @@ import os
 import random
 import shutil
 from contextlib import nullcontext
+from itertools import chain
 from pathlib import Path
 import json
 
@@ -582,6 +583,17 @@ def parse_args(input_args=None):
     )
     parser.add_argument("--noise_offset", type=float, default=0, help="The scale of noise offset.")
     parser.add_argument(
+        "--train_text_encoder",
+        action="store_true",
+        help="Enable full fine-tuning of both text encoders.",
+    )
+    parser.add_argument(
+        "--text_encoder_learning_rate",
+        type=float,
+        default=5e-6,
+        help="Learning rate applied to text encoder parameters when `--train_text_encoder` is set.",
+    )
+    parser.add_argument(
         "--image_interpolation_mode",
         type=str,
         default="lanczos",
@@ -848,10 +860,10 @@ def main(args):
         args.pretrained_model_name_or_path, subfolder="unet", revision=args.revision, variant=args.variant
     )
 
-    # Freeze vae and text encoders.
+    # Freeze vae and optionally text encoders.
     vae.requires_grad_(False)
-    text_encoder_one.requires_grad_(False)
-    text_encoder_two.requires_grad_(False)
+    text_encoder_one.requires_grad_(args.train_text_encoder)
+    text_encoder_two.requires_grad_(args.train_text_encoder)
     # Set unet as trainable.
     unet.train()
 
@@ -863,11 +875,13 @@ def main(args):
     elif accelerator.mixed_precision == "bf16":
         weight_dtype = torch.bfloat16
 
-    # Move unet, vae and text_encoder to device and cast to weight_dtype
-    # The VAE is in float32 to avoid NaN losses.
+    # Move models to device. Keep VAE in float32 to avoid NaNs. When training the text encoders in fp16, keep them in fp32.
     vae.to(accelerator.device, dtype=torch.float32)
-    text_encoder_one.to(accelerator.device, dtype=weight_dtype)
-    text_encoder_two.to(accelerator.device, dtype=weight_dtype)
+    text_dtype = (
+        torch.float32 if args.train_text_encoder and accelerator.mixed_precision == "fp16" else weight_dtype
+    )
+    text_encoder_one.to(accelerator.device, dtype=text_dtype)
+    text_encoder_two.to(accelerator.device, dtype=text_dtype)
 
     # Create EMA for the unet.
     if args.use_ema:
@@ -902,10 +916,21 @@ def main(args):
                 if args.use_ema:
                     ema_unet.save_pretrained(os.path.join(output_dir, "unet_ema"))
 
-                for i, model in enumerate(models):
-                    model.save_pretrained(os.path.join(output_dir, "unet"))
+                ref_unet = accelerator.unwrap_model(unet)
+                ref_te1 = accelerator.unwrap_model(text_encoder_one) if args.train_text_encoder else None
+                ref_te2 = accelerator.unwrap_model(text_encoder_two) if args.train_text_encoder else None
 
-                    # make sure to pop weight so that corresponding model is not saved again
+                for model in models:
+                    module = accelerator.unwrap_model(model)
+                    if module is ref_unet or isinstance(module, UNet2DConditionModel):
+                        module.save_pretrained(os.path.join(output_dir, "unet"))
+                    elif args.train_text_encoder and (module is ref_te1):
+                        module.save_pretrained(os.path.join(output_dir, "text_encoder"))
+                    elif args.train_text_encoder and (module is ref_te2):
+                        module.save_pretrained(os.path.join(output_dir, "text_encoder_2"))
+                    else:
+                        raise ValueError(f"Unexpected model encountered during save: {type(module)}")
+
                     if weights:
                         weights.pop()
 
@@ -916,22 +941,42 @@ def main(args):
                 ema_unet.to(accelerator.device)
                 del load_model
 
+            ref_unet = accelerator.unwrap_model(unet)
+            ref_te1 = accelerator.unwrap_model(text_encoder_one) if args.train_text_encoder else None
+            ref_te2 = accelerator.unwrap_model(text_encoder_two) if args.train_text_encoder else None
+
             for _ in range(len(models)):
-                # pop models so that they are not loaded again
                 model = models.pop()
+                module = accelerator.unwrap_model(model)
 
-                # load diffusers style into model
-                load_model = UNet2DConditionModel.from_pretrained(input_dir, subfolder="unet")
-                model.register_to_config(**load_model.config)
-
-                model.load_state_dict(load_model.state_dict())
-                del load_model
+                if module is ref_unet or isinstance(module, UNet2DConditionModel):
+                    load_model = UNet2DConditionModel.from_pretrained(input_dir, subfolder="unet")
+                    module.register_to_config(**load_model.config)
+                    module.load_state_dict(load_model.state_dict())
+                    del load_model
+                elif args.train_text_encoder and module is ref_te1:
+                    te_path = os.path.join(input_dir, "text_encoder")
+                    if os.path.isdir(te_path):
+                        load_model = text_encoder_cls_one.from_pretrained(te_path)
+                        module.load_state_dict(load_model.state_dict())
+                        del load_model
+                elif args.train_text_encoder and module is ref_te2:
+                    te2_path = os.path.join(input_dir, "text_encoder_2")
+                    if os.path.isdir(te2_path):
+                        load_model = text_encoder_cls_two.from_pretrained(te2_path)
+                        module.load_state_dict(load_model.state_dict())
+                        del load_model
+                else:
+                    raise ValueError(f"Unexpected model encountered during load: {type(module)}")
 
         accelerator.register_save_state_pre_hook(save_model_hook)
         accelerator.register_load_state_pre_hook(load_model_hook)
 
     if args.gradient_checkpointing:
         unet.enable_gradient_checkpointing()
+        if args.train_text_encoder:
+            text_encoder_one.gradient_checkpointing_enable()
+            text_encoder_two.gradient_checkpointing_enable()
 
     # Enable TF32 for faster training on Ampere GPUs,
     # cf https://pytorch.org/docs/stable/notes/cuda.html#tensorfloat-32-tf32-on-ampere-devices
@@ -957,9 +1002,27 @@ def main(args):
         optimizer_class = torch.optim.AdamW
 
     # Optimizer creation
-    params_to_optimize = unet.parameters()
+    unet_params = list(filter(lambda p: p.requires_grad, unet.parameters()))
+    param_groups = [
+        {
+            "params": unet_params,
+            "lr": args.learning_rate,
+        }
+    ]
+
+    if args.train_text_encoder:
+        text_lora_params = list(
+            filter(
+                lambda p: p.requires_grad,
+                chain(text_encoder_one.parameters(), text_encoder_two.parameters()),
+            )
+        )
+        if not text_lora_params:
+            raise RuntimeError("Text encoder training is enabled but no trainable parameters were found.")
+        param_groups.append({"params": text_lora_params, "lr": args.text_encoder_learning_rate})
+
     optimizer = optimizer_class(
-        params_to_optimize,
+        param_groups,
         lr=args.learning_rate,
         betas=(args.adam_beta1, args.adam_beta2),
         weight_decay=args.adam_weight_decay,
@@ -968,6 +1031,11 @@ def main(args):
 
     # Branch A: latent dataset directory (index.jsonl + .npz latents)
     using_latent_db = args.dataset_dir is not None
+
+    if args.train_text_encoder and not using_latent_db:
+        raise ValueError(
+            "Full text encoder fine-tuning currently requires providing `--dataset_dir` with precomputed latents for on-the-fly encoding."
+        )
 
     if using_latent_db:
         latent_dataset = LatentDataset(args.dataset_dir)
@@ -1019,9 +1087,21 @@ def main(args):
         )
 
         # Prepare modules
-        unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
-            unet, optimizer, train_dataloader, lr_scheduler
-        )
+        if args.train_text_encoder:
+            (
+                unet,
+                text_encoder_one,
+                text_encoder_two,
+                optimizer,
+                train_dataloader,
+                lr_scheduler,
+            ) = accelerator.prepare(unet, text_encoder_one, text_encoder_two, optimizer, train_dataloader, lr_scheduler)
+            text_encoder_one.train()
+            text_encoder_two.train()
+        else:
+            unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
+                unet, optimizer, train_dataloader, lr_scheduler
+            )
         if args.use_ema:
             ema_unet.to(accelerator.device)
 
@@ -1134,8 +1214,9 @@ def main(args):
             out.save(os.path.join(out_dir, f"step_{step:08d}.png"))
 
         # ====== Text encode helper ======
-        def encode_texts_runtime(texts):
-            with torch.no_grad():
+        def encode_texts_runtime(texts, train_mode: bool = False):
+            ctx = nullcontext() if (train_mode and args.train_text_encoder) else torch.no_grad()
+            with ctx:
                 # encoder 1
                 inputs1 = tokenizer_one(
                     texts, padding="max_length", max_length=tokenizer_one.model_max_length,
@@ -1153,7 +1234,9 @@ def main(args):
                 hid2 = out2[-1][-2]
                 bs, L, _ = hid2.shape
                 pe = torch.cat([hid1, hid2], dim=-1).view(bs, L, -1)
-                return pe.to(accelerator.device, dtype=weight_dtype), pooled.to(accelerator.device, dtype=weight_dtype)
+                pe = pe.to(accelerator.device, dtype=weight_dtype)
+                pooled = pooled.to(accelerator.device, dtype=weight_dtype)
+                return pe, pooled
 
         # ====== Train (latent path) ======
         total_batch_size = args.train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
@@ -1241,7 +1324,9 @@ def main(args):
                         )
                         chosen.append(text[0])
 
-                    prompt_embeds, pooled_prompt_embeds = encode_texts_runtime(chosen)
+                    prompt_embeds, pooled_prompt_embeds = encode_texts_runtime(
+                        chosen, train_mode=args.train_text_encoder
+                    )
 
                     unet_added_conditions = {"time_ids": add_time_ids, "text_embeds": pooled_prompt_embeds}
                     model_pred = unet(
@@ -1282,7 +1367,12 @@ def main(args):
 
                     accelerator.backward(loss)
                     if accelerator.sync_gradients:
-                        params_to_clip = unet.parameters()
+                        if args.train_text_encoder:
+                            params_to_clip = chain(
+                                unet.parameters(), text_encoder_one.parameters(), text_encoder_two.parameters()
+                            )
+                        else:
+                            params_to_clip = unet.parameters()
                         accelerator.clip_grad_norm_(params_to_clip, args.max_grad_norm)
                     optimizer.step(); lr_scheduler.step(); optimizer.zero_grad()
 
