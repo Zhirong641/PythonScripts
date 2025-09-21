@@ -282,10 +282,11 @@ def main():
             general_text = ", ".join([f"{t}:{p:.3f}" for t, p in per["general"][:64]])
             character_text = ", ".join([f"{t}:{p:.3f}" for t, p in per["character"][:64]])
 
-            print(f"\n[{batch_paths[i]}]")
-            print("  rating   :", rating_text)
-            print("  general  :", general_text)
-            print("  character:", character_text)
+            if len(inputs) <= 10:
+                print(f"\n[{batch_paths[i]}]")
+                print("  rating   :", rating_text)
+                print("  general  :", general_text)
+                print("  character:", character_text)
 
             if csv_writer:
                 csv_writer.writerow([str(batch_paths[i]), rating_text, general_text, character_text])

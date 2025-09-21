@@ -240,6 +240,8 @@ def _rating_phrase(ratings: List[str], max_ratings: int = 1) -> str:
         if norm.startswith("rating "):
             suffix = norm.split(" ", 1)[1] if " " in norm else ""
             norm = f"rating:{suffix}" if suffix else "rating"
+        else:
+            norm = f"rating:{norm}"
         picked.append(norm)
         seen.add(norm)
         if len(picked) >= max_ratings:
