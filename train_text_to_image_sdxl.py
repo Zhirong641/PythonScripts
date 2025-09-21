@@ -136,6 +136,7 @@ class LatentDataset(torch.utils.data.Dataset):
                 try:
                     j = json.loads(line)
                 except Exception:
+                    print(f"[DBG] Warning: failed to parse line: {line}, skipping")
                     continue
                 fname = j.get("npz")
                 if not fname:
@@ -146,7 +147,7 @@ class LatentDataset(torch.utils.data.Dataset):
                     if any(w in general for w in exclude_word_list):
                         return False
                     if year:
-                        years = [int(y.split("_")[1]) for y in year if y.startswith("year_") and y[5:].isdigit()]
+                        years = [int(y.split("_")[1]) for y in _split_clean_comma_list(year) if y.startswith("year_") and y[5:].isdigit()]
                         if years and max(years) < 2000:
                             return False
                     return True
@@ -1236,9 +1237,13 @@ def main(args):
                     chosen = []
                     for i in range(bsz):
                         text = generate_variants_with_nl_list(
-                            general_tags[i], artist_tags[i], k=1, token_budget=74,
-                            max_general_per_variant=30, characters=character_tags[i],
-                            rating=rating_tags[i], year=year_tags[i]
+                            _split_clean_comma_list(general_tags[i]),
+                            _split_clean_comma_list(artist_tags[i]),
+                            k=1, token_budget=74,
+                            head_keep=16, max_general_per_variant=22,
+                            characters=_split_clean_comma_list(character_tags[i]),
+                            ratings=_split_clean_comma_list(rating_tags[i]),
+                            years=_split_clean_comma_list(year_tags[i])
                         )
                         chosen.append(text[0])
 
@@ -1314,9 +1319,13 @@ def main(args):
                                 if args.use_ema:
                                     ema_unet.store(unet.parameters()); ema_unet.copy_to(unet.parameters())
                                 prev_prompts = generate_variants_with_nl_list(
-                                    general_tags[0], artist_tags[0], k=5, token_budget=74,
-                                    max_general_per_variant=30, characters=character_tags[0],
-                                    rating=rating_tags[0], year=year_tags[0]
+                                    _split_clean_comma_list(general_tags[0]),
+                                    _split_clean_comma_list(artist_tags[0]),
+                                    k=5, token_budget=74,
+                                    head_keep=16, max_general_per_variant=22,
+                                    characters=_split_clean_comma_list(character_tags[0]),
+                                    ratings=_split_clean_comma_list(rating_tags[0]),
+                                    years=_split_clean_comma_list(year_tags[0])
                                 )
                                 for i, prev_prompt in enumerate(prev_prompts):
                                     save_preview(global_step + i, prev_prompt)
