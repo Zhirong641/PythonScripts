@@ -1,6 +1,6 @@
 # app_multi_ext.py
 # -*- coding: utf-8 -*-
-import os, json, csv, torch, gradio as gr
+import os, json, csv, html, torch, gradio as gr
 from functools import lru_cache
 from typing import Optional, Dict, Any, List, Tuple
 from dataclasses import dataclass
@@ -671,64 +671,492 @@ TOKEN_LIMIT_INFO_MD = {
 }
 
 
+TOKENIZER_SPECS = {
+    "sd15": {
+        "label_en": "SD 1.5",
+        "label_ja": "SD1.5",
+        "ui_choice": "SD 1.5",
+        "limit": SD15_TOKEN_LIMIT,
+        "getter": _get_sd15_tokenizer,
+    },
+    "sdxl_primary": {
+        "label_en": "SDXL (Primary)",
+        "label_ja": "SDXL（第1エンコーダ）",
+        "ui_choice": "SDXL (Primary)",
+        "limit": SDXL_TOKEN_LIMIT,
+        "getter": _get_sdxl_tokenizer_primary,
+    },
+    "sdxl_secondary": {
+        "label_en": "SDXL (Secondary)",
+        "label_ja": "SDXL（第2エンコーダ）",
+        "ui_choice": "SDXL (Secondary)",
+        "limit": SDXL_TOKEN_LIMIT,
+        "getter": _get_sdxl_tokenizer_secondary,
+    },
+}
+
+MODEL_KEY_ORDER = ["sd15", "sdxl_primary", "sdxl_secondary"]
+MODEL_RADIO_CHOICES = [TOKENIZER_SPECS[k]["ui_choice"] for k in MODEL_KEY_ORDER]
+MODEL_CHOICE_TO_KEY = {TOKENIZER_SPECS[k]["ui_choice"]: k for k in MODEL_KEY_ORDER}
+
+DISPLAY_MODE_RADIO_CHOICES = ["Text", "Token IDs"]
+DISPLAY_MODE_TO_KEY = {"Text": "text", "Token IDs": "ids"}
+DISPLAY_MODE_LABELS = {
+    "text": {"en": "Text", "ja": "テキスト"},
+    "ids": {"en": "Token IDs", "ja": "トークンID"},
+}
+
+TOKEN_COLOR_PALETTE = [
+    "#FDE1D3",
+    "#FFE4F2",
+    "#E3F7FF",
+    "#E7F8F0",
+    "#FDF2D7",
+    "#EDEBFF",
+    "#F6E8FF",
+    "#DDF0FF",
+]
+
+SPECIAL_TOKEN_DISPLAY = {
+    "<|startoftext|>": "⟨start⟩",
+    "<|endoftext|>": "⟨end⟩",
+    "<s>": "⟨start⟩",
+    "</s>": "⟨end⟩",
+    "[CLS]": "⟨CLS⟩",
+    "[SEP]": "⟨SEP⟩",
+}
+
+TOKEN_COUNTER_EMPTY_SUMMARY = {
+    "en": "Enter text to count tokens.",
+    "ja": "テキストを入力するとトークン数を計算します。",
+}
+
+TOKEN_COUNTER_EXAMPLES = {
+    "en": "A watercolor fox sits on a mossy rock at sunrise, surrounded by glowing fireflies.",
+    "ja": "朝日の中、苔むした岩に座る水彩の狐。周囲には光るホタルが舞っている。",
+}
+
+TOKEN_COUNTER_CSS = """
+.token-counter-wrapper {
+    gap: 16px !important;
+}
+.token-counter-top-controls {
+    gap: 12px !important;
+    align-items: stretch;
+}
+.token-counter-actions {
+    gap: 8px !important;
+}
+.token-counter-actions .gr-button {
+    height: 44px;
+}
+.token-counter-stats .token-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px;
+}
+.token-counter-stats .token-stat-card {
+    border-radius: 14px;
+    padding: 14px;
+    background: linear-gradient(180deg, rgba(129, 140, 248, 0.12), rgba(59, 130, 246, 0.06));
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    backdrop-filter: blur(6px);
+}
+.token-counter-stats .token-stat-card.characters {
+    background: linear-gradient(180deg, rgba(45, 212, 191, 0.12), rgba(16, 185, 129, 0.04));
+}
+.token-counter-stats .token-stat-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    opacity: 0.76;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.token-counter-stats .token-stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-top: 6px;
+}
+.token-counter-stats .token-stat-sub {
+    font-size: 0.88rem;
+    margin-top: 6px;
+    opacity: 0.75;
+}
+.token-counter-stats .token-stat-status {
+    font-size: 0.78rem;
+    margin-top: 8px;
+    font-weight: 600;
+}
+.token-counter-stats .token-stat-status.ok {
+    color: #047857;
+}
+.token-counter-stats .token-stat-status.warn {
+    color: #b91c1c;
+}
+.token-counter-summary {
+    font-size: 0.95rem;
+}
+.token-counter-visual .token-preview {
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    border-radius: 16px;
+    padding: 16px;
+    background: var(--block-background-fill, #f8fafc);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.token-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+}
+.token-preview-heading {
+    font-weight: 700;
+    font-size: 1rem;
+}
+.token-preview-mode {
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+.token-chip-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.token-chip {
+    border-radius: 12px;
+    padding: 6px 10px;
+    font-family: var(--font-mono, "JetBrains Mono", "SFMono-Regular", monospace);
+    font-size: 0.85rem;
+    white-space: pre;
+    color: #0f172a;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.token-preview-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+    border-radius: 16px;
+    border: 1px dashed rgba(148, 163, 184, 0.55);
+    background: rgba(148, 163, 184, 0.1);
+    padding: 16px;
+}
+.token-preview-placeholder {
+    font-size: 0.95rem;
+    opacity: 0.8;
+    text-align: center;
+}
+.token-counter-info {
+    font-size: 0.9rem;
+    opacity: 0.82;
+}
+.token-counter-textbox textarea {
+    min-height: 220px;
+    font-size: 1rem;
+}
+.token-counter-actions .gr-button {
+    flex: 1 1 auto;
+}
+.token-counter-actions .gr-button:first-child {
+    flex: 1.6 1 0;
+}
+.token-counter-top-controls > .gradio-column {
+    min-width: 0;
+}
+"""
+
+
 def _resolve_lang(lang_choice: str) -> str:
     return LANG_CHOICES.get(lang_choice, "en")
 
 
-def token_count_handle(text: str, lang_choice: str) -> str:
+def _decode_single_token(tokenizer, token_id: int) -> str:
+    try:
+        return tokenizer.decode([token_id], clean_up_tokenization_spaces=False)
+    except Exception:
+        try:
+            return tokenizer.convert_ids_to_tokens([token_id])[0]
+        except Exception:
+            return ""
+
+
+def _present_display_token(token_str: str, decoded: str) -> str:
+    token_str = token_str or ""
+    decoded = (decoded or "").replace("\r", "")
+    if decoded:
+        return decoded
+    if token_str in SPECIAL_TOKEN_DISPLAY:
+        return SPECIAL_TOKEN_DISPLAY[token_str]
+    if token_str.endswith("</w>"):
+        return token_str[:-4]
+    if token_str and token_str[0] in {"Ġ", "▁", "\u0120"}:
+        return f" {token_str[1:]}"
+    return token_str
+
+
+def _format_token_display(text: str) -> str:
+    if text is None:
+        text = ""
+    text = text.replace("\r", "")
+    text = text.replace("\n", "⏎")
+    text = text.replace("\t", "⇥")
+    if text == "":
+        return "∅"
+    return html.escape(text)
+
+
+def _build_token_report(key: str, prompt: str) -> Dict[str, Any]:
+    spec = TOKENIZER_SPECS[key]
+    tokenizer = spec["getter"]()
+    ids = _extract_ids(tokenizer, prompt)
+    tokens = tokenizer.convert_ids_to_tokens(ids)
+    decoded_tokens = [_decode_single_token(tokenizer, tid) for tid in ids]
+    display_tokens = [
+        _present_display_token(tok, decoded)
+        for tok, decoded in zip(tokens, decoded_tokens)
+    ]
+    length = len(ids)
+    limit = spec["limit"]
+    over = max(0, length - limit)
+    effective = min(length, limit)
+    usable = max(effective - 2, 0)
+    blocks = max(1, (length + limit - 1) // limit) if length else 0
+    return {
+        "ids": ids,
+        "tokens": tokens,
+        "decoded_tokens": decoded_tokens,
+        "display_tokens": display_tokens,
+        "length": length,
+        "limit": limit,
+        "over": over,
+        "usable": usable,
+        "blocks": blocks,
+        "label_en": spec["label_en"],
+        "label_ja": spec["label_ja"],
+    }
+
+
+def _render_stats_html(char_count: int, lang: str, reports: Dict[str, Dict[str, Any]]) -> str:
+    if not reports:
+        return ""
+    cards: List[str] = []
+    for key in MODEL_KEY_ORDER:
+        report = reports.get(key)
+        if report is None:
+            continue
+        title = (
+            f"{report['label_en']} tokens"
+            if lang == "en"
+            else f"{report['label_ja']}トークン"
+        )
+        usable = report["usable"]
+        limit = report["limit"]
+        over = report["over"]
+        if lang == "en":
+            prompt_tokens = f"{usable} prompt token(s)" if usable else "0 prompt tokens"
+            status = "Within limit" if over <= 0 else f"Truncates {over} token(s)"
+            sub = f"{prompt_tokens} · limit {limit}"
+        else:
+            prompt_tokens = f"プロンプト {usable} トークン" if usable else "プロンプト 0 トークン"
+            status = "上限内" if over <= 0 else f"超過 {over} トークンは切り捨て"
+            sub = f"{prompt_tokens} / 上限 {limit}"
+        status_class = "ok" if over <= 0 else "warn"
+        cards.append(
+            """
+            <div class="token-stat-card">
+                <div class="token-stat-title">{title}</div>
+                <div class="token-stat-value">{value}</div>
+                <div class="token-stat-sub">{sub}</div>
+                <div class="token-stat-status {status_class}">{status}</div>
+            </div>
+            """.format(
+                title=html.escape(title),
+                value=report["length"],
+                sub=html.escape(sub),
+                status_class=status_class,
+                status=html.escape(status),
+            )
+        )
+    char_title = "Characters" if lang == "en" else "文字数"
+    char_sub = (
+        "Spaces and punctuation included."
+        if lang == "en"
+        else "スペースや句読点も含まれます。"
+    )
+    cards.append(
+        """
+        <div class="token-stat-card characters">
+            <div class="token-stat-title">{title}</div>
+            <div class="token-stat-value">{value}</div>
+            <div class="token-stat-sub">{sub}</div>
+            <div class="token-stat-status ok">&nbsp;</div>
+        </div>
+        """.format(
+            title=html.escape(char_title),
+            value=char_count,
+            sub=html.escape(char_sub),
+        )
+    )
+    return '<div class="token-stats-grid">' + "".join(cards) + "</div>"
+
+
+def _build_summary_markdown(lang: str, char_count: int, reports: Dict[str, Dict[str, Any]]) -> str:
+    if not reports:
+        return ""
+    lines: List[str] = []
+    if lang == "en":
+        lines.append(f"**Characters:** {char_count}")
+    else:
+        lines.append(f"**文字数:** {char_count}")
+    for key in MODEL_KEY_ORDER:
+        report = reports.get(key)
+        if report is None:
+            continue
+        label = report["label_en"] if lang == "en" else report["label_ja"]
+        length = report["length"]
+        usable = report["usable"]
+        limit = report["limit"]
+        over = report["over"]
+        if lang == "en":
+            usable_part = f"{usable} prompt token(s)" if usable else "0 prompt tokens"
+            line = (
+                f"- **{label}** · {length} total tokens ({usable_part}) / limit {limit}"
+            )
+            line += " — within limit" if over <= 0 else f" — truncates {over} token(s)"
+        else:
+            usable_part = f"プロンプト {usable} トークン" if usable else "プロンプト 0 トークン"
+            line = (
+                f"- **{label}** · 合計{length}トークン（{usable_part}） / 上限 {limit}"
+            )
+            line += " — 上限内" if over <= 0 else f" — 超過 {over} トークンは切り捨て"
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def _render_empty_preview(message: str) -> str:
+    return (
+        '<div class="token-preview token-preview-empty">'
+        f'<div class="token-preview-placeholder">{html.escape(message)}</div>'
+        '</div>'
+    )
+
+
+def _render_token_preview(
+    state: Dict[str, Any],
+    model_choice: str,
+    display_mode: str,
+    lang_choice: str,
+) -> str:
+    lang = _resolve_lang(lang_choice)
+    if not state or "reports" not in state:
+        message = TOKEN_COUNTER_EMPTY_SUMMARY.get(lang, TOKEN_COUNTER_EMPTY_SUMMARY["en"])
+        return _render_empty_preview(message)
+    key = MODEL_CHOICE_TO_KEY.get(model_choice, MODEL_KEY_ORDER[0])
+    report = state["reports"].get(key)
+    if report is None:
+        message = TOKEN_COUNTER_EMPTY_SUMMARY.get(lang, TOKEN_COUNTER_EMPTY_SUMMARY["en"])
+        return _render_empty_preview(message)
+    mode_key = DISPLAY_MODE_TO_KEY.get(display_mode, "text")
+    heading = (
+        f"{report['label_en']} tokens"
+        if lang == "en"
+        else f"{report['label_ja']}トークン"
+    )
+    mode_label = DISPLAY_MODE_LABELS.get(mode_key, DISPLAY_MODE_LABELS["text"])[lang]
+    if mode_key == "ids":
+        items = [str(x) for x in report["ids"]]
+    else:
+        items = report["display_tokens"]
+    chips: List[str] = []
+    for idx, item in enumerate(items):
+        color = TOKEN_COLOR_PALETTE[idx % len(TOKEN_COLOR_PALETTE)]
+        text_display = _format_token_display(item)
+        token_id = report["ids"][idx] if idx < len(report["ids"]) else ""
+        if mode_key == "ids":
+            tooltip_raw = report["display_tokens"][idx] if idx < len(report["display_tokens"]) else ""
+        else:
+            tooltip_raw = f"ID {token_id}"
+        tooltip = html.escape(tooltip_raw if tooltip_raw else "", quote=True)
+        chips.append(
+            f'<span class="token-chip" style="background:{color}" title="{tooltip}">{text_display}</span>'
+        )
+    if not chips:
+        message = TOKEN_COUNTER_EMPTY_SUMMARY.get(lang, TOKEN_COUNTER_EMPTY_SUMMARY["en"])
+        chips_html = f'<span class="token-chip">{html.escape(message)}</span>'
+    else:
+        chips_html = "".join(chips)
+    return (
+        '<div class="token-preview">'
+        f'<div class="token-preview-header"><span class="token-preview-heading">{html.escape(heading)}</span>'
+        f'<span class="token-preview-mode">{html.escape(mode_label)}</span></div>'
+        f'<div class="token-chip-wrap">{chips_html}</div>'
+        '</div>'
+    )
+
+
+def update_token_preview(
+    state: Dict[str, Any],
+    model_choice: str,
+    display_mode: str,
+    lang_choice: str,
+) -> str:
+    return _render_token_preview(state, model_choice, display_mode, lang_choice)
+
+
+def token_count_handle(
+    text: str,
+    lang_choice: str,
+    model_choice: str,
+    display_mode: str,
+) -> Tuple[str, str, str, Dict[str, Any]]:
     lang = _resolve_lang(lang_choice)
     if CLIPTokenizer is None:
-        return (
+        message = (
             "transformers/CLIPTokenizer unavailable. Install transformers to enable token counting."
             if lang == "en"
             else "transformers/CLIPTokenizerが見つかりません。token countingを使うにはtransformersをインストールしてください。"
         )
+        preview = _render_empty_preview(message)
+        return "", message, preview, {}
 
-    prompt = (text or "").strip()
-    if not prompt:
-        return "Please enter text to analyze." if lang == "en" else "テキストを入力してください。"
+    prompt = text or ""
+    if not (prompt.strip()):
+        message = TOKEN_COUNTER_EMPTY_SUMMARY.get(lang, TOKEN_COUNTER_EMPTY_SUMMARY["en"])
+        preview = _render_empty_preview(message)
+        return "", message, preview, {}
+
+    char_count = len(prompt)
 
     try:
-        sd15_ids = _extract_ids(_get_sd15_tokenizer(), prompt)
+        reports: Dict[str, Dict[str, Any]] = {
+            "sd15": _build_token_report("sd15", prompt),
+        }
     except Exception as exc:
-        return (
+        message = (
             f"Failed to load SD1.5 tokenizer: {exc}"
             if lang == "en"
             else f"SD1.5トークナイザの読み込みに失敗しました: {exc}"
         )
+        preview = _render_empty_preview(message)
+        return "", message, preview, {}
 
     try:
-        sdxl_ids_primary = _extract_ids(_get_sdxl_tokenizer_primary(), prompt)
-        sdxl_ids_secondary = _extract_ids(_get_sdxl_tokenizer_secondary(), prompt)
+        reports["sdxl_primary"] = _build_token_report("sdxl_primary", prompt)
+        reports["sdxl_secondary"] = _build_token_report("sdxl_secondary", prompt)
     except Exception as exc:
-        return (
+        message = (
             f"Failed to load SDXL tokenizers: {exc}"
             if lang == "en"
             else f"SDXLトークナイザの読み込みに失敗しました: {exc}"
         )
+        preview = _render_empty_preview(message)
+        return "", message, preview, {}
 
-    def _format_line(label_en: str, label_ja: str, length: int, limit: int) -> str:
-        over = max(0, length - limit)
-        blocks = max(1, (length + limit - 1) // limit)
-        effective = min(length, limit)
-        usable = max(effective - 2, 0)
-        if over > 0:
-            status_en = f"truncates {over} token(s)"
-            status_ja = f"超過分{over}トークンが切り捨てられます"
-        else:
-            status_en = "fits within the limit"
-            status_ja = "制限内に収まります"
-        if lang == "en":
-            return f"- {label_en}: **{length}** tokens (usable {usable}/{limit}, blocks {blocks}) – {status_en}."
-        return f"- {label_ja}: トークン数{length}（有効{usable}/{limit}・ブロック{blocks}） – {status_ja}。"
-
-    header = "### Token counts" if lang == "en" else "### トークン数"
-    lines = [header]
-    lines.append(_format_line("SD1.5 CLIP", "SD1.5のCLIP", len(sd15_ids), SD15_TOKEN_LIMIT))
-    lines.append(_format_line("SDXL text encoder 1", "SDXLテキストエンコーダ1", len(sdxl_ids_primary), SDXL_TOKEN_LIMIT))
-    lines.append(_format_line("SDXL text encoder 2", "SDXLテキストエンコーダ2", len(sdxl_ids_secondary), SDXL_TOKEN_LIMIT))
-
-    return "\n".join(lines)
+    stats_html = _render_stats_html(char_count, lang, reports)
+    summary_md = _build_summary_markdown(lang, char_count, reports)
+    state = {"char_count": char_count, "reports": reports}
+    preview_html = _render_token_preview(state, model_choice, display_mode, lang_choice)
+    return stats_html, summary_md, preview_html, state
 
 # ============ UI: 6) Components & wiring ============
 model_keys = list(MODEL_REGISTRY.keys())
@@ -749,7 +1177,7 @@ def on_model_change(model_name: str):
         gr.update(value=p['steps']),
     )
 
-with gr.Blocks(title='Generate & Describe Images (SD/SDXL, WD-EVA02, BLIP2)') as demo:
+with gr.Blocks(title='Generate & Describe Images (SD/SDXL, WD-EVA02, BLIP2)', css=TOKEN_COUNTER_CSS) as demo:
     gr.Markdown(
         "# Stable Diffusion Toolkit\n"
         f"- Text-to-image device: **{DEVICE}** · Image-to-text device: **{IMG2TEXT_DEVICE}**\n"
@@ -878,24 +1306,79 @@ with gr.Blocks(title='Generate & Describe Images (SD/SDXL, WD-EVA02, BLIP2)') as
             tag_clear.click(_on_tag_clear, inputs=[], outputs=[tag_prompt_box, tag_choices])
 
         with gr.Tab("Token Counter / トークンカウンター"):
-            token_lang = gr.Radio(
-                choices=list(LANG_CHOICES.keys()),
-                value="日本語",
-                label="Language / 言語",
-            )
-            token_info = gr.Markdown(TOKEN_LIMIT_INFO_MD["ja"])
-            token_input = gr.Textbox(
-                label="入力テキスト",
-                lines=6,
-                placeholder="プロンプトまたはネガティブプロンプトを入力してください…",
-            )
-            token_button = gr.Button("トークン数を計算")
-            token_output = gr.Markdown()
+            token_state = gr.State({})
+            empty_preview_ja = _render_empty_preview(TOKEN_COUNTER_EMPTY_SUMMARY["ja"])
+            with gr.Column(elem_classes=["token-counter-wrapper"]):
+                with gr.Row(elem_classes=["token-counter-top-controls"]):
+                    with gr.Column(scale=1):
+                        token_lang = gr.Radio(
+                            choices=list(LANG_CHOICES.keys()),
+                            value="日本語",
+                            label="Language / 言語",
+                            elem_classes=["token-lang-radio"],
+                        )
+                    with gr.Column(scale=1):
+                        token_model = gr.Radio(
+                            choices=MODEL_RADIO_CHOICES,
+                            value=MODEL_RADIO_CHOICES[0],
+                            label="トークン表示",
+                            elem_classes=["token-model-radio"],
+                        )
+                    with gr.Column(scale=1):
+                        token_display_mode = gr.Radio(
+                            choices=DISPLAY_MODE_RADIO_CHOICES,
+                            value=DISPLAY_MODE_RADIO_CHOICES[0],
+                            label="表示モード",
+                            elem_classes=["token-display-radio"],
+                        )
+                token_input = gr.Textbox(
+                    label="入力テキスト",
+                    lines=8,
+                    placeholder="プロンプトまたはネガティブプロンプトを入力してください…",
+                    show_copy_button=True,
+                    elem_classes=["token-counter-textbox"],
+                )
+                with gr.Row(elem_classes=["token-counter-actions"]):
+                    token_button = gr.Button("トークン数を計算", variant="primary")
+                    token_clear = gr.Button("クリア")
+                    token_example = gr.Button("サンプルを表示")
+                token_stats = gr.HTML(value="", elem_classes=["token-counter-stats"])
+                token_summary = gr.Markdown(
+                    value=TOKEN_COUNTER_EMPTY_SUMMARY["ja"],
+                    elem_classes=["token-counter-summary"],
+                )
+                token_visual = gr.HTML(
+                    value=empty_preview_ja,
+                    elem_classes=["token-counter-visual"],
+                )
+                token_info = gr.Markdown(
+                    TOKEN_LIMIT_INFO_MD["ja"],
+                    elem_classes=["token-counter-info"],
+                )
 
-            token_button.click(token_count_handle, inputs=[token_input, token_lang], outputs=[token_output])
-            token_input.submit(token_count_handle, inputs=[token_input, token_lang], outputs=[token_output])
+            def _on_token_clear(lang_choice: str):
+                lang = _resolve_lang(lang_choice)
+                message = TOKEN_COUNTER_EMPTY_SUMMARY.get(lang, TOKEN_COUNTER_EMPTY_SUMMARY["en"])
+                preview = _render_empty_preview(message)
+                return "", "", message, preview, {}
 
-            def _on_token_lang_change(lang_choice: str, current_text: str):
+            def _on_token_example(lang_choice: str, model_choice: str, display_mode_choice: str):
+                lang = _resolve_lang(lang_choice)
+                sample_text = TOKEN_COUNTER_EXAMPLES.get(lang, TOKEN_COUNTER_EXAMPLES["en"])
+                stats, summary, preview, state = token_count_handle(
+                    sample_text,
+                    lang_choice,
+                    model_choice,
+                    display_mode_choice,
+                )
+                return sample_text, stats, summary, preview, state
+
+            def _on_token_lang_change(
+                lang_choice: str,
+                current_text: str,
+                model_choice: str,
+                display_mode_choice: str,
+            ):
                 lang = _resolve_lang(lang_choice)
                 info = TOKEN_LIMIT_INFO_MD.get(lang, TOKEN_LIMIT_INFO_MD["en"])
                 textbox_update = gr.update(
@@ -903,13 +1386,83 @@ with gr.Blocks(title='Generate & Describe Images (SD/SDXL, WD-EVA02, BLIP2)') as
                     placeholder="Type your prompt or negative prompt here..." if lang == "en" else "プロンプトまたはネガティブプロンプトを入力してください…",
                 )
                 button_update = gr.update(value="Count tokens" if lang == "en" else "トークン数を計算")
-                output = token_count_handle(current_text, lang_choice) if (current_text or "").strip() else ""
-                return gr.update(value=info), textbox_update, button_update, output
+                clear_update = gr.update(value="Clear" if lang == "en" else "クリア")
+                example_update = gr.update(value="Show example" if lang == "en" else "サンプルを表示")
+                model_update = gr.update(label="Tokenizer view" if lang == "en" else "トークン表示")
+                display_update = gr.update(label="Display mode" if lang == "en" else "表示モード")
+                if (current_text or "").strip():
+                    stats, summary, preview, state = token_count_handle(
+                        current_text,
+                        lang_choice,
+                        model_choice,
+                        display_mode_choice,
+                    )
+                else:
+                    message = TOKEN_COUNTER_EMPTY_SUMMARY.get(lang, TOKEN_COUNTER_EMPTY_SUMMARY["en"])
+                    stats = ""
+                    summary = message
+                    preview = _render_empty_preview(message)
+                    state = {}
+                return (
+                    gr.update(value=info),
+                    textbox_update,
+                    button_update,
+                    clear_update,
+                    example_update,
+                    model_update,
+                    display_update,
+                    stats,
+                    summary,
+                    preview,
+                    state,
+                )
 
+            token_button.click(
+                token_count_handle,
+                inputs=[token_input, token_lang, token_model, token_display_mode],
+                outputs=[token_stats, token_summary, token_visual, token_state],
+            )
+            token_input.submit(
+                token_count_handle,
+                inputs=[token_input, token_lang, token_model, token_display_mode],
+                outputs=[token_stats, token_summary, token_visual, token_state],
+            )
+            token_model.change(
+                update_token_preview,
+                inputs=[token_state, token_model, token_display_mode, token_lang],
+                outputs=[token_visual],
+            )
+            token_display_mode.change(
+                update_token_preview,
+                inputs=[token_state, token_model, token_display_mode, token_lang],
+                outputs=[token_visual],
+            )
+            token_clear.click(
+                _on_token_clear,
+                inputs=[token_lang],
+                outputs=[token_input, token_stats, token_summary, token_visual, token_state],
+            )
+            token_example.click(
+                _on_token_example,
+                inputs=[token_lang, token_model, token_display_mode],
+                outputs=[token_input, token_stats, token_summary, token_visual, token_state],
+            )
             token_lang.change(
                 _on_token_lang_change,
-                inputs=[token_lang, token_input],
-                outputs=[token_info, token_input, token_button, token_output],
+                inputs=[token_lang, token_input, token_model, token_display_mode],
+                outputs=[
+                    token_info,
+                    token_input,
+                    token_button,
+                    token_clear,
+                    token_example,
+                    token_model,
+                    token_display_mode,
+                    token_stats,
+                    token_summary,
+                    token_visual,
+                    token_state,
+                ],
             )
 
 if __name__ == '__main__':
