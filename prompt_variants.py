@@ -345,7 +345,7 @@ _BLACKLIST = {
     # 文本/翻译/字幕
     "translated", "check translation", "speech bubble", "text focus",
     # 其他不建议进入提示的“分类标签”
-    # "rating_general", "rating_sensitive",  # 用于分桶，不进 prompt
+    "general", "sensitive", "questionable", "explicit"
     # 年份序列（如 year_2017）：训练提示里通常无意义
     # 你也可以用正则整体拦截：^year_\d{4}$
 }
@@ -561,9 +561,11 @@ if __name__ == "__main__":
     characters = []
     rating = ["rating_general"]
     general = [
-        "1girl","long_hair","braid","sleeveless_dress","white_dress","ribbon",
-        "looking_at_viewer","blush","sandals","open_mouth","frills","bow",
-        "hair_ribbon","purple_eyes","pink_hair","full_body","standing","hand_on_hip"
+        "nipples", "explicit", "breasts", "pee", "1girl", "naked apron", "peeing", "apron",
+        "pink apron", "barefoot", "armpits", "open mouth", "solo", "blush",
+        "spread legs", "long hair", "pussy", "large breasts", "arms behind head",
+        "lying", "indoors", "on back", "mosaic censoring", "sweat", "censored", "hairband",
+        "hair ribbon", "grey hair", "purple eyes", "feet", "arms up", "smile", "plant", "profile", "sidelocks", "ribbon"
     ]
     years = ["year_2021","year_2020","year_2019","year_2018","year_2017"]
     nl_list = [
@@ -572,7 +574,8 @@ if __name__ == "__main__":
         # "standing pose with braided hair, subtle blush and purple eyes"
     ]
     caps = generate_variants_with_nl_list(
-        general, artists, k=10, phrase_ratio=1, token_budget=70, max_general_per_variant=20,
+        general, artists, k=10, phrase_ratio=1, token_budget=72,
+        head_keep = 12, max_general_per_variant=16,
         characters=characters, ratings=rating, years=years
     )
     for i, c in enumerate(caps, 1):

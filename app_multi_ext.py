@@ -44,21 +44,37 @@ IMG2TEXT_DEVICE = os.getenv("IMG2TEXT_DEVICE", "cpu").strip().lower()  # "cpu" /
 # 1) Model registry (add/remove as needed)
 # ========================
 MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
-    "illustrious_emberveil": {
-        "name": "【illustrious】EmberVeilMix (merge)",
-        "type": "sdxl",
+    # "illustrious_emberveil": {
+    #     "name": "【illustrious】EmberVeilMix (merge)",
+    #     "type": "sdxl",
+    #     "load": {
+    #         "mode": "singlefile",
+    #         "filename": "IllustriousEmberveilmix_v10.safetensors"  # Put in current directory or fetch via repo
+    #         # "repo": "YourOrg/IllustriousEmberveilmix_v10",
+    #     },
+    #     "presets": {
+    #         "widths":  [512, 640, 768, 896, 1024, 1152, 1232, 1280],
+    #         "heights": [512, 640, 768, 896, 1024, 1152, 1232, 1280],
+    #         "default_w": 1024,
+    #         "default_h": 1024,
+    #         "steps": 28,
+    #         "guidance": 5.5,
+    #     }
+    # },
+    "sd15_official": {
+        "name": "SD15 Official (runwayml/stable-diffusion-v1-5)",
+        "type": "sd15",
         "load": {
-            "mode": "singlefile",
-            "filename": "IllustriousEmberveilmix_v10.safetensors"  # Put in current directory or fetch via repo
-            # "repo": "YourOrg/IllustriousEmberveilmix_v10",
+            "mode": "pretrained",
+            "repo": "runwayml/stable-diffusion-v1-5"
         },
         "presets": {
-            "widths":  [512, 640, 768, 896, 1024, 1152, 1232, 1280],
-            "heights": [512, 640, 768, 896, 1024, 1152, 1232, 1280],
-            "default_w": 1024,
-            "default_h": 1024,
+            "widths":  [384, 448, 512, 576, 640, 704, 768],
+            "heights": [384, 448, 512, 576, 640, 704, 768],
+            "default_w": 512,
+            "default_h": 512,
             "steps": 28,
-            "guidance": 5.5,
+            "guidance": 7.0,
         }
     },
     # To add SD15/official SDXL models, copy an entry in this format
@@ -165,6 +181,17 @@ class WDTaggerCache:
 
 WD = WDTaggerCache()
 
+
+@dataclass
+class CamieTaggerCache:
+    ort_session: Optional['ort.InferenceSession'] = None
+    idx_to_tag: Optional[List[str]] = None
+    tag_to_category: Optional[Dict[str, str]] = None
+    img_size: int = 512
+
+
+CAMIE = CamieTaggerCache()
+
 # ==================================
 # Danbooru tags (EN->JA) lookup cache
 # ==================================
@@ -208,6 +235,35 @@ def _search_tags_ja(query: str, max_results: int = 50) -> Tuple[List[List[str]],
     table = [[en, ja] for en, ja in rows]
     suggestions = [en for en, _ in rows]
     return table, suggestions
+
+
+def _danbooru_lang_text(lang_code: str) -> Dict[str, Any]:
+    if lang_code == "en":
+        return {
+            "intro": "## Danbooru Tag Search\n- Search by English or Japanese phrase.\n- Pick tags from the results to add them below.",
+            "search_label": "Search (EN/JP)",
+            "search_placeholder": "e.g. girl / 女の子 / hair",
+            "max_label": "Max results",
+            "table_label": "Tag table",
+            "table_headers": ["English", "Japanese"],
+            "choices_label": "Candidate tags",
+            "add_label": "Add",
+            "clear_label": "Clear",
+            "selected_label": "Selected tags",
+        }
+    return {
+        "intro": "## Danbooru 用語検索\n- 英語/日本語で検索できます。\n- 候補から英語タグを選んで、下のボックスへ追加します。",
+        "search_label": "検索（英語/日本語）",
+        "search_placeholder": "例: girl / 女の子 / hair",
+        "max_label": "最大件数",
+        "table_label": "タグ一覧",
+        "table_headers": ["英語タグ", "日本語"],
+        "choices_label": "候補タグ",
+        "add_label": "追加",
+        "clear_label": "クリア",
+        "selected_label": "選択済みタグ",
+    }
+
 
 def _ensure_wd_eva02():
     """
@@ -332,21 +388,23 @@ def _run_wd_tagger(
     img: Image.Image,
     th_general: float = 0.25,
     th_character: float = 0.75,
-    *,
     norm: str = "0to255",            # "0to255" (recommended for eva02 onnx) | "0to1" | "minus1to1" | "imagenet"
     force_layout: str = None,         # None | "nhwc" | "nchw"
     topk_preview: int = 10,           # DEBUG: how many to preview
     fallback_topk: int = 30,          # Fallback topK
     debug: bool = False
-) -> Tuple[str, List[Tuple[str, float]], List[Tuple[str, float]]]:
+) -> Tuple[str, List[Tuple[str, float]], List[Tuple[str, float]], List[Tuple[str, float]], List[Tuple[str, float]]]:
     """
     Returns:
         tags_sentence: str (comma-separated)
-        results: List[(tag, score)] (descending)
+        results: List[(tag, score)] (descending, general+character)
+        rating_list: rating predictions
+        general_list: general-only predictions
+        character_list: character-only predictions
     """
     _ensure_wd_eva02()
     if img is None:
-        return "", [], []
+        return "", [], [], [], []
 
     # Safety: if idx_* not ready, backfill from legacy fields on the fly
     if (WD.idx_rating is None or WD.idx_general is None or WD.idx_character is None) and WD.labels:
@@ -489,7 +547,7 @@ def _run_wd_tagger(
         print(f"[WD DEBUG] providers={providers}")
         print(f"[WD DEBUG] input_shape_decl={shape} | layout={layout_used} | norm={norm_used} | channels={channel_order}")
         print(f"[WD DEBUG] output_activation={activation} | raw_range=[{rmin:.3f},{rmax:.3f}]")
-        print(f"[WD DEBUG] thresholds: general={th_general:.3f}, character={th_character:.3f}")
+        print(f"[WD DEBUG] thresholds: general={th_general:.3f}, character={CAMIE_THRESHOLD_MAP.get('character', 0.35):.3f}")
         print(f"[WD DEBUG] counts: general={len(general_list)}, character={len(character_list)}, total={num_tags}")
         print(f"[WD DEBUG] max: general={gmax:.3f}, character={cmax:.3f}")
 
@@ -504,7 +562,281 @@ def _run_wd_tagger(
 
     # Build sentence
     tags_sentence = ", ".join([t.replace("_", " ") for t, _ in results])
-    return tags_sentence, results, rating_list
+    return tags_sentence, results, rating_list, general_list, character_list
+
+
+# ===============================
+# 3b) Camie tagger (ONNXRuntime)
+# ===============================
+CAMIE_REPO_DEFAULT = "Camais03/camie-tagger-v2"
+CAMIE_MODEL_FILENAME = "camie-tagger-v2.onnx"
+CAMIE_META_FILENAME = "camie-tagger-v2-metadata.json"
+CAMIE_THRESHOLD_MAP = {
+    "default": 0.50,
+    "character": 0.70,
+    "copyright": 0.50,
+    "artist": 0.50,
+    "meta": 0.50,
+    "year": 0.50,
+    "rating": 0.50,
+}
+CAMIE_TOPK_MAP = {
+    "default": 32,
+    "character": 40,
+    "copyright": 24,
+    "artist": 24,
+    "meta": 16,
+    "year": 8,
+    "rating": 4,
+}
+
+
+def _ensure_camie_tagger():
+    if CAMIE.ort_session is not None and CAMIE.idx_to_tag is not None and CAMIE.tag_to_category is not None:
+        return
+    if ort is None:
+        raise RuntimeError("onnxruntime not available; install onnxruntime or onnxruntime-gpu to use camie-tagger")
+
+    repo = os.getenv("CAMIE_TAGGER_REPO", CAMIE_REPO_DEFAULT)
+    model_path = os.getenv("CAMIE_TAGGER_MODEL_PATH")
+    meta_path = os.getenv("CAMIE_TAGGER_META_PATH")
+
+    if not model_path:
+        if hf_hub_download is None:
+            raise RuntimeError("huggingface_hub not available; set CAMIE_TAGGER_MODEL_PATH to local ONNX file")
+        model_path = hf_hub_download(repo_id=repo, filename=CAMIE_MODEL_FILENAME)
+    if not meta_path:
+        if hf_hub_download is None:
+            raise RuntimeError("huggingface_hub not available; set CAMIE_TAGGER_META_PATH to local metadata JSON")
+        meta_path = hf_hub_download(repo_id=repo, filename=CAMIE_META_FILENAME)
+
+    try:
+        with open(meta_path, "r", encoding="utf-8") as f:
+            meta = json.load(f)
+    except Exception as exc:
+        raise RuntimeError(f"Failed to load camie metadata: {exc}") from exc
+
+    ds = meta.get("dataset_info", {})
+    tag_map = ds.get("tag_mapping", {})
+    idx_to_tag_map = tag_map.get("idx_to_tag", {}) or {}
+    tag_to_category = tag_map.get("tag_to_category", {}) or {}
+    total_tags = int(ds.get("total_tags", len(idx_to_tag_map)))
+    idx_to_tag: List[str] = [""] * total_tags
+    for k, v in idx_to_tag_map.items():
+        try:
+            i = int(k)
+        except ValueError:
+            continue
+        if 0 <= i < total_tags:
+            idx_to_tag[i] = v
+
+    CAMIE.idx_to_tag = idx_to_tag
+    CAMIE.tag_to_category = tag_to_category
+    CAMIE.img_size = int(meta.get("model_info", {}).get("img_size", 512))
+
+    providers = []
+    if torch.cuda.is_available():
+        providers.append("CUDAExecutionProvider")
+    providers.append("CPUExecutionProvider")
+
+    sess_options = ort.SessionOptions()
+    try:
+        CAMIE.ort_session = ort.InferenceSession(model_path, sess_options, providers=providers)
+    except Exception as exc:
+        # Retry CPU-only if CUDA fails
+        if providers and providers[0] == "CUDAExecutionProvider":
+            try:
+                CAMIE.ort_session = ort.InferenceSession(model_path, sess_options, providers=["CPUExecutionProvider"])
+            except Exception as exc_cpu:
+                raise RuntimeError(f"Failed to initialize camie ONNX session (CPU fallback also failed): {exc_cpu}") from exc_cpu
+        else:
+            raise RuntimeError(f"Failed to initialize camie ONNX session: {exc}") from exc
+
+
+CAMIE_IMAGENET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+CAMIE_IMAGENET_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+
+
+def _camie_preprocess(img: Image.Image, target: int) -> np.ndarray:
+    if img.mode not in ("RGB",):
+        img = img.convert("RGB")
+
+    w, h = img.size
+    if w == 0 or h == 0:
+        canvas = Image.new("RGB", (target, target), (124, 116, 104))
+        arr = np.asarray(canvas).astype(np.float32) / 255.0
+    else:
+        aspect = w / h
+        if aspect >= 1.0:
+            new_w = target
+            new_h = max(1, int(round(target / aspect)))
+        else:
+            new_h = target
+            new_w = max(1, int(round(target * aspect)))
+
+        try:
+            resample = Image.Resampling.LANCZOS  # Pillow >=9
+        except AttributeError:
+            resample = Image.LANCZOS
+
+        resized = img.resize((new_w, new_h), resample)
+        pad_color = (124, 116, 104)
+        canvas = Image.new("RGB", (target, target), pad_color)
+        offset = ((target - new_w) // 2, (target - new_h) // 2)
+        canvas.paste(resized, offset)
+        arr = np.asarray(canvas).astype(np.float32) / 255.0
+
+    arr = (arr - CAMIE_IMAGENET_MEAN) / CAMIE_IMAGENET_STD
+    arr = np.transpose(arr, (2, 0, 1)).astype(np.float32)  # CHW
+    return arr
+
+
+def _run_camie_tagger(
+    img: Image.Image,
+    threshold_overrides: Optional[Dict[str, float]] = None,
+) -> Dict[str, List[Tuple[str, float]]]:
+    if ort is None:
+        print("[CAMIE] onnxruntime unavailable; skipping camie tagger")
+        return {}
+    try:
+        _ensure_camie_tagger()
+    except Exception as exc:
+        print(f"[CAMIE] initialization failed: {exc}")
+        return {}
+    if CAMIE.ort_session is None or CAMIE.idx_to_tag is None or CAMIE.tag_to_category is None:
+        return {}
+    if img is None:
+        return {}
+
+    arr = _camie_preprocess(img, CAMIE.img_size)
+    inputs = CAMIE.ort_session.get_inputs()
+    if not inputs:
+        print("[CAMIE] ONNX session has no inputs; skipping")
+        return {}
+    input_name = inputs[0].name
+    try:
+        raw_outputs = CAMIE.ort_session.run(None, {input_name: arr[None, ...]})
+    except Exception as exc:
+        print(f"[CAMIE] inference failed: {exc}")
+        return {}
+
+    if not raw_outputs:
+        return {}
+    logits = raw_outputs[1] if len(raw_outputs) >= 2 else raw_outputs[0]
+    probs = 1.0 / (1.0 + np.exp(-logits))
+    if probs.ndim == 2:
+        probs = probs[0]
+    probs = np.asarray(probs, dtype=np.float32)
+
+    tag_map = CAMIE.tag_to_category or {}
+    idx_to_tag = CAMIE.idx_to_tag or []
+    limit = min(len(idx_to_tag), probs.shape[0])
+    buckets: Dict[str, List[Tuple[str, float]]] = {}
+    for i in range(limit):
+        tag = idx_to_tag[i]
+        if not tag:
+            continue
+        score = float(probs[i])
+        cat = tag_map.get(tag, "general")
+        buckets.setdefault(cat, []).append((tag, score))
+
+    filtered: Dict[str, List[Tuple[str, float]]] = {}
+    thr_map = CAMIE_THRESHOLD_MAP.copy()
+    overrides = threshold_overrides or {}
+    if overrides:
+        thr_map.update(overrides)
+    default_thr = thr_map.get("default", 0.45)
+    default_topk = CAMIE_TOPK_MAP.get("default", 32)
+    for cat, items in buckets.items():
+        items.sort(key=lambda x: x[1], reverse=True)
+        thr = thr_map.get(cat, default_thr)
+        topk = CAMIE_TOPK_MAP.get(cat, default_topk)
+        selected = [(tag, score) for tag, score in items if score >= thr]
+        if not selected:
+            if cat in overrides:
+                selected = []
+            else:
+                selected = items[:max(1, topk)]
+        filtered[cat] = selected[:topk]
+
+    return filtered
+
+
+def _combine_tagger_outputs(
+    wd_general: List[Tuple[str, float]],
+    wd_rating: List[Tuple[str, float]],
+    wd_character: List[Tuple[str, float]],
+    camie_buckets: Dict[str, List[Tuple[str, float]]],
+    *,
+    max_general: int = 30,
+    sentence_cap: int = 80,
+) -> Tuple[str, Dict[str, str]]:
+    sections: Dict[str, str] = {}
+
+    def prettify(tag: str) -> str:
+        return tag.replace("_", " ")
+
+    def add_section(key: str, title: str, source: str, items: List[Tuple[str, float]]):
+        count = len(items)
+        header = f"><font size=\"4\" color=\"red\"> **{title}** ({count} tag{'s' if count != 1 else ''} · {source})</font><br>"
+        if items:
+            body = ">" + ",".join(
+                f" {tag} ({score * 100:.0f}%)" for tag, score in items
+            )
+        else:
+            body = ">_**No tags above threshold.**_"
+        sections[key] = "\n".join([header, body]) + "\n***"
+
+    add_section("general", "General", "wd-eva02", wd_general[:max_general])
+    add_section("rating", "Rating", "wd-eva02", wd_rating)
+
+    def _resolve_cat(cat: str) -> List[Tuple[str, float]]:
+        items = camie_buckets.get(cat, [])
+        if cat == "character" and not items:
+            return wd_character[:max_general]
+        return items
+
+    for cat in ["character", "copyright", "artist", "meta", "year"]:
+        items = _resolve_cat(cat)
+        source = "camie" # if camie_buckets.get(cat) else "wd-eva02"
+        add_section(cat, cat.title(), source, items)
+
+    sentence_tags: List[str] = []
+    sentence_tags.extend([t for t, _ in wd_general[:max_general]])
+    for cat in ["character", "copyright", "artist", "meta", "year"]:
+        for t, _ in _resolve_cat(cat)[:max_general]:
+            sentence_tags.append(t)
+
+    sentence = ", ".join(prettify(t) for t in sentence_tags[:sentence_cap])
+
+    return sentence, sections
+
+
+TAG_SECTION_ORDER = [
+    ("general", "General"),
+    ("rating", "Rating"),
+    ("character", "Character"),
+    ("copyright", "Copyright"),
+    ("artist", "Artist"),
+    ("meta", "Meta"),
+    ("year", "Year"),
+]
+
+
+def _reset_tag_updates():
+    updates = [gr.update(visible=False)]
+    updates.extend(gr.update(value="", visible=False) for _ in TAG_SECTION_ORDER)
+    return updates
+
+
+def _apply_tag_updates(sections_md: Optional[Dict[str, str]]):
+    has_sections = bool(sections_md)
+    updates = [gr.update(visible=has_sections)]
+    for key, _ in TAG_SECTION_ORDER:
+        text = (sections_md or {}).get(key, "")
+        updates.append(gr.update(value=text, visible=bool(text.strip())))
+    return updates
+
 
 # ============================
 # 4) BLIP2 (natural language caption)
@@ -571,38 +903,57 @@ def generate(model_key: str, prompt: str, neg: Optional[str], steps: int, guidan
 # text-to-image + img2text
 def generate_then_interrogate(model_name: str, prompt: str, neg: str, steps: int, guidance: float,
                               width: int, height: int, scheduler: str, seed: str,
-                              th_general: float, th_character: float,
-                              blip_prompt: str, max_tokens: int):
+                              th_general: float,
+                              camie_general_thr: float = CAMIE_THRESHOLD_MAP.get("default", 0.45),
+                              camie_character_thr: float = CAMIE_THRESHOLD_MAP.get("character", 0.35),
+                              blip_prompt: str = "", max_tokens: int = 40):
     model_key = key_by_name.get(model_name, DEFAULT_KEY)
     img = generate(model_key, prompt, neg, steps, guidance, width, height, scheduler, seed)
 
-    # Run WD-EVA02
-    wd_sentence, wd_pairs, wd_rating = _run_wd_tagger(img, th_general=th_general, th_character=th_character)
+    # Run taggers (WD for general/rating, Camie for others)
+    wd_sentence, _, wd_rating, wd_general, wd_character = _run_wd_tagger(
+        img, th_general=th_general, th_character=CAMIE_THRESHOLD_MAP.get("character", 0.35)
+    )
+    camie_buckets = _run_camie_tagger(
+        img,
+        threshold_overrides={
+            "character": camie_character_thr,
+            "artist": camie_general_thr,
+            "copyright": camie_general_thr,
+            "meta": camie_general_thr,
+            "year": camie_general_thr,
+        },
+    )
+    tag_sentence, tag_sections = _combine_tagger_outputs(wd_general, wd_rating, wd_character, camie_buckets)
+
     # Run BLIP2
     nl = blip2_caption(img, prompt=blip_prompt if blip_prompt.strip() else None, max_new_tokens=max_tokens)
 
-    # Show rating + top tags as Markdown tables
-    r_tbl = ""
-    if wd_rating:
-        r_tbl = "### rating\n| tag | score |\n|---|---|\n" + "\n".join([f"| {t} | {s:.3f} |" for t, s in wd_rating]) + "\n\n"
-    topk = min(30, len(wd_pairs))
-    md_table = r_tbl + "### general/character\n| tag | score |\n|---|---|\n" + "\n".join([f"| {t} | {s:.3f} |" for t, s in wd_pairs[:topk]])
-
-    return img, wd_sentence, nl, md_table
+    return img, (tag_sentence or wd_sentence), nl, tag_sections
 
 # Standalone img2text
-def img2text_handle(img: Image.Image, th_general: float, th_character: float,
-                    blip_prompt: str, max_tokens: int):
+def img2text_handle(img: Image.Image, th_general: float,
+                    camie_general_thr: float = CAMIE_THRESHOLD_MAP.get("default", 0.45),
+                    camie_character_thr: float = CAMIE_THRESHOLD_MAP.get("character", 0.35),
+                    blip_prompt: str = "", max_tokens: int = 40):
     if img is None:
-        return "", "", ""
-    wd_sentence, wd_pairs, wd_rating = _run_wd_tagger(img, th_general=th_general, th_character=th_character)
+        return "", "", {}
+    wd_sentence, _, wd_rating, wd_general, wd_character = _run_wd_tagger(
+        img, th_general=th_general, th_character=CAMIE_THRESHOLD_MAP.get("character", 0.35)
+    )
+    camie_buckets = _run_camie_tagger(
+        img,
+        threshold_overrides={
+            "character": camie_character_thr,
+            "artist": camie_general_thr,
+            "copyright": camie_general_thr,
+            "meta": camie_general_thr,
+            "year": camie_general_thr,
+        },
+    )
+    tag_sentence, tag_sections = _combine_tagger_outputs(wd_general, wd_rating, wd_character, camie_buckets)
     nl = blip2_caption(img, prompt=blip_prompt if blip_prompt.strip() else None, max_new_tokens=max_tokens)
-    topk = min(30, len(wd_pairs))
-    r_tbl = ""
-    if wd_rating:
-        r_tbl = "### rating\n| tag | score |\n|---|---|\n" + "\n".join([f"| {t} | {s:.3f} |" for t, s in wd_rating]) + "\n\n"
-    md_table = r_tbl + "### general/character\n| tag | score |\n|---|---|\n" + "\n".join([f"| {t} | {s:.3f} |" for t, s in wd_pairs[:topk]])
-    return wd_sentence, nl, md_table
+    return (tag_sentence or wd_sentence), nl, tag_sections
 
 # =========================
 # 6) Token counting helpers
@@ -660,13 +1011,15 @@ LANG_CHOICES = {
 TOKEN_LIMIT_INFO_MD = {
     "en": (
         "### Text Encoder Basics\n"
-        "- SD1.5 uses a single CLIP text encoder and only reads the first 77 tokens (≈75 prompt tokens). Anything beyond that is truncated.\n"
-        "- SDXL feeds the same prompt into two CLIP text encoders, but each still keeps only the first 77 tokens, so extra tokens past 77 are dropped."
+        "- SD1.5 uses a single CLIP text encoder and only reads the first 77 tokens. Anything beyond that is truncated.\n"
+        "- SDXL feeds the same prompt into two CLIP text encoders, but each still keeps only the first 77 tokens, so extra tokens past 77 are dropped.\n"
+        "- The [BOS] (beginning of sentence) and [EOS] (end of sentence) tokens take up 2 tokens, so the effective prompt length is up to 75 tokens."
     ),
     "ja": (
         "### テキストエンコーダの基本\n"
-        "- SD1.5はCLIPテキストエンコーダを1つだけ使い、先頭から77トークン（実質約75語）までしか読みません。これを超えた部分は切り捨てられます。\n"
-        "- SDXLは同じプロンプトを2種類のテキストエンコーダに流しますが、どちらも77トークンまでしか処理しないため、超過分は同様に切り捨てられます。"
+        "- SD1.5はCLIPテキストエンコーダを1つだけ使い、先頭から**77トークン**までしか読みません。これを超えた部分は切り捨てられます。\n"
+        "- SDXLは同じプロンプトを2種類のテキストエンコーダに流しますが、どちらも**77トークン**までしか処理しないため、超過分は同様に切り捨てられます。\n"
+        "- [BOS]・[EOS] に2トークン取られるため有効プロンプト長は最大75トークンです。"
     ),
 }
 
@@ -749,7 +1102,7 @@ def on_model_change(model_name: str):
         gr.update(value=p['steps']),
     )
 
-with gr.Blocks(title='Generate & Describe Images (SD/SDXL, WD-EVA02, BLIP2)') as demo:
+with gr.Blocks(title='Stable Diffusion Toolkit') as demo:
     gr.Markdown(
         "# Stable Diffusion Toolkit\n"
         f"- Text-to-image device: **{DEVICE}** · Image-to-text device: **{IMG2TEXT_DEVICE}**\n"
@@ -775,43 +1128,57 @@ with gr.Blocks(title='Generate & Describe Images (SD/SDXL, WD-EVA02, BLIP2)') as
                 seed = gr.Textbox(label='Seed (leave blank for random)', value='')
 
             with gr.Accordion("Auto description settings", open=False):
+                th_general = gr.Slider(0.0, 1.0, 0.55, 0.01, label="WD tagger threshold (general)")
                 with gr.Row():
-                    th_general = gr.Slider(0.0, 1.0, 0.55, 0.01, label="General tag sensitivity (lower = more)")
-                    th_character = gr.Slider(0.0, 1.0, 0.75, 0.01, label="Character tag sensitivity (lower = more)")
+                    camie_general_thr = gr.Slider(0.05, 1.0, 0.50, 0.01, label="Camie tagger threshold (copyright/artist/meta/year)")
+                    camie_character_thr = gr.Slider(0.05, 1.0, 0.75, 0.01, label="Camie tagger threshold (character)")
                 with gr.Row():
                     blip_prompt = gr.Textbox(label="Caption prompt (optional)", value="")
                     max_tokens = gr.Slider(8, 120, 40, 1, label="Caption length (max tokens)")
 
             btn = gr.Button('Generate Image')
             out_img = gr.Image(label='Generated image', type='pil', interactive=False, sources=[])
-            # Added: manual description button
             btn_interrogate = gr.Button('Describe Image')
-            # Manually-triggered description outputs
             out_wd_sentence = gr.Textbox(label="Tag summary", lines=6, show_copy_button=True)
             out_blip = gr.Textbox(label="Caption", lines=6, show_copy_button=True)
-            out_wd_table = gr.Markdown(label="Top tags")
+            with gr.Group(visible=False) as tag_sections_group:
+                gr.Markdown("### Tag Details")
+                tag_section_components: Dict[str, gr.Markdown] = {}
+                for key, title in TAG_SECTION_ORDER:
+                    tag_section_components[key] = gr.Markdown(label=title, value="", show_label=False)
+                tag_section_component_list = [tag_section_components[key] for key, _ in TAG_SECTION_ORDER]
 
             model_sel_name.change(on_model_change, inputs=[model_sel_name], outputs=[width, height, guidance, steps])
 
             # 1) Generate image only
+            def _on_generate(model_name, prm, neg_prompt, steps_v, guidance_v, width_v, height_v, scheduler_v, seed_v):
+                img = generate(key_by_name.get(model_name, DEFAULT_KEY), prm, neg_prompt, steps_v, guidance_v, width_v, height_v, scheduler_v, seed_v)
+                return (img, *_reset_tag_updates())
+
             btn.click(
-                lambda n, *args: generate(key_by_name.get(n, DEFAULT_KEY), *args),
+                _on_generate,
                 inputs=[model_sel_name, prompt, neg, steps, guidance, width, height, scheduler, seed],
-                outputs=[out_img],
+                outputs=[out_img, tag_sections_group, *tag_section_component_list],
             )
 
             # 2) Manually run img2text on the image above when needed
+            def _run_interrogate(img_in, *params):
+                tags, caption, sections_md = img2text_handle(img_in, *params)
+                updates = _apply_tag_updates(sections_md) if img_in else _reset_tag_updates()
+                return (tags, caption, *updates)
+
             btn_interrogate.click(
-                img2text_handle,
-                inputs=[out_img, th_general, th_character, blip_prompt, max_tokens],
-                outputs=[out_wd_sentence, out_blip, out_wd_table],
+                _run_interrogate,
+                inputs=[out_img, th_general, camie_general_thr, camie_character_thr, blip_prompt, max_tokens],
+                outputs=[out_wd_sentence, out_blip, tag_sections_group, *tag_section_component_list],
             )
 
         with gr.Tab("Describe Image"):
             in_img = gr.Image(label="Image", type="pil")
+            th_general2 = gr.Slider(0.0, 1.0, 0.55, 0.01, label="WD tagger threshold (general)")
             with gr.Row():
-                th_general2 = gr.Slider(0.0, 1.0, 0.55, 0.01, label="General tag sensitivity (lower = more)")
-                th_character2 = gr.Slider(0.0, 1.0, 0.75, 0.01, label="Character tag sensitivity (lower = more)")
+                camie_general_thr2 = gr.Slider(0.05, 1.0, 0.50, 0.01, label="Camie tagger threshold (copyright/artist/meta/year)")
+                camie_character_thr2 = gr.Slider(0.05, 1.0, 0.75, 0.01, label="Camie tagger threshold (character)")
             with gr.Row():
                 blip_prompt2 = gr.Textbox(label="Caption prompt (optional)", value="")
                 max_tokens2 = gr.Slider(8, 120, 40, 1, label="Caption length (max tokens)")
@@ -819,27 +1186,38 @@ with gr.Blocks(title='Generate & Describe Images (SD/SDXL, WD-EVA02, BLIP2)') as
             btn2 = gr.Button("Describe Image")
             out_wd_sentence2 = gr.Textbox(label="Tag summary", lines=6, show_copy_button=True)
             out_blip2 = gr.Textbox(label="Caption", lines=6, show_copy_button=True)
-            out_wd_table2 = gr.Markdown(label="Top tags")
+            with gr.Group(visible=False) as tag_sections_group2:
+                gr.Markdown("### Tag Details")
+                tag_section_components2: Dict[str, gr.Markdown] = {}
+                for key, title in TAG_SECTION_ORDER:
+                    tag_section_components2[key] = gr.Markdown(label=title, value="", show_label=False)
+                tag_section_component_list2 = [tag_section_components2[key] for key, _ in TAG_SECTION_ORDER]
 
             btn2.click(
-                img2text_handle,
-                inputs=[in_img, th_general2, th_character2, blip_prompt2, max_tokens2],
-                outputs=[out_wd_sentence2, out_blip2, out_wd_table2]
+                _run_interrogate,
+                inputs=[in_img, th_general2, camie_general_thr2, camie_character_thr2, blip_prompt2, max_tokens2],
+                outputs=[out_wd_sentence2, out_blip2, tag_sections_group2, *tag_section_component_list2]
             )
 
-        # Danbooru tag lookup (JA-friendly)
-        with gr.Tab("Danbooru用語（タグ検索）"):
-            gr.Markdown("## Danbooru 用語検索\n- 英語/日本語で検索できます。\n- 候補から英語タグを選んで、下のボックスへ追加します。")
+        # Danbooru tag lookup (JA-friendly/EN)
+        with gr.Tab("Danbooru Tag Search"):
+            danbooru_lang = gr.Radio(
+                choices=list(LANG_CHOICES.keys()),
+                value="日本語",
+                label="Language / 言語",
+            )
+            _initial_texts = _danbooru_lang_text(_resolve_lang("日本語"))
+            danbooru_intro = gr.Markdown(_initial_texts["intro"])
             with gr.Row():
-                tag_query = gr.Textbox(label="検索（英語/日本語）", placeholder="例: girl / 女の子 / hair", lines=1)
-                tag_max = gr.Slider(5, 200, value=50, step=5, label="最大件数")
+                tag_query = gr.Textbox(label=_initial_texts["search_label"], placeholder=_initial_texts["search_placeholder"], lines=1)
+                tag_max = gr.Slider(5, 200, value=50, step=5, label=_initial_texts["max_label"])
             with gr.Row():
-                tag_table = gr.Dataframe(headers=["英語タグ", "日本語"], interactive=False, row_count=5, col_count=2)
-            tag_choices = gr.CheckboxGroup(choices=[], label="候補タグ")
+                tag_table = gr.Dataframe(label=_initial_texts["table_label"], headers=_initial_texts["table_headers"], interactive=False, row_count=5, col_count=2)
+            tag_choices = gr.CheckboxGroup(choices=[], label=_initial_texts["choices_label"])
             with gr.Row():
-                tag_add = gr.Button("追加")
-                tag_clear = gr.Button("クリア")
-            tag_prompt_box = gr.Textbox(label="選択済みタグ", show_copy_button=True)
+                tag_add = gr.Button(_initial_texts["add_label"])
+                tag_clear = gr.Button(_initial_texts["clear_label"])
+            tag_prompt_box = gr.Textbox(label=_initial_texts["selected_label"], show_copy_button=True)
 
             def _on_tag_query(q, m):
                 table, sugg = _search_tags_ja(q, int(m))
@@ -877,7 +1255,27 @@ with gr.Blocks(title='Generate & Describe Images (SD/SDXL, WD-EVA02, BLIP2)') as
             tag_add.click(_on_tag_add, inputs=[tag_choices, tag_prompt_box], outputs=[tag_prompt_box, tag_choices])
             tag_clear.click(_on_tag_clear, inputs=[], outputs=[tag_prompt_box, tag_choices])
 
-        with gr.Tab("Token Counter / トークンカウンター"):
+            def _on_danbooru_lang_change(choice: str):
+                lang = _resolve_lang(choice)
+                texts = _danbooru_lang_text(lang)
+                return (
+                    gr.update(value=texts["intro"]),
+                    gr.update(label=texts["search_label"], placeholder=texts["search_placeholder"]),
+                    gr.update(label=texts["max_label"]),
+                    gr.update(label=texts["table_label"], headers=texts["table_headers"]),
+                    gr.update(label=texts["choices_label"]),
+                    gr.update(value=texts["add_label"]),
+                    gr.update(value=texts["clear_label"]),
+                    gr.update(label=texts["selected_label"]),
+                )
+
+            danbooru_lang.change(
+                _on_danbooru_lang_change,
+                inputs=[danbooru_lang],
+                outputs=[danbooru_intro, tag_query, tag_max, tag_table, tag_choices, tag_add, tag_clear, tag_prompt_box],
+            )
+
+        with gr.Tab("Token Counter"):
             token_lang = gr.Radio(
                 choices=list(LANG_CHOICES.keys()),
                 value="日本語",
@@ -923,4 +1321,13 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"[BLIP2] Preload failed (will delay to first call): {e}")
 
-    demo.queue(max_size=32).launch(server_name='0.0.0.0', server_port=7860, share=False)
+    launch_kwargs = dict(server_name='0.0.0.0', server_port=7860, share=False)
+    favicon_candidate = os.getenv("GRADIO_FAVICON_PATH", "")
+    if favicon_candidate and os.path.exists(favicon_candidate):
+        launch_kwargs["favicon_path"] = favicon_candidate
+    else:
+        default_icon = os.path.join(os.path.dirname(__file__), "favicon.png")
+        if os.path.exists(default_icon):
+            launch_kwargs["favicon_path"] = default_icon
+
+    demo.queue(max_size=32).launch(**launch_kwargs)

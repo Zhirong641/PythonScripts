@@ -148,7 +148,7 @@ class LatentDataset(torch.utils.data.Dataset):
                         return False
                     if year:
                         years = [int(y.split("_")[1]) for y in _split_clean_comma_list(year) if y.startswith("year_") and y[5:].isdigit()]
-                        if years and max(years) < 2000:
+                        if years and min(years) < 2000:
                             return False
                     return True
                 fp = os.path.join(data_dir, fname)
@@ -1239,8 +1239,8 @@ def main(args):
                         text = generate_variants_with_nl_list(
                             _split_clean_comma_list(general_tags[i]),
                             _split_clean_comma_list(artist_tags[i]),
-                            k=1, token_budget=74,
-                            head_keep=16, max_general_per_variant=22,
+                            k=1, token_budget=72,
+                            head_keep=14, max_general_per_variant=18,
                             characters=_split_clean_comma_list(character_tags[i]),
                             ratings=_split_clean_comma_list(rating_tags[i]),
                             years=_split_clean_comma_list(year_tags[i])
@@ -1321,8 +1321,8 @@ def main(args):
                                 prev_prompts = generate_variants_with_nl_list(
                                     _split_clean_comma_list(general_tags[0]),
                                     _split_clean_comma_list(artist_tags[0]),
-                                    k=5, token_budget=74,
-                                    head_keep=16, max_general_per_variant=22,
+                                    k=5, token_budget=72,
+                                    head_keep=14, max_general_per_variant=18,
                                     characters=_split_clean_comma_list(character_tags[0]),
                                     ratings=_split_clean_comma_list(rating_tags[0]),
                                     years=_split_clean_comma_list(year_tags[0])
