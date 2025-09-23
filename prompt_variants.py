@@ -216,6 +216,48 @@ _POSE_PATTERN = re.compile(
     r")\b"
 )
 
+_PERSON_COUNT_F_PATTERN = re.compile(
+    r"\b(" +
+    r"|".join([
+        r"[0-9]+(?:\+)?(?:\s*|[-_])*(?:girls?|women)",
+        r"multi(?:ple)?(?:\s*|[-_])*(?:girls?|women)",
+        r"double(?:\s*|[-_])*girls?", r"triple(?:\s*|[-_])*girls?", r"quadruple(?:\s*|[-_])*girls?",
+    ]) +
+    r")\b"
+)
+
+_PERSON_COUNT_M_PATTERN = re.compile(
+    r"\b(" +
+    r"|".join([
+        r"[0-9]+(?:\+)?(?:\s*|[-_])*(?:boys?|men)",
+        r"multi(?:ple)?(?:\s*|[-_])*(?:boys?|men)",
+        r"double(?:\s*|[-_])*boys?", r"triple(?:\s*|[-_])*boys?", r"quadruple(?:\s*|[-_])*boys?",
+    ]) +
+    r")\b"
+)
+
+_PERSON_COUNT_GENERIC_PATTERN = re.compile(
+    r"\b(" +
+    r"|".join([
+        r"[0-9]+(?:\+)?(?:\s*|[-_])*(?:people|persons?|characters?|kids?|children)",
+        r"multi(?:ple)?(?:\s*|[-_])*(?:people|persons?|characters?|kids?|children)",
+        r"solo", r"pair", r"couple", r"duo", r"twosome", r"threesome", r"foursome",
+        r"trio", r"quartet", r"quintet", r"sextet", r"septet", r"octet", r"nonet",
+        r"group", r"crowd", r"team", r"party",
+    ]) +
+    r")\b"
+)
+
+_URINATION_PATTERN = re.compile(
+    r"\b(" +
+    r"|".join([
+        r"pee", r"peeings?", r"peeing", r"pee\s*fetish", r"pee\s*play",
+        r"urination", r"urinate", r"urinating", r"urinated",
+        r"piss", r"pissing", r"wetting",
+    ]) +
+    r")\b"
+)
+
 def _normalize(tag: str) -> str:
     return tag.strip().replace("_", " ").lower()
 
@@ -289,8 +331,10 @@ def _era_tag(year_tags: List[str]) -> str:
         label = "old"
     elif latest_year < 2015:
         label = "modern"
+    elif latest_year < 2020:
+        label = "recent"
     else:
-        label = "latest"
+        label = "newest"
     return f"era:{label}"
 
 # 互斥 / 模式限额（pattern caps）
@@ -318,6 +362,12 @@ _PATTERNS = [
     ("footwear",     lambda t: bool(_FOOTWEAR_PATTERN.search(t))),
     # 蝴蝶结/丝带：仅 1 个
     ("ribbon",       lambda t: bool(_RIBBON_PATTERN.search(t))),
+    # 人数（1girl/2girls 等按性别区分；solo/group 等归入通用）：各自仅 1 个
+    ("person_count_f", lambda t: bool(_PERSON_COUNT_F_PATTERN.search(t))),
+    ("person_count_m", lambda t: bool(_PERSON_COUNT_M_PATTERN.search(t))),
+    ("person_count_generic", lambda t: bool(_PERSON_COUNT_GENERIC_PATTERN.search(t))),
+    # 排尿相关（pee/peeing/urination 等）：仅 1 个
+    ("urination",    lambda t: bool(_URINATION_PATTERN.search(t))),
     # 包/挎包：仅 1 个
     ("bag",          lambda t: bool(_BAG_PATTERN.search(t))),
     # 眼镜类：仅 1 个
@@ -567,7 +617,7 @@ if __name__ == "__main__":
         "lying", "indoors", "on back", "mosaic censoring", "sweat", "censored", "hairband",
         "hair ribbon", "grey hair", "purple eyes", "feet", "arms up", "smile", "plant", "profile", "sidelocks", "ribbon"
     ]
-    years = ["year_2021","year_2020","year_2019","year_2018","year_2017"]
+    years = ["year_2019","year_2018","year_2017"]
     nl_list = [
         # "a girl with long hair in a white sundress, looking at the viewer, gentle expression",
         # "full-body illustration, ribbon details and sandals, summer vibe",
@@ -575,7 +625,7 @@ if __name__ == "__main__":
     ]
     caps = generate_variants_with_nl_list(
         general, artists, k=10, phrase_ratio=1, token_budget=72,
-        head_keep = 12, max_general_per_variant=16,
+        head_keep=14, max_general_per_variant=18,
         characters=characters, ratings=rating, years=years
     )
     for i, c in enumerate(caps, 1):
