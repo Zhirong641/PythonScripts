@@ -258,6 +258,17 @@ _URINATION_PATTERN = re.compile(
     r")\b"
 )
 
+_PANTIES_PATTERN = re.compile(r"\b(panties|panty)\b")
+
+_BRA_PATTERN = re.compile(
+    r"\b(" +
+    r"|".join([
+        r"bra", r"brassiere", r"bralette", r"sports bra", r"strapless bra",
+        r"lingerie bra", r"lace bra", r"underwire bra",
+    ]) +
+    r")\b"
+)
+
 def _normalize(tag: str) -> str:
     return tag.strip().replace("_", " ").lower()
 
@@ -368,6 +379,10 @@ _PATTERNS = [
     ("person_count_generic", lambda t: bool(_PERSON_COUNT_GENERIC_PATTERN.search(t))),
     # 排尿相关（pee/peeing/urination 等）：仅 1 个
     ("urination",    lambda t: bool(_URINATION_PATTERN.search(t))),
+    # 内裤相关（panties/side-tie panties 等）：仅 1 个
+    ("panties",      lambda t: bool(_PANTIES_PATTERN.search(t))),
+    # 胸罩相关（bra/brassiere/sports bra 等）：仅 1 个
+    ("bra",          lambda t: bool(_BRA_PATTERN.search(t))),
     # 包/挎包：仅 1 个
     ("bag",          lambda t: bool(_BAG_PATTERN.search(t))),
     # 眼镜类：仅 1 个

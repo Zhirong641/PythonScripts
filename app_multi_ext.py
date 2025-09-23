@@ -44,39 +44,39 @@ IMG2TEXT_DEVICE = os.getenv("IMG2TEXT_DEVICE", "cpu").strip().lower()  # "cpu" /
 # 1) Model registry (add/remove as needed)
 # ========================
 MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
-    # "illustrious_emberveil": {
-    #     "name": "【illustrious】EmberVeilMix (merge)",
-    #     "type": "sdxl",
-    #     "load": {
-    #         "mode": "singlefile",
-    #         "filename": "IllustriousEmberveilmix_v10.safetensors"  # Put in current directory or fetch via repo
-    #         # "repo": "YourOrg/IllustriousEmberveilmix_v10",
-    #     },
-    #     "presets": {
-    #         "widths":  [512, 640, 768, 896, 1024, 1152, 1232, 1280],
-    #         "heights": [512, 640, 768, 896, 1024, 1152, 1232, 1280],
-    #         "default_w": 1024,
-    #         "default_h": 1024,
-    #         "steps": 28,
-    #         "guidance": 5.5,
-    #     }
-    # },
-    "sd15_official": {
-        "name": "SD15 Official (runwayml/stable-diffusion-v1-5)",
-        "type": "sd15",
+    "illustrious_emberveil": {
+        "name": "【illustrious】EmberVeilMix (merge)",
+        "type": "sdxl",
         "load": {
-            "mode": "pretrained",
-            "repo": "runwayml/stable-diffusion-v1-5"
+            "mode": "singlefile",
+            "filename": "IllustriousEmberveilmix_v10.safetensors"  # Put in current directory or fetch via repo
+            # "repo": "YourOrg/IllustriousEmberveilmix_v10",
         },
         "presets": {
-            "widths":  [384, 448, 512, 576, 640, 704, 768],
-            "heights": [384, 448, 512, 576, 640, 704, 768],
-            "default_w": 512,
-            "default_h": 512,
+            "widths":  [512, 640, 768, 896, 1024, 1152, 1232, 1280],
+            "heights": [512, 640, 768, 896, 1024, 1152, 1232, 1280],
+            "default_w": 1024,
+            "default_h": 1024,
             "steps": 28,
-            "guidance": 7.0,
+            "guidance": 5.5,
         }
     },
+    # "sd15_official": {
+    #     "name": "SD15 Official (runwayml/stable-diffusion-v1-5)",
+    #     "type": "sd15",
+    #     "load": {
+    #         "mode": "pretrained",
+    #         "repo": "runwayml/stable-diffusion-v1-5"
+    #     },
+    #     "presets": {
+    #         "widths":  [384, 448, 512, 576, 640, 704, 768],
+    #         "heights": [384, 448, 512, 576, 640, 704, 768],
+    #         "default_w": 512,
+    #         "default_h": 512,
+    #         "steps": 28,
+    #         "guidance": 7.0,
+    #     }
+    # },
     # To add SD15/official SDXL models, copy an entry in this format
 }
 
@@ -367,19 +367,30 @@ def _ensure_wd_eva02():
     except Exception:
         pass
 
+def _pad_to_square_white(img_rgb: Image.Image) -> Image.Image:
+    """Pad on a white canvas so the image becomes square."""
+    w, h = img_rgb.size
+    if w == h:
+        return img_rgb
+    m = max(w, h)
+    canvas = Image.new("RGB", (m, m), (255, 255, 255))
+    canvas.paste(img_rgb, ((m - w) // 2, (m - h) // 2))
+    return canvas
+
+
 def _preprocess_for_wd(img: Image.Image) -> Image.Image:
-    # Target 448×448; resize with aspect ratio, then center-crop to avoid distortion
-    if img.mode != "RGB":
-        img = img.convert("RGB")
-    w, h = img.size
+    # Align with image_tagger: composite transparency on white, pad square, resize to 448×448.
+    if img.mode != "RGBA":
+        img = img.convert("RGBA")
+    canvas = Image.new("RGBA", img.size, (255, 255, 255, 255))
+    canvas.alpha_composite(img)
+    img = canvas.convert("RGB")
+
+    img = _pad_to_square_white(img)
+
     target = 448
-    scale = target / min(w, h)
-    new_w, new_h = int(round(w * scale)), int(round(h * scale))
-    img = img.resize((new_w, new_h), Image.BICUBIC)
-    # Center crop
-    left = (new_w - target) // 2
-    top = (new_h - target) // 2
-    img = img.crop((left, top, left + target, top + target))
+    if img.size != (target, target):
+        img = img.resize((target, target), Image.BICUBIC)
     return img
 
 
@@ -768,7 +779,7 @@ def _combine_tagger_outputs(
     wd_character: List[Tuple[str, float]],
     camie_buckets: Dict[str, List[Tuple[str, float]]],
     *,
-    max_general: int = 30,
+    max_general: int = 50,
     sentence_cap: int = 80,
 ) -> Tuple[str, Dict[str, str]]:
     sections: Dict[str, str] = {}
@@ -1128,9 +1139,9 @@ with gr.Blocks(title='Stable Diffusion Toolkit') as demo:
                 seed = gr.Textbox(label='Seed (leave blank for random)', value='')
 
             with gr.Accordion("Auto description settings", open=False):
-                th_general = gr.Slider(0.0, 1.0, 0.55, 0.01, label="WD tagger threshold (general)")
+                th_general = gr.Slider(0.0, 1.0, 0.35, 0.01, label="WD tagger threshold (general)")
                 with gr.Row():
-                    camie_general_thr = gr.Slider(0.05, 1.0, 0.50, 0.01, label="Camie tagger threshold (copyright/artist/meta/year)")
+                    camie_general_thr = gr.Slider(0.05, 1.0, 0.492, 0.01, label="Camie tagger threshold (copyright/artist/meta/year)")
                     camie_character_thr = gr.Slider(0.05, 1.0, 0.75, 0.01, label="Camie tagger threshold (character)")
                 with gr.Row():
                     blip_prompt = gr.Textbox(label="Caption prompt (optional)", value="")
@@ -1175,9 +1186,9 @@ with gr.Blocks(title='Stable Diffusion Toolkit') as demo:
 
         with gr.Tab("Describe Image"):
             in_img = gr.Image(label="Image", type="pil")
-            th_general2 = gr.Slider(0.0, 1.0, 0.55, 0.01, label="WD tagger threshold (general)")
+            th_general2 = gr.Slider(0.0, 1.0, 0.35, 0.01, label="WD tagger threshold (general)")
             with gr.Row():
-                camie_general_thr2 = gr.Slider(0.05, 1.0, 0.50, 0.01, label="Camie tagger threshold (copyright/artist/meta/year)")
+                camie_general_thr2 = gr.Slider(0.05, 1.0, 0.492, 0.01, label="Camie tagger threshold (copyright/artist/meta/year)")
                 camie_character_thr2 = gr.Slider(0.05, 1.0, 0.75, 0.01, label="Camie tagger threshold (character)")
             with gr.Row():
                 blip_prompt2 = gr.Textbox(label="Caption prompt (optional)", value="")
