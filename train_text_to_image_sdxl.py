@@ -418,6 +418,66 @@ def parse_args(input_args=None):
     parser.add_argument(
         "--train_batch_size", type=int, default=16, help="Batch size (per device) for the training dataloader."
     )
+    parser.add_argument(
+        "--precompute_text_embeddings",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Whether to precompute all text embeddings before training. Disable to compute prompts on the fly"
+            " and skip the initial `datasets.map` stage."
+        ),
+    )
+    parser.add_argument(
+        "--precompute-text-embeddings",
+        dest="precompute_text_embeddings",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "--no-precompute-text-embeddings",
+        dest="precompute_text_embeddings",
+        action="store_false",
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "--precompute_vae_latents",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Whether to precompute VAE latents before training. This is only supported when text embeddings are"
+            " also precomputed."
+        ),
+    )
+    parser.add_argument(
+        "--precompute-vae-latents",
+        dest="precompute_vae_latents",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "--no-precompute-vae-latents",
+        dest="precompute_vae_latents",
+        action="store_false",
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "--text_encode_batch_size",
+        type=int,
+        default=None,
+        help=(
+            "Batch size to use while precomputing text embeddings. Defaults to the training batch size; raise this"
+            " to keep the GPU busier during `datasets.map`."
+        ),
+    )
+    parser.add_argument(
+        "--vae_encode_batch_size",
+        type=int,
+        default=None,
+        help=(
+            "Batch size to use while precomputing VAE latents. Defaults to the training batch size; increase this"
+            " to speed up the `datasets.map` stage if you have spare VRAM."
+        ),
+    )
     parser.add_argument("--num_train_epochs", type=int, default=100)
     parser.add_argument(
         "--max_train_steps",
@@ -682,6 +742,24 @@ def parse_args(input_args=None):
         raise ValueError("Need either a latent dataset_dir or a dataset name or a training folder.")
     if args.proportion_empty_prompts < 0 or args.proportion_empty_prompts > 1:
         raise ValueError("`--proportion_empty_prompts` must be in the range [0, 1].")
+
+    if not args.precompute_text_embeddings and args.precompute_vae_latents:
+        raise ValueError(
+            "`--precompute_vae_latents` requires text embeddings to be precomputed as well."
+            " Use `--no-precompute-vae-latents` when disabling text precomputation."
+        )
+
+    if args.precompute_text_embeddings:
+        if args.text_encode_batch_size is None or args.text_encode_batch_size <= 0:
+            args.text_encode_batch_size = args.train_batch_size
+    else:
+        args.text_encode_batch_size = None
+
+    if args.precompute_vae_latents:
+        if args.vae_encode_batch_size is None or args.vae_encode_batch_size <= 0:
+            args.vae_encode_batch_size = args.train_batch_size
+    else:
+        args.vae_encode_batch_size = None
 
     return args
 
@@ -1660,6 +1738,8 @@ def main(args):
 
     args.caption_column = caption_column
 
+    metadata_aliases = list(metadata_column_map.keys()) if metadata_column_map else []
+
     # Preprocessing the datasets.
     interpolation = getattr(transforms.InterpolationMode, args.image_interpolation_mode.upper(), None)
     if interpolation is None:
@@ -1724,96 +1804,132 @@ def main(args):
         # Set the training transforms
         train_dataset = dataset["train"].with_transform(preprocess_train)
 
-    # Let's first compute all the embeddings so that we can free up the text encoders
-    # from memory. We will pre-compute the VAE encodings too.
-    text_encoders = [text_encoder_one, text_encoder_two]
-    tokenizers = [tokenizer_one, tokenizer_two]
-    compute_embeddings_fn = functools.partial(
-        encode_prompt,
-        text_encoders=text_encoders,
-        tokenizers=tokenizers,
-        proportion_empty_prompts=args.proportion_empty_prompts,
-        caption_column=args.caption_column,
-        metadata_columns=metadata_column_map,
-    )
-    compute_vae_encodings_fn = functools.partial(compute_vae_encodings, vae=vae)
-    with accelerator.main_process_first():
-        from datasets.fingerprint import Hasher
+    using_precomputed_dataset = args.precompute_text_embeddings and args.precompute_vae_latents
 
-        # fingerprint used by the cache for the other processes to load the result
-        # details: https://github.com/huggingface/diffusers/pull/4038#discussion_r1266078401
-        new_fingerprint = Hasher.hash(args)
-        new_fingerprint_for_vae = Hasher.hash((vae_path, args))
-        train_dataset_with_embeddings = train_dataset.map(
-            compute_embeddings_fn, batched=True, new_fingerprint=new_fingerprint
+    if using_precomputed_dataset:
+        # Let's first compute all the embeddings so that we can free up the text encoders
+        # from memory. We will pre-compute the VAE encodings too.
+        text_encoders = [text_encoder_one, text_encoder_two]
+        tokenizers = [tokenizer_one, tokenizer_two]
+        compute_embeddings_fn = functools.partial(
+            encode_prompt,
+            text_encoders=text_encoders,
+            tokenizers=tokenizers,
+            proportion_empty_prompts=args.proportion_empty_prompts,
+            caption_column=args.caption_column,
+            metadata_columns=metadata_column_map,
         )
-        train_dataset_with_vae = train_dataset.map(
-            compute_vae_encodings_fn,
-            batched=True,
-            batch_size=args.train_batch_size,
-            new_fingerprint=new_fingerprint_for_vae,
-        )
-        columns_to_remove = [col for col in ["image", "text"] if col in train_dataset_with_vae.column_names]
-        train_dataset_with_vae = (
-            train_dataset_with_vae.remove_columns(columns_to_remove) if columns_to_remove else train_dataset_with_vae
-        )
-        # Drop duplicate metadata columns from the embeddings dataset so axis=1 concatenation keeps a single copy.
-        shared_columns = set(train_dataset_with_embeddings.column_names).intersection(
-            set(train_dataset_with_vae.column_names)
-        )
-        keep_columns = {"prompt_embeds", "pooled_prompt_embeds"}
-        if args.image_column in train_dataset_with_embeddings.column_names:
-            keep_columns.add(args.image_column)
-        columns_to_remove_from_embeddings = [
-            column for column in shared_columns if column not in keep_columns
-        ]
-        if columns_to_remove_from_embeddings:
-            train_dataset_with_embeddings = train_dataset_with_embeddings.remove_columns(
-                columns_to_remove_from_embeddings
+        compute_vae_encodings_fn = functools.partial(compute_vae_encodings, vae=vae)
+        with accelerator.main_process_first():
+            from datasets.fingerprint import Hasher
+
+            # fingerprint used by the cache for the other processes to load the result
+            # details: https://github.com/huggingface/diffusers/pull/4038#discussion_r1266078401
+            new_fingerprint = Hasher.hash(args)
+            new_fingerprint_for_vae = Hasher.hash((vae_path, args))
+            if accelerator.is_main_process:
+                logger.info(
+                    f"Precomputing prompt embeddings with batch size {args.text_encode_batch_size}"
+                )
+            train_dataset_with_embeddings = train_dataset.map(
+                compute_embeddings_fn,
+                batched=True,
+                batch_size=args.text_encode_batch_size,
+                new_fingerprint=new_fingerprint,
             )
-        precomputed_dataset = concatenate_datasets(
-            [train_dataset_with_embeddings, train_dataset_with_vae], axis=1
-        )
-        precomputed_dataset = precomputed_dataset.with_transform(preprocess_train)
+            if accelerator.is_main_process:
+                logger.info(
+                    f"Precomputing VAE latents with batch size {args.vae_encode_batch_size}"
+                )
+            train_dataset_with_vae = train_dataset.map(
+                compute_vae_encodings_fn,
+                batched=True,
+                batch_size=args.vae_encode_batch_size,
+                new_fingerprint=new_fingerprint_for_vae,
+            )
+            columns_to_remove = [col for col in ["image", "text"] if col in train_dataset_with_vae.column_names]
+            train_dataset_with_vae = (
+                train_dataset_with_vae.remove_columns(columns_to_remove) if columns_to_remove else train_dataset_with_vae
+            )
+            # Drop duplicate metadata columns from the embeddings dataset so axis=1 concatenation keeps a single copy.
+            shared_columns = set(train_dataset_with_embeddings.column_names).intersection(
+                set(train_dataset_with_vae.column_names)
+            )
+            keep_columns = {"prompt_embeds", "pooled_prompt_embeds"}
+            if args.image_column in train_dataset_with_embeddings.column_names:
+                keep_columns.add(args.image_column)
+            columns_to_remove_from_embeddings = [
+                column for column in shared_columns if column not in keep_columns
+            ]
+            if columns_to_remove_from_embeddings:
+                train_dataset_with_embeddings = train_dataset_with_embeddings.remove_columns(
+                    columns_to_remove_from_embeddings
+                )
+            precomputed_dataset = concatenate_datasets(
+                [train_dataset_with_embeddings, train_dataset_with_vae], axis=1
+            )
+            precomputed_dataset = precomputed_dataset.with_transform(preprocess_train)
 
-    del compute_vae_encodings_fn, compute_embeddings_fn, text_encoder_one, text_encoder_two
-    del text_encoders, tokenizers, vae
-    gc.collect()
-    if is_torch_npu_available():
-        torch_npu.npu.empty_cache()
-    elif torch.cuda.is_available():
-        torch.cuda.empty_cache()
+        del compute_vae_encodings_fn, compute_embeddings_fn, text_encoder_one, text_encoder_two
+        del text_encoders, tokenizers, vae
+        gc.collect()
+        if is_torch_npu_available():
+            torch_npu.npu.empty_cache()
+        elif torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
-    metadata_aliases = list(metadata_column_map.keys()) if metadata_column_map else []
+        def collate_fn(examples):
+            model_input = torch.stack([example["model_input"] if isinstance(example["model_input"], torch.Tensor) else torch.tensor(example["model_input"]) for example in examples])
+            original_sizes = [example["original_sizes"] for example in examples]
+            crop_top_lefts = [example["crop_top_lefts"] for example in examples]
+            prompt_embeds = torch.stack([example["prompt_embeds"] if isinstance(example["prompt_embeds"], torch.Tensor) else torch.tensor(example["prompt_embeds"]) for example in examples])
+            pooled_prompt_embeds = torch.stack([example["pooled_prompt_embeds"] if isinstance(example["pooled_prompt_embeds"], torch.Tensor) else torch.tensor(example["pooled_prompt_embeds"]) for example in examples])
 
-    def collate_fn(examples):
-        model_input = torch.stack([torch.tensor(example["model_input"]) for example in examples])
-        original_sizes = [example["original_sizes"] for example in examples]
-        crop_top_lefts = [example["crop_top_lefts"] for example in examples]
-        prompt_embeds = torch.stack([torch.tensor(example["prompt_embeds"]) for example in examples])
-        pooled_prompt_embeds = torch.stack([torch.tensor(example["pooled_prompt_embeds"]) for example in examples])
+            batch = {
+                "model_input": model_input,
+                "prompt_embeds": prompt_embeds,
+                "pooled_prompt_embeds": pooled_prompt_embeds,
+                "original_sizes": original_sizes,
+                "crop_top_lefts": crop_top_lefts,
+            }
 
-        batch = {
-            "model_input": model_input,
-            "prompt_embeds": prompt_embeds,
-            "pooled_prompt_embeds": pooled_prompt_embeds,
-            "original_sizes": original_sizes,
-            "crop_top_lefts": crop_top_lefts,
-        }
+            # Preserve metadata/caption fields for preview prompt reconstruction if present.
+            for alias in metadata_aliases:
+                column = metadata_column_map[alias]
+                if column in examples[0]:
+                    batch[alias] = [example.get(column) or "" for example in examples]
+            if args.caption_column and args.caption_column in examples[0]:
+                batch["_caption_texts"] = [example.get(args.caption_column) or "" for example in examples]
 
-        # Preserve metadata/caption fields for preview prompt reconstruction if present.
-        for alias in metadata_aliases:
-            column = metadata_column_map[alias]
-            if column in examples[0]:
-                batch[alias] = [example.get(column) or "" for example in examples]
-        if args.caption_column and args.caption_column in examples[0]:
-            batch["_caption_texts"] = [example.get(args.caption_column) or "" for example in examples]
+            return batch
 
-        return batch
+        dataset_for_loader = precomputed_dataset
+    else:
+        def collate_fn(examples):
+            pixel_values = torch.stack([example["pixel_values"] if isinstance(example["pixel_values"], torch.Tensor) else torch.tensor(example["pixel_values"]) for example in examples])
+            original_sizes = [example["original_sizes"] for example in examples]
+            crop_top_lefts = [example["crop_top_lefts"] for example in examples]
+
+            batch = {
+                "pixel_values": pixel_values,
+                "original_sizes": original_sizes,
+                "crop_top_lefts": crop_top_lefts,
+            }
+
+            for alias in metadata_aliases:
+                column = metadata_column_map[alias]
+                if column in examples[0]:
+                    batch[alias] = [example.get(column) or "" for example in examples]
+            if args.caption_column and args.caption_column in examples[0]:
+                batch["_caption_texts"] = [example.get(args.caption_column) or "" for example in examples]
+
+            return batch
+
+        dataset_for_loader = train_dataset
 
     # DataLoaders creation:
     train_dataloader = torch.utils.data.DataLoader(
-        precomputed_dataset,
+        dataset_for_loader,
         shuffle=True,
         collate_fn=collate_fn,
         batch_size=args.train_batch_size,
@@ -1869,7 +1985,7 @@ def main(args):
     total_batch_size = args.train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
 
     logger.info("***** Running training *****")
-    logger.info(f"  Num examples = {len(precomputed_dataset)}")
+    logger.info(f"  Num examples = {len(dataset_for_loader)}")
     logger.info(f"  Num Epochs = {args.num_train_epochs}")
     logger.info(f"  Instantaneous batch size per device = {args.train_batch_size}")
     logger.info(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}")
@@ -1975,12 +2091,51 @@ def main(args):
         disable=not accelerator.is_local_main_process,
     )
 
+    if not using_precomputed_dataset:
+        def encode_texts_runtime(texts):
+            with torch.no_grad():
+                inputs1 = tokenizer_one(
+                    texts,
+                    padding="max_length",
+                    max_length=tokenizer_one.model_max_length,
+                    truncation=True,
+                    return_tensors="pt",
+                ).input_ids.to(text_encoder_one.device)
+                out1 = text_encoder_one(inputs1, output_hidden_states=True, return_dict=False)
+
+                inputs2 = tokenizer_two(
+                    texts,
+                    padding="max_length",
+                    max_length=tokenizer_two.model_max_length,
+                    truncation=True,
+                    return_tensors="pt",
+                ).input_ids.to(text_encoder_two.device)
+                out2 = text_encoder_two(inputs2, output_hidden_states=True, return_dict=False)
+
+                pooled = out2[0]
+                hid1 = out1[-1][-2]
+                hid2 = out2[-1][-2]
+                bs, seq_len, _ = hid2.shape
+                prompt_embeds = torch.cat([hid1, hid2], dim=-1).view(bs, seq_len, -1)
+
+                return (
+                    prompt_embeds.to(accelerator.device, dtype=weight_dtype),
+                    pooled.to(accelerator.device, dtype=weight_dtype),
+                )
+
     for epoch in range(first_epoch, args.num_train_epochs):
         train_loss = 0.0
         for step, batch in enumerate(train_dataloader):
             with accelerator.accumulate(unet):
                 # Sample noise that we'll add to the latents
-                model_input = batch["model_input"].to(accelerator.device)
+                if using_precomputed_dataset:
+                    model_input = batch["model_input"].to(accelerator.device)
+                else:
+                    pixel_values = batch["pixel_values"].to(memory_format=torch.contiguous_format).float()
+                    pixel_values = pixel_values.to(accelerator.device, dtype=vae.dtype)
+                    with torch.no_grad():
+                        latents = vae.encode(pixel_values).latent_dist.sample()
+                    model_input = (latents * vae.config.scaling_factor).to(weight_dtype)
                 noise = torch.randn_like(model_input)
                 if args.noise_offset:
                     # https://www.crosslabs.org//blog/diffusion-with-offset-noise
@@ -2020,8 +2175,45 @@ def main(args):
 
                 # Predict the noise residual
                 unet_added_conditions = {"time_ids": add_time_ids}
-                prompt_embeds = batch["prompt_embeds"].to(accelerator.device, dtype=weight_dtype)
-                pooled_prompt_embeds = batch["pooled_prompt_embeds"].to(accelerator.device)
+                if using_precomputed_dataset:
+                    prompt_embeds = batch["prompt_embeds"].to(accelerator.device, dtype=weight_dtype)
+                    pooled_prompt_embeds = batch["pooled_prompt_embeds"].to(accelerator.device)
+                else:
+                    bsz = model_input.shape[0]
+                    chosen_prompts = []
+                    if metadata_column_map and "general" in batch:
+                        general_tags = batch.get("general") or []
+                        rating_tags = batch.get("rating") or []
+                        meta_tags = batch.get("meta") or []
+                        year_tags = batch.get("year") or []
+                        character_tags = batch.get("character") or []
+                        artist_tags = batch.get("artist") or []
+                        for i in range(bsz):
+                            variants = generate_variants_with_nl_list(
+                                _split_clean_comma_list(general_tags[i] if i < len(general_tags) else ""),
+                                _split_clean_comma_list(artist_tags[i] if i < len(artist_tags) else ""),
+                                k=1,
+                                token_budget=72,
+                                head_keep=random.choices([10, 12, 14], [0.5, 0.35, 0.15])[0],
+                                max_general_per_variant=random.randint(14, 18),
+                                characters=_split_clean_comma_list(character_tags[i] if i < len(character_tags) else ""),
+                                ratings=_split_clean_comma_list(rating_tags[i] if i < len(rating_tags) else ""),
+                                years=_split_clean_comma_list(year_tags[i] if i < len(year_tags) else ""),
+                                nl_texts=_split_clean_comma_list(meta_tags[i] if i < len(meta_tags) else ""),
+                            )
+                            chosen_prompts.append(variants[0] if variants else "")
+                    else:
+                        captions = batch.get("_caption_texts") or []
+                        for cap in captions:
+                            if isinstance(cap, str):
+                                chosen_prompts.append(cap)
+                            elif isinstance(cap, (list, tuple)) and cap:
+                                chosen_prompts.append(str(cap[0]))
+                            else:
+                                chosen_prompts.append("")
+                    if not chosen_prompts:
+                        chosen_prompts = [""] * bsz
+                    prompt_embeds, pooled_prompt_embeds = encode_texts_runtime(chosen_prompts)
                 unet_added_conditions.update({"text_embeds": pooled_prompt_embeds})
                 model_pred = unet(
                     noisy_model_input,
