@@ -118,6 +118,40 @@ def _build_variants_from_cap_author(caption_tags: str, caption_nl: str, author: 
     return texts, mask, preview_text
 
 
+# ===== Resolution helpers =====
+def _parse_resolution(res_arg):
+    """Parse resolution argument into (height, width)."""
+    if isinstance(res_arg, int):
+        if res_arg <= 0:
+            raise ValueError("Resolution value must be positive")
+        return res_arg, res_arg
+    if isinstance(res_arg, (tuple, list)):
+        if len(res_arg) == 1:
+            return _parse_resolution(int(res_arg[0]))
+        if len(res_arg) == 2:
+            height = int(res_arg[0])
+            width = int(res_arg[1])
+            if height <= 0 or width <= 0:
+                raise ValueError("Resolution dimensions must be positive")
+            return height, width
+        raise ValueError("Resolution must have one or two values")
+
+    res_str = str(res_arg).lower().replace("×", "x").strip()
+    res_str = res_str.replace(",", "x")
+    parts = [p for p in res_str.replace(" ", "x").split("x") if p]
+
+    if len(parts) == 1:
+        return _parse_resolution(int(parts[0]))
+    if len(parts) == 2:
+        width = int(parts[0])
+        height = int(parts[1])
+        if height <= 0 or width <= 0:
+            raise ValueError("Resolution dimensions must be positive")
+        return height, width
+
+    raise ValueError(f"Cannot parse resolution value: {res_arg}")
+
+
 # ===== Latent dataset (index.jsonl + .npz) =====
 class LatentDataset(torch.utils.data.Dataset):
     def __init__(self, data_dir: str):
@@ -305,7 +339,7 @@ def parse_args(input_args=None):
     parser.add_argument(
         "--caption_column",
         type=str,
-        default="text",
+        default=None,
         help="The column of the dataset containing a caption or a list of captions.",
     )
     parser.add_argument(
@@ -359,11 +393,11 @@ def parse_args(input_args=None):
     parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
     parser.add_argument(
         "--resolution",
-        type=int,
-        default=1024,
+        type=str,
+        default="1024",
         help=(
-            "The resolution for input images, all the images in the train/validation dataset will be resized to this"
-            " resolution"
+            "The target resolution for input images. Provide a single integer for square training or"
+            " a WIDTHxHEIGHT pair (e.g. 1024x768) for non-square images."
         ),
     )
     parser.add_argument(
@@ -632,6 +666,16 @@ def parse_args(input_args=None):
     if env_local_rank != -1 and env_local_rank != args.local_rank:
         args.local_rank = env_local_rank
 
+    try:
+        res_height, res_width = _parse_resolution(args.resolution)
+    except ValueError as err:
+        raise ValueError(
+            "`--resolution` must be a positive integer or WIDTHxHEIGHT pair (e.g. 1024x768)."
+        ) from err
+    args.resolution = (res_height, res_width)
+    args.resolution_height = res_height
+    args.resolution_width = res_width
+
     # Sanity checks
     if args.dataset_dir is None and args.dataset_name is None and args.train_data_dir is None:
         raise ValueError("Need either a latent dataset_dir or a dataset name or a training folder.")
@@ -642,12 +686,77 @@ def parse_args(input_args=None):
 
 
 # Adapted from pipelines.StableDiffusionXLPipeline.encode_prompt
-def encode_prompt(batch, text_encoders, tokenizers, proportion_empty_prompts, caption_column, is_train=True):
+def encode_prompt(
+    batch,
+    text_encoders,
+    tokenizers,
+    proportion_empty_prompts,
+    caption_column,
+    metadata_columns=None,
+    is_train=True,
+):
     prompt_embeds_list = []
-    prompt_batch = batch[caption_column]
+    prompt_batch = batch[caption_column] if caption_column is not None and caption_column in batch else None
+
+    metadata_batch = None
+    if metadata_columns is not None:
+        if all(col in batch for col in metadata_columns.values()):
+            metadata_batch = {key: batch[col] for key, col in metadata_columns.items()}
+
+    base_captions = []
+    if metadata_batch is not None:
+        general_values = metadata_batch.get("general", [])
+        if not isinstance(general_values, (list, tuple)):
+            general_values = [general_values]
+        num_samples = len(general_values)
+
+        def _values_for(key):
+            values = metadata_batch.get(key)
+            if values is None:
+                return [""] * num_samples
+            if not isinstance(values, (list, tuple)):
+                return [values] * num_samples
+            if len(values) != num_samples:
+                return list(values) + [""] * max(0, num_samples - len(values))
+            return values
+
+        rating_values = _values_for("rating")
+        meta_values = _values_for("meta")
+        year_values = _values_for("year")
+        character_values = _values_for("character")
+        artist_values = _values_for("artist")
+
+        for idx in range(num_samples):
+            general_tags = _split_clean_comma_list(general_values[idx] or "")
+            artist_tags = _split_clean_comma_list(artist_values[idx] or "")
+            rating_tags = _split_clean_comma_list(rating_values[idx] or "")
+            year_tags = _split_clean_comma_list(year_values[idx] or "")
+            character_tags = _split_clean_comma_list(character_values[idx] or "")
+            meta_tags = _split_clean_comma_list(meta_values[idx] or "")
+            nl_texts = meta_tags if meta_tags else None
+            variants = generate_variants_with_nl_list(
+                general_tags,
+                artist_tags,
+                k=1,
+                token_budget=72,
+                head_keep=14,
+                max_general_per_variant=18,
+                characters=character_tags,
+                ratings=rating_tags,
+                years=year_tags,
+                nl_texts=nl_texts,
+            )
+            base_captions.append(variants[0] if variants else "")
+
+    if not base_captions and prompt_batch is not None:
+        for caption in prompt_batch:
+            base_captions.append(caption)
+
+    if not base_captions:
+        raise ValueError("No captions available for encoding. Provide captions or valid metadata columns.")
 
     captions = []
-    for caption in prompt_batch:
+    for caption in base_captions:
         if random.random() < proportion_empty_prompts:
             captions.append("")
         elif isinstance(caption, str):
@@ -655,6 +764,8 @@ def encode_prompt(batch, text_encoders, tokenizers, proportion_empty_prompts, ca
         elif isinstance(caption, (list, np.ndarray)):
             # take a random caption if there are multiple
             captions.append(random.choice(caption) if is_train else caption[0])
+        else:
+            captions.append(str(caption))
 
     with torch.no_grad():
         for tokenizer, text_encoder in zip(tokenizers, text_encoders):
@@ -1116,8 +1227,18 @@ def main(args):
             # Build added cond kwargs (time_ids + pooled)
             pe, pooled = encode_texts_runtime([prompt])
             add_time_ids = torch.tensor(
-                [[args.resolution, args.resolution, 0, 0, args.resolution, args.resolution]],
-                device=accelerator.device, dtype=weight_dtype
+                [
+                    [
+                        args.resolution_height,
+                        args.resolution_width,
+                        0,
+                        0,
+                        args.resolution_height,
+                        args.resolution_width,
+                    ]
+                ],
+                device=accelerator.device,
+                dtype=weight_dtype,
             )
             add_kw = {"text_embeds": pooled, "time_ids": add_time_ids}
 
@@ -1126,8 +1247,8 @@ def main(args):
                 pooled_prompt_embeds=pooled,
                 num_inference_steps=int(args.preview_steps),
                 guidance_scale=float(args.preview_scale),
-                width=args.resolution,
-                height=args.resolution,
+                width=args.resolution_width,
+                height=args.resolution_height,
                 generator=generator,
                 added_cond_kwargs=add_kw,
             ).images[0]
@@ -1222,8 +1343,18 @@ def main(args):
 
                     # time ids (all 1024 and no crop)
                     add_time_ids = torch.tensor(
-                        [[args.resolution, args.resolution, 0, 0, args.resolution, args.resolution]],
-                        device=accelerator.device, dtype=weight_dtype
+                        [
+                            [
+                                args.resolution_height,
+                                args.resolution_width,
+                                0,
+                                0,
+                                args.resolution_height,
+                                args.resolution_width,
+                            ]
+                        ],
+                        device=accelerator.device,
+                        dtype=weight_dtype,
                     ).repeat(bsz, 1)
 
                     # Build dynamic prompts per-sample
@@ -1396,46 +1527,143 @@ def main(args):
                 args.dataset_name, args.dataset_config_name, cache_dir=args.cache_dir, data_dir=args.train_data_dir
             )
         else:
-            data_files = {}
+            dataset = None
+            index_path = None
             if args.train_data_dir is not None:
-                data_files["train"] = os.path.join(args.train_data_dir, "**")
-            dataset = load_dataset(
-                "imagefolder",
-                data_files=data_files,
-                cache_dir=args.cache_dir,
-            )
-            # See more about loading custom images at
-            # https://huggingface.co/docs/datasets/v2.4.0/en/image_load#imagefolder
+                index_path = os.path.join(args.train_data_dir, "index.jsonl")
+                if os.path.isfile(index_path):
+                    dataset = load_dataset(
+                        "json",
+                        data_files={"train": index_path},
+                        cache_dir=args.cache_dir,
+                    )
+                    # Resolve image paths and filter unusable entries
+                    def _resolve_src(example):
+                        src = example.get("src", "") or ""
+                        if src and not os.path.isabs(src):
+                            src_path = os.path.join(args.train_data_dir, src)
+                        else:
+                            src_path = src
+                        example["_image_path"] = src_path
+                        return example
+
+                    dataset["train"] = dataset["train"].map(_resolve_src)
+
+                    exclude_word_list = [
+                        "no humans",
+                        "chibi",
+                        "character profile",
+                        "lineart",
+                        "sketch",
+                        "monochrome",
+                        "comic",
+                        "text focus",
+                        "1990s",
+                        "1980s",
+                        "retro artstyle",
+                        "abstract",
+                    ]
+
+                    def _filter_index_entry(example):
+                        src_path = example.get("_image_path", "") or ""
+                        if not src_path or not os.path.isfile(src_path):
+                            return False
+                        general = example.get("general", "") or ""
+                        if any(word in general for word in exclude_word_list):
+                            return False
+                        year_tags = example.get("year", "") or ""
+                        years = []
+                        for y in _split_clean_comma_list(year_tags):
+                            if y.startswith("year_") and y[5:].isdigit():
+                                years.append(int(y[5:]))
+                        if years and min(years) < 2000:
+                            return False
+                        return True
+
+                    dataset["train"] = dataset["train"].filter(_filter_index_entry)
+                    if len(dataset["train"]) == 0:
+                        raise RuntimeError(f"No valid samples found in {index_path}")
+
+                    dataset["train"] = dataset["train"].cast_column("_image_path", datasets.Image())
+                    dataset["train"] = dataset["train"].rename_column("_image_path", "image")
+
+            if dataset is None:
+                data_files = {}
+                if args.train_data_dir is not None:
+                    data_files["train"] = os.path.join(args.train_data_dir, "**")
+                dataset = load_dataset(
+                    "imagefolder",
+                    data_files=data_files,
+                    cache_dir=args.cache_dir,
+                )
+                # See more about loading custom images at
+                # https://huggingface.co/docs/datasets/v2.4.0/en/image_load#imagefolder
 
     # Preprocessing the datasets.
     # We need to tokenize inputs and targets.
     column_names = dataset["train"].column_names
 
-    # 6. Get the column names for input/target.
     dataset_columns = DATASET_NAME_MAPPING.get(args.dataset_name, None)
     if args.image_column is None:
-        image_column = dataset_columns[0] if dataset_columns is not None else column_names[0]
+        if dataset_columns is not None:
+            image_column = dataset_columns[0]
+        elif "image" in column_names:
+            image_column = "image"
+        else:
+            image_column = column_names[0]
     else:
         image_column = args.image_column
         if image_column not in column_names:
             raise ValueError(
                 f"--image_column' value '{args.image_column}' needs to be one of: {', '.join(column_names)}"
             )
+    args.image_column = image_column
+
+    metadata_column_map = {
+        "general": "general",
+        "rating": "rating",
+        "meta": "meta",
+        "year": "year",
+        "character": "character",
+        "artist": "artist",
+    }
+    metadata_column_map = {
+        key: value for key, value in metadata_column_map.items() if value in column_names
+    }
+    if "general" not in metadata_column_map:
+        metadata_column_map = None
+
     if args.caption_column is None:
-        caption_column = dataset_columns[1] if dataset_columns is not None else column_names[1]
+        if dataset_columns is not None and len(dataset_columns) > 1:
+            caption_column = dataset_columns[1]
+        elif "text" in column_names:
+            caption_column = "text"
+        elif metadata_column_map and "general" in metadata_column_map:
+            caption_column = metadata_column_map["general"]
+        else:
+            caption_column = None
     else:
         caption_column = args.caption_column
         if caption_column not in column_names:
-            raise ValueError(
-                f"--caption_column' value '{args.caption_column}' needs to be one of: {', '.join(column_names)}"
-            )
+            if metadata_column_map and "general" in metadata_column_map:
+                caption_column = metadata_column_map["general"]
+            else:
+                raise ValueError(
+                    f"--caption_column' value '{args.caption_column}' needs to be one of: {', '.join(column_names)}"
+                )
+
+    if caption_column is None and metadata_column_map is None:
+        raise ValueError("Could not determine a caption column or metadata columns for prompt generation.")
+
+    args.caption_column = caption_column
 
     # Preprocessing the datasets.
     interpolation = getattr(transforms.InterpolationMode, args.image_interpolation_mode.upper(), None)
     if interpolation is None:
         raise ValueError(f"Unsupported interpolation mode {interpolation=}.")
-    train_resize = transforms.Resize(args.resolution, interpolation=interpolation)
-    train_crop = transforms.CenterCrop(args.resolution) if args.center_crop else transforms.RandomCrop(args.resolution)
+    resize_size = (args.resolution_height, args.resolution_width)
+    train_resize = transforms.Resize(resize_size, interpolation=interpolation)
+    train_crop = transforms.CenterCrop(resize_size) if args.center_crop else transforms.RandomCrop(resize_size)
     train_flip = transforms.RandomHorizontalFlip(p=1.0)
     train_transforms = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5], [0.5])])
 
@@ -1452,11 +1680,11 @@ def main(args):
                 # flip
                 image = train_flip(image)
             if args.center_crop:
-                y1 = max(0, int(round((image.height - args.resolution) / 2.0)))
-                x1 = max(0, int(round((image.width - args.resolution) / 2.0)))
+                y1 = max(0, int(round((image.height - args.resolution_height) / 2.0)))
+                x1 = max(0, int(round((image.width - args.resolution_width) / 2.0)))
                 image = train_crop(image)
             else:
-                y1, x1, h, w = train_crop.get_params(image, (args.resolution, args.resolution))
+                y1, x1, h, w = train_crop.get_params(image, resize_size)
                 image = crop(image, y1, x1, h, w)
             crop_top_left = (y1, x1)
             crop_top_lefts.append(crop_top_left)
@@ -1484,6 +1712,7 @@ def main(args):
         tokenizers=tokenizers,
         proportion_empty_prompts=args.proportion_empty_prompts,
         caption_column=args.caption_column,
+        metadata_columns=metadata_column_map,
     )
     compute_vae_encodings_fn = functools.partial(compute_vae_encodings, vae=vae)
     with accelerator.main_process_first():
@@ -1502,8 +1731,12 @@ def main(args):
             batch_size=args.train_batch_size,
             new_fingerprint=new_fingerprint_for_vae,
         )
+        columns_to_remove = [col for col in ["image", "text"] if col in train_dataset_with_vae.column_names]
+        train_dataset_with_vae = (
+            train_dataset_with_vae.remove_columns(columns_to_remove) if columns_to_remove else train_dataset_with_vae
+        )
         precomputed_dataset = concatenate_datasets(
-            [train_dataset_with_embeddings, train_dataset_with_vae.remove_columns(["image", "text"])], axis=1
+            [train_dataset_with_embeddings, train_dataset_with_vae], axis=1
         )
         precomputed_dataset = precomputed_dataset.with_transform(preprocess_train)
 
@@ -1667,7 +1900,7 @@ def main(args):
                 # time ids
                 def compute_time_ids(original_size, crops_coords_top_left):
                     # Adapted from pipeline.StableDiffusionXLPipeline._get_add_time_ids
-                    target_size = (args.resolution, args.resolution)
+                    target_size = (args.resolution_height, args.resolution_width)
                     add_time_ids = list(original_size + crops_coords_top_left + target_size)
                     add_time_ids = torch.tensor([add_time_ids], device=accelerator.device, dtype=weight_dtype)
                     return add_time_ids
