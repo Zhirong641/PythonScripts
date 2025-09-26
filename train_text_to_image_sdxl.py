@@ -60,6 +60,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from prompt_variants import generate_variants_with_nl_list
+from PIL import Image
 
 
 # Will error if the minimal version of diffusers is not installed. Remove at your own risks.
@@ -162,9 +163,9 @@ class LatentDataset(torch.utils.data.Dataset):
         self.items = []
         with open(index_path, "r", encoding="utf-8") as f:
             exclude_word_list = [
-                "no humans", "chibi", "character profile", "lineart", "sketch",
-                "monochrome", "comic", "text focus", "1990s", "1980s",
-                "retro artstyle", "abstract"
+                "no_humans", "chibi", "character_profile", "lineart", "sketch",
+                "monochrome", "comic", "text_focus", "1990s", "1980s",
+                "retro_artstyle", "abstract"
             ]
             for line in f:
                 try:
@@ -739,8 +740,8 @@ def encode_prompt(
                 artist_tags,
                 k=1,
                 token_budget=72,
-                head_keep=14,
-                max_general_per_variant=18,
+                head_keep=random.choices([10,12,14],[0.5,0.35,0.15])[0],
+                max_general_per_variant=random.randint(14, 18),
                 characters=character_tags,
                 ratings=rating_tags,
                 years=year_tags,
@@ -1371,7 +1372,8 @@ def main(args):
                             _split_clean_comma_list(general_tags[i]),
                             _split_clean_comma_list(artist_tags[i]),
                             k=1, token_budget=72,
-                            head_keep=14, max_general_per_variant=18,
+                            head_keep=random.choices([10,12,14],[0.5,0.35,0.15])[0],
+                            max_general_per_variant=random.randint(14, 18),
                             characters=_split_clean_comma_list(character_tags[i]),
                             ratings=_split_clean_comma_list(rating_tags[i]),
                             years=_split_clean_comma_list(year_tags[i])
@@ -1453,7 +1455,8 @@ def main(args):
                                     _split_clean_comma_list(general_tags[0]),
                                     _split_clean_comma_list(artist_tags[0]),
                                     k=5, token_budget=72,
-                                    head_keep=14, max_general_per_variant=18,
+                                    head_keep=random.choices([10,12,14],[0.5,0.35,0.15])[0],
+                                    max_general_per_variant=random.randint(14, 18),
                                     characters=_split_clean_comma_list(character_tags[0]),
                                     ratings=_split_clean_comma_list(rating_tags[0]),
                                     years=_split_clean_comma_list(year_tags[0])
@@ -1550,17 +1553,17 @@ def main(args):
                     dataset["train"] = dataset["train"].map(_resolve_src)
 
                     exclude_word_list = [
-                        "no humans",
+                        "no_humans",
                         "chibi",
-                        "character profile",
+                        "character_profile",
                         "lineart",
                         "sketch",
                         "monochrome",
                         "comic",
-                        "text focus",
+                        "text_focus",
                         "1990s",
                         "1980s",
-                        "retro artstyle",
+                        "retro_artstyle",
                         "abstract",
                     ]
 
@@ -1667,7 +1670,15 @@ def main(args):
     train_transforms = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5], [0.5])])
 
     def preprocess_train(examples):
-        images = [image.convert("RGB") for image in examples[image_column]]
+        processed_images = []
+        for image in examples[image_column]:
+            img = image
+            if img.mode != "RGBA":
+                img = img.convert("RGBA")
+            canvas = Image.new("RGBA", img.size, (255, 255, 255, 255))
+            canvas.alpha_composite(img)
+            processed_images.append(canvas.convert("RGB"))
+        images = processed_images
         # image aug
         original_sizes = []
         all_images = []
@@ -1746,6 +1757,20 @@ def main(args):
         train_dataset_with_vae = (
             train_dataset_with_vae.remove_columns(columns_to_remove) if columns_to_remove else train_dataset_with_vae
         )
+        # Drop duplicate metadata columns from the embeddings dataset so axis=1 concatenation keeps a single copy.
+        shared_columns = set(train_dataset_with_embeddings.column_names).intersection(
+            set(train_dataset_with_vae.column_names)
+        )
+        keep_columns = {"prompt_embeds", "pooled_prompt_embeds"}
+        if args.image_column in train_dataset_with_embeddings.column_names:
+            keep_columns.add(args.image_column)
+        columns_to_remove_from_embeddings = [
+            column for column in shared_columns if column not in keep_columns
+        ]
+        if columns_to_remove_from_embeddings:
+            train_dataset_with_embeddings = train_dataset_with_embeddings.remove_columns(
+                columns_to_remove_from_embeddings
+            )
         precomputed_dataset = concatenate_datasets(
             [train_dataset_with_embeddings, train_dataset_with_vae], axis=1
         )
@@ -1759,6 +1784,8 @@ def main(args):
     elif torch.cuda.is_available():
         torch.cuda.empty_cache()
 
+    metadata_aliases = list(metadata_column_map.keys()) if metadata_column_map else []
+
     def collate_fn(examples):
         model_input = torch.stack([torch.tensor(example["model_input"]) for example in examples])
         original_sizes = [example["original_sizes"] for example in examples]
@@ -1766,13 +1793,23 @@ def main(args):
         prompt_embeds = torch.stack([torch.tensor(example["prompt_embeds"]) for example in examples])
         pooled_prompt_embeds = torch.stack([torch.tensor(example["pooled_prompt_embeds"]) for example in examples])
 
-        return {
+        batch = {
             "model_input": model_input,
             "prompt_embeds": prompt_embeds,
             "pooled_prompt_embeds": pooled_prompt_embeds,
             "original_sizes": original_sizes,
             "crop_top_lefts": crop_top_lefts,
         }
+
+        # Preserve metadata/caption fields for preview prompt reconstruction if present.
+        for alias in metadata_aliases:
+            column = metadata_column_map[alias]
+            if column in examples[0]:
+                batch[alias] = [example.get(column) or "" for example in examples]
+        if args.caption_column and args.caption_column in examples[0]:
+            batch["_caption_texts"] = [example.get(args.caption_column) or "" for example in examples]
+
+        return batch
 
     # DataLoaders creation:
     train_dataloader = torch.utils.data.DataLoader(
@@ -1868,6 +1905,67 @@ def main(args):
 
     else:
         initial_global_step = 0
+
+    preview_pipe = None
+
+    @torch.no_grad()
+    def save_preview(step: int, prompt: str):
+        nonlocal preview_pipe
+        if not prompt:
+            return
+        if preview_pipe is None:
+            vae_local = AutoencoderKL.from_pretrained(
+                vae_path,
+                subfolder="vae" if args.pretrained_vae_model_name_or_path is None else None,
+                revision=args.revision,
+                variant=args.variant,
+                torch_dtype=weight_dtype,
+            )
+            preview_pipe = StableDiffusionXLPipeline.from_pretrained(
+                args.pretrained_model_name_or_path,
+                vae=vae_local,
+                unet=unwrap_model(unet),
+                revision=args.revision,
+                variant=args.variant,
+                torch_dtype=weight_dtype,
+            ).to(accelerator.device)
+            preview_pipe.set_progress_bar_config(disable=True)
+        else:
+            preview_pipe.unet = unwrap_model(unet)
+
+        generator = (
+            torch.Generator(device=accelerator.device).manual_seed(args.preview_seed)
+            if args.preview_seed is not None
+            else None
+        )
+        add_time_ids = torch.tensor(
+            [
+                [
+                    args.resolution_height,
+                    args.resolution_width,
+                    0,
+                    0,
+                    args.resolution_height,
+                    args.resolution_width,
+                ]
+            ],
+            device=accelerator.device,
+            dtype=weight_dtype,
+        )
+
+        result = preview_pipe(
+            prompt=prompt,
+            num_inference_steps=int(args.preview_steps),
+            guidance_scale=float(args.preview_scale),
+            width=args.resolution_width,
+            height=args.resolution_height,
+            generator=generator,
+            added_cond_kwargs={"time_ids": add_time_ids},
+        )
+        image = result.images[0]
+        out_dir = os.path.join(args.output_dir, "preview")
+        os.makedirs(out_dir, exist_ok=True)
+        image.save(os.path.join(out_dir, f"step_{step:08d}.png"))
 
     progress_bar = tqdm(
         range(0, args.max_train_steps),
@@ -1990,6 +2088,55 @@ def main(args):
                 global_step += 1
                 accelerator.log({"train_loss": train_loss}, step=global_step)
                 train_loss = 0.0
+
+                if accelerator.is_main_process and args.preview_save_steps:
+                    if global_step % int(args.preview_save_steps) == 0 or global_step == 1:
+                        preview_prompts: list[str] = []
+                        def _first_str(values):
+                            if not values:
+                                return ""
+                            value = values[0]
+                            if isinstance(value, (list, tuple)):
+                                return ", ".join(str(v) for v in value if v)
+                            return str(value or "")
+
+                        if metadata_column_map and "general" in metadata_column_map:
+                            general_tags = batch.get("general") or []
+                            artist_tags = batch.get("artist") or []
+                            rating_tags = batch.get("rating") or []
+                            year_tags = batch.get("year") or []
+                            character_tags = batch.get("character") or []
+                            meta_tags = batch.get("meta") or []
+                            if general_tags:
+                                preview_prompts = generate_variants_with_nl_list(
+                                    _split_clean_comma_list(_first_str(general_tags)),
+                                    _split_clean_comma_list(_first_str(artist_tags)),
+                                    k=5,
+                                    token_budget=72,
+                                    head_keep=random.choices([10,12,14],[0.5,0.35,0.15])[0],
+                                    max_general_per_variant=random.randint(14, 18),
+                                    characters=_split_clean_comma_list(_first_str(character_tags)),
+                                    ratings=_split_clean_comma_list(_first_str(rating_tags)),
+                                    years=_split_clean_comma_list(_first_str(year_tags)),
+                                    nl_texts=_split_clean_comma_list(_first_str(meta_tags)),
+                                )
+                        if not preview_prompts:
+                            captions = batch.get("_caption_texts") or []
+                            if captions and isinstance(captions[0], str) and captions[0].strip():
+                                preview_prompts = [captions[0].strip()]
+
+                        for idx, preview_prompt in enumerate(preview_prompts):
+                            save_preview(global_step + idx, preview_prompt)
+                            out_dir = os.path.join(args.output_dir, "preview")
+                            try:
+                                with open(
+                                    os.path.join(out_dir, f"prompt-{global_step + idx}.txt"),
+                                    "w",
+                                    encoding="utf-8",
+                                ) as f:
+                                    f.write(preview_prompt)
+                            except Exception:
+                                pass
 
                 # DeepSpeed requires saving weights on every device; saving weights only on the main process would cause issues.
                 if accelerator.distributed_type == DistributedType.DEEPSPEED or accelerator.is_main_process:
