@@ -41,7 +41,7 @@ from datasets import concatenate_datasets, load_dataset
 from huggingface_hub import create_repo, upload_folder
 from packaging import version
 from torchvision import transforms
-from torchvision.transforms.functional import crop
+from torchvision.transforms.functional import crop, resize
 from tqdm.auto import tqdm
 from transformers import AutoTokenizer, PretrainedConfig
 
@@ -1662,7 +1662,6 @@ def main(args):
     if interpolation is None:
         raise ValueError(f"Unsupported interpolation mode {interpolation=}.")
     resize_size = (args.resolution_height, args.resolution_width)
-    train_resize = transforms.Resize(resize_size, interpolation=interpolation)
     train_crop = transforms.CenterCrop(resize_size) if args.center_crop else transforms.RandomCrop(resize_size)
     train_flip = transforms.RandomHorizontalFlip(p=1.0)
     train_transforms = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5], [0.5])])
@@ -1675,7 +1674,19 @@ def main(args):
         crop_top_lefts = []
         for image in images:
             original_sizes.append((image.height, image.width))
-            image = train_resize(image)
+            scale = max(
+                resize_size[0] / image.height,
+                resize_size[1] / image.width,
+            )
+            resized_height = max(resize_size[0], int(math.ceil(image.height * scale)))
+            resized_width = max(resize_size[1], int(math.ceil(image.width * scale)))
+            if resized_height != image.height or resized_width != image.width:
+                image = resize(
+                    image,
+                    [resized_height, resized_width],
+                    interpolation=interpolation,
+                    antialias=True,
+                )
             if args.random_flip and random.random() < 0.5:
                 # flip
                 image = train_flip(image)
