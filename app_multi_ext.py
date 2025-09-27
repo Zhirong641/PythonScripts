@@ -44,6 +44,26 @@ IMG2TEXT_DEVICE = os.getenv("IMG2TEXT_DEVICE", "cpu").strip().lower()  # "cpu" /
 # 1) Model registry (add/remove as needed)
 # ========================
 MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
+    "noobaiXLNAIXL_vPred10Version": {
+        "name": "noobaiXLNAIXL_vPred10Version",
+        "type": "sdxl",
+        "load": {
+            "mode": "singlefile",
+            "filename": "noobaiXLNAIXL_vPred10Version.safetensors"  # Put in current directory or fetch via repo
+        },
+        "presets": {
+            "widths":  [512, 640, 768, 896, 1024, 1152, 1232, 1280],
+            "heights": [512, 640, 768, 896, 1024, 1152, 1232, 1280],
+            "default_w": 1024,
+            "default_h": 1024,
+            "steps": 28,
+            "guidance": 5.5,
+            "default_scheduler": "dpmpp2m",
+        },
+        "scheduler_config": {
+            "prediction_type": "v_prediction",
+        },
+    },
     "illustrious_emberveil": {
         "name": "【illustrious】EmberVeilMix (merge)",
         "type": "sdxl",
@@ -59,6 +79,7 @@ MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
             "default_h": 1024,
             "steps": 28,
             "guidance": 5.5,
+            "default_scheduler": "euler",
         }
     },
     # "sd15_official": {
@@ -148,6 +169,13 @@ def _load_from_cfg(cfg: Dict[str, Any]):
         raise ValueError(f"Unknown model type: {mtype}")
 
     p = p.to(DEVICE)
+
+    sched_cfg_overrides = cfg.get('scheduler_config')
+    if sched_cfg_overrides:
+        base_config = dict(p.scheduler.config)
+        base_config.update(sched_cfg_overrides)
+        p.scheduler = p.scheduler.__class__.from_config(base_config)
+
     try: p.enable_xformers_memory_efficient_attention()
     except Exception: pass
     p.enable_vae_slicing(); p.enable_vae_tiling()
@@ -896,6 +924,13 @@ def generate(model_key: str, prompt: str, neg: Optional[str], steps: int, guidan
     Sched = scheduler_map.get(scheduler, EulerDiscreteScheduler)
     CACHE.pipe.scheduler = Sched.from_config(CACHE.pipe.scheduler.config)
 
+    cfg = MODEL_REGISTRY.get(model_key, {})
+    sched_cfg_overrides = cfg.get('scheduler_config')
+    if sched_cfg_overrides:
+        base_config = dict(CACHE.pipe.scheduler.config)
+        base_config.update(sched_cfg_overrides)
+        CACHE.pipe.scheduler = CACHE.pipe.scheduler.__class__.from_config(base_config)
+
     g = None
     if seed and str(seed).strip() != '':
         g = torch.Generator(device=DEVICE if torch.cuda.is_available() else "cpu").manual_seed(int(seed))
@@ -1111,6 +1146,7 @@ def on_model_change(model_name: str):
         gr.update(choices=p['heights'], value=p['default_h']),
         gr.update(value=p['guidance']),
         gr.update(value=p['steps']),
+        gr.update(value=p.get('default_scheduler', 'euler')),
     )
 
 with gr.Blocks(title='Stable Diffusion Toolkit') as demo:
@@ -1135,7 +1171,11 @@ with gr.Blocks(title='Stable Diffusion Toolkit') as demo:
                 width = gr.Dropdown(choices=MODEL_REGISTRY[DEFAULT_KEY]['presets']['widths'], value=MODEL_REGISTRY[DEFAULT_KEY]['presets']['default_w'], label='Width (px)')
                 height = gr.Dropdown(choices=MODEL_REGISTRY[DEFAULT_KEY]['presets']['heights'], value=MODEL_REGISTRY[DEFAULT_KEY]['presets']['default_h'], label='Height (px)')
             with gr.Row():
-                scheduler = gr.Dropdown(choices=['euler','ddim','dpmpp2m'], value='euler', label='Sampler (scheduler)')
+                scheduler = gr.Dropdown(
+                    choices=['euler','ddim','dpmpp2m'],
+                    value=MODEL_REGISTRY[DEFAULT_KEY]['presets'].get('default_scheduler', 'euler'),
+                    label='Sampler (scheduler)'
+                )
                 seed = gr.Textbox(label='Seed (leave blank for random)', value='')
 
             with gr.Accordion("Auto description settings", open=False):
@@ -1159,7 +1199,7 @@ with gr.Blocks(title='Stable Diffusion Toolkit') as demo:
                     tag_section_components[key] = gr.Markdown(label=title, value="", show_label=False)
                 tag_section_component_list = [tag_section_components[key] for key, _ in TAG_SECTION_ORDER]
 
-            model_sel_name.change(on_model_change, inputs=[model_sel_name], outputs=[width, height, guidance, steps])
+            model_sel_name.change(on_model_change, inputs=[model_sel_name], outputs=[width, height, guidance, steps, scheduler])
 
             # 1) Generate image only
             def _on_generate(model_name, prm, neg_prompt, steps_v, guidance_v, width_v, height_v, scheduler_v, seed_v):
