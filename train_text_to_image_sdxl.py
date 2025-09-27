@@ -1205,8 +1205,8 @@ def main(args):
         lr_scheduler = get_scheduler(
             args.lr_scheduler,
             optimizer=optimizer,
-            num_warmup_steps=args.lr_warmup_steps * args.gradient_accumulation_steps,
-            num_training_steps=args.max_train_steps * args.gradient_accumulation_steps,
+            num_warmup_steps=args.lr_warmup_steps,
+            num_training_steps=args.max_train_steps,
         )
 
         # Prepare modules
@@ -1946,8 +1946,8 @@ def main(args):
     lr_scheduler = get_scheduler(
         args.lr_scheduler,
         optimizer=optimizer,
-        num_warmup_steps=args.lr_warmup_steps * args.gradient_accumulation_steps,
-        num_training_steps=args.max_train_steps * args.gradient_accumulation_steps,
+        num_warmup_steps=args.lr_warmup_steps,
+        num_training_steps=args.max_train_steps,
     )
 
     # Prepare everything with our `accelerator`.
