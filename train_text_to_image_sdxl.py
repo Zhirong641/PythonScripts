@@ -183,7 +183,7 @@ class LatentDataset(torch.utils.data.Dataset):
                         return False
                     if year:
                         years = [int(y.split("_")[1]) for y in _split_clean_comma_list(year) if y.startswith("year_") and y[5:].isdigit()]
-                        if years and min(years) < 2000:
+                        if years and min(years) < 2005:
                             return False
                     return True
                 fp = os.path.join(data_dir, fname)
@@ -1620,7 +1620,7 @@ def main(args):
                     )
                     # Resolve image paths and filter unusable entries
                     def _resolve_src(example):
-                        src = example.get("src", "") or ""
+                        src = example.get("src", "") or example.get("path", "") or ""
                         if src and not os.path.isabs(src):
                             src_path = os.path.join(args.train_data_dir, src)
                         else:
@@ -1657,7 +1657,10 @@ def main(args):
                         for y in _split_clean_comma_list(year_tags):
                             if y.startswith("year_") and y[5:].isdigit():
                                 years.append(int(y[5:]))
-                        if years and min(years) < 2000:
+                        if years and min(years) <= 2005:
+                            return False
+                        meta = example.get("meta", "") or ""
+                        if "lowres" in meta:
                             return False
                         return True
 
@@ -2030,12 +2033,13 @@ def main(args):
         if not prompt:
             return
         if preview_pipe is None:
+            vae_dtype = vae.dtype if hasattr(vae, "dtype") else torch.float32
             vae_local = AutoencoderKL.from_pretrained(
                 vae_path,
                 subfolder="vae" if args.pretrained_vae_model_name_or_path is None else None,
                 revision=args.revision,
                 variant=args.variant,
-                torch_dtype=weight_dtype,
+                torch_dtype=vae_dtype,
             )
             preview_pipe = StableDiffusionXLPipeline.from_pretrained(
                 args.pretrained_model_name_or_path,
@@ -2045,6 +2049,7 @@ def main(args):
                 variant=args.variant,
                 torch_dtype=weight_dtype,
             ).to(accelerator.device)
+            preview_pipe.vae.to(accelerator.device, dtype=vae_dtype)
             preview_pipe.set_progress_bar_config(disable=True)
         else:
             preview_pipe.unet = unwrap_model(unet)

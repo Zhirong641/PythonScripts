@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="search-box">
+  <form method="get" action="{{ url_for('home') }}" id="search-form" autocomplete="off">
+    <label for="q">Enter tags (space or comma separated; supports <code>tag:score</code>, default score = 0.5):</label>
+    <div id="tag-input-wrapper">
+      <input type="text" id="q" name="q" value="{{ q|e }}" placeholder="e.g. 1girl large_breasts:0.8 brown_hair">
+      <div id="suggestions" class="suggestions hidden"></div>
+    </div>
+    <div class="form-row">
+      <label>Per page:</label>
+      <input type="number" min="12" max="200" step="12" name="per_page" value="{{ request.args.get('per_page', 60) }}">
+      <button type="submit">Search</button>
+    </div>
+    <p class="hint">Tip: autocomplete only applies to the last token. Multi-tag search is AND (all tags must meet their thresholds).</p>
+  </form>
+</section>
+
+{% if results %}
+<section class="results">
+  <div class="grid">
+    {% for it in results %}
+    <a class="card" href="{{ it.detail_url }}" title="{{ it.tooltip|replace('\n','&#10;')|safe }}">
+      <img loading="lazy" src="{{ it.thumb_url }}" alt="preview">
+    </a>
+    {% endfor %}
+  </div>
+
+  <div class="pagination">
+    {% if page > 1 %}
+      <a href="{{ url_for('home', q=q, page=page-1, per_page=request.args.get('per_page', 60)) }}">&laquo; Prev</a>
+    {% else %}
+      <span class="disabled">&laquo; Prev</span>
+    {% endif %}
+
+    <span>Page {{ page }} / {{ total_pages }} ({{ total }} images)</span>
+
+    {% if page < total_pages %}
+      <a href="{{ url_for('home', q=q, page=page+1, per_page=request.args.get('per_page', 60)) }}">Next &raquo;</a>
+    {% else %}
+      <span class="disabled">Next &raquo;</span>
+    {% endif %}
+
+    {% if total_pages > 1 %}
+    <form method="get" action="{{ url_for('home') }}" style="display:inline-flex; gap:8px; align-items:center;">
+      <input type="hidden" name="q" value="{{ q }}">
+      <input type="hidden" name="per_page" value="{{ request.args.get('per_page', 60) }}">
+      <label for="goto_page">Go to</label>
+      <input id="goto_page" name="page" type="number" min="1" max="{{ total_pages }}" value="{{ page }}" style="width:90px;">
+      <span>/ {{ total_pages }}</span>
+      <button type="submit">Go</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% elif q %}
+  <p>No results for “{{ q|e }}”.</p>
+{% endif %}
+{% endblock %}

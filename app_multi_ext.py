@@ -1,6 +1,7 @@
 # app_multi_ext.py
 # -*- coding: utf-8 -*-
-import os, json, csv, torch, gradio as gr
+import os, json, csv, gc, torch, gradio as gr
+from collections import OrderedDict
 from functools import lru_cache
 from typing import Optional, Dict, Any, List, Tuple
 from dataclasses import dataclass
@@ -34,6 +35,11 @@ except Exception:
     Blip2ForConditionalGeneration = None
     CLIPTokenizer = None
 
+try:
+    import psutil  # optional, used for memory-aware caching of SD pipelines
+except Exception:
+    psutil = None
+
 DTYPE = torch.float16 if torch.cuda.is_available() else torch.float32
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -57,7 +63,7 @@ MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
             "default_w": 1024,
             "default_h": 1024,
             "steps": 28,
-            "guidance": 5.5,
+            "guidance": 4.8,
             "default_scheduler": "dpmpp2m",
         },
         "scheduler_config": {
@@ -125,20 +131,109 @@ class PipeCache:
     model_key: Optional[str] = None
 CACHE = PipeCache()
 
+# Allow keeping recently used pipelines in memory to avoid repeated disk loads.
+def _env_int(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
+def _env_float(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
+
+
+PIPE_CACHE_LIMIT = max(0, _env_int("SD_PIPE_CACHE_LIMIT", 2))
+PIPE_CACHE_MODE = os.getenv("SD_PIPE_CACHE_MODE", "cpu").strip().lower()
+if PIPE_CACHE_MODE not in {"cpu", "gpu", "off"}:
+    PIPE_CACHE_MODE = "cpu"
+if PIPE_CACHE_MODE == "gpu" and not torch.cuda.is_available():
+    PIPE_CACHE_MODE = "cpu"
+PIPE_CACHE_DEBUG = os.getenv("SD_PIPE_CACHE_DEBUG", "0") in {"1", "true", "True"}
+PIPE_CACHE_MIN_FREE_GB = max(0.0, _env_float("SD_PIPE_CACHE_MIN_FREE_GB", 1.5))
+PIPE_STASH: "OrderedDict[str, object]" = OrderedDict()
+
 scheduler_map = {
     'euler': EulerDiscreteScheduler,
     'ddim': DDIMScheduler,
     'dpmpp2m': DPMSolverMultistepScheduler,
 }
 
+def _release_pipe(pipe: Optional[object], *, move_to_cpu: bool = True):
+    if pipe is None:
+        return
+    if move_to_cpu:
+        try:
+            pipe.to('cpu', torch_dtype=torch.float32)
+        except Exception:
+            pass
+    # help python drop remaining references promptly
+    del pipe
+    gc.collect()
+
+
+def _maybe_evict_for_memory():
+    if psutil is None or PIPE_CACHE_MIN_FREE_GB <= 0.0:
+        return
+    try:
+        available_gb = psutil.virtual_memory().available / (1024 ** 3)
+    except Exception:
+        return
+    while PIPE_STASH and available_gb < PIPE_CACHE_MIN_FREE_GB:
+        key, old_pipe = PIPE_STASH.popitem(last=False)
+        if PIPE_CACHE_DEBUG:
+            print(f"[PIPE CACHE] low RAM – evict {key} (available {available_gb:.2f} GiB)")
+        _release_pipe(old_pipe, move_to_cpu=(PIPE_CACHE_MODE != "gpu"))
+        try:
+            available_gb = psutil.virtual_memory().available / (1024 ** 3)
+        except Exception:
+            break
+
+
 def _free_pipe():
-    if CACHE.pipe is not None:
-        try: CACHE.pipe.to('cpu')
-        except Exception: pass
-        del CACHE.pipe
-        CACHE.pipe = None
-    if torch.cuda.is_available():
+    if CACHE.pipe is None:
+        return
+
+    model_key = CACHE.model_key
+    pipe = CACHE.pipe
+
+    if PIPE_CACHE_MODE == "off" or PIPE_CACHE_LIMIT <= 0 or model_key is None:
+        _release_pipe(pipe, move_to_cpu=(PIPE_CACHE_MODE != "gpu"))
+    else:
+        if PIPE_CACHE_MODE == "cpu":
+            try:
+                pipe.to('cpu', torch_dtype=torch.float32)
+            except Exception:
+                pass
+        if PIPE_CACHE_DEBUG:
+            print(f"[PIPE CACHE] stash {model_key} (mode={PIPE_CACHE_MODE})")
+        if model_key in PIPE_STASH:
+            _release_pipe(PIPE_STASH.pop(model_key), move_to_cpu=(PIPE_CACHE_MODE != "gpu"))
+        _maybe_evict_for_memory()
+        PIPE_STASH[model_key] = pipe
+        PIPE_STASH.move_to_end(model_key, last=True)
+        if PIPE_CACHE_DEBUG:
+            print(f"[PIPE CACHE] stash set {model_key} (size={len(PIPE_STASH)})")
+        while len(PIPE_STASH) > PIPE_CACHE_LIMIT:
+            _, old_pipe = PIPE_STASH.popitem(last=False)
+            _release_pipe(old_pipe, move_to_cpu=(PIPE_CACHE_MODE != "gpu"))
+            if PIPE_CACHE_DEBUG:
+                print(f"[PIPE CACHE] evicted oldest pipeline (size={len(PIPE_STASH)})")
+
+    CACHE.pipe = None
+    CACHE.model_key = None
+    if torch.cuda.is_available() and PIPE_CACHE_MODE != "gpu":
         torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
 
 def _load_from_cfg(cfg: Dict[str, Any]):
     mtype = cfg['type']
@@ -168,7 +263,10 @@ def _load_from_cfg(cfg: Dict[str, Any]):
     else:
         raise ValueError(f"Unknown model type: {mtype}")
 
-    p = p.to(DEVICE)
+    try:
+        p = p.to(DEVICE, torch_dtype=DTYPE)
+    except Exception:
+        p = p.to(DEVICE)
 
     sched_cfg_overrides = cfg.get('scheduler_config')
     if sched_cfg_overrides:
@@ -185,8 +283,23 @@ def ensure_pipe(model_key: str):
     if CACHE.pipe is not None and CACHE.model_key == model_key:
         return
     _free_pipe()
-    cfg = MODEL_REGISTRY[model_key]
-    CACHE.pipe = _load_from_cfg(cfg)
+    reused = PIPE_STASH.pop(model_key, None)
+    if reused is not None:
+        if PIPE_CACHE_MODE == "cpu":
+            try:
+                reused = reused.to(DEVICE, torch_dtype=DTYPE)
+            except Exception:
+                reused = reused.to(DEVICE)
+        pipe = reused
+        if PIPE_CACHE_DEBUG:
+            print(f"[PIPE CACHE] reuse pipeline {model_key}")
+    else:
+        cfg = MODEL_REGISTRY[model_key]
+        pipe = _load_from_cfg(cfg)
+        if PIPE_CACHE_DEBUG:
+            print(f"[PIPE CACHE] load pipeline {model_key} from config")
+
+    CACHE.pipe = pipe
     CACHE.model_key = model_key
 
 # ==================================
@@ -1371,6 +1484,10 @@ if __name__ == '__main__':
         _ensure_blip2()
     except Exception as e:
         print(f"[BLIP2] Preload failed (will delay to first call): {e}")
+    try:
+        _ensure_camie_tagger()
+    except Exception as e:
+        print(f"[CAMIE] Preload failed (will delay to first call): {e}")
 
     launch_kwargs = dict(server_name='0.0.0.0', server_port=7860, share=False)
     favicon_candidate = os.getenv("GRADIO_FAVICON_PATH", "")

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="detail">
+  <div class="detail-img">
+    <img src="{{ img_url }}" alt="image">
+  </div>
+
+  <div class="detail-meta">
+    <h2>Tags (EN / JA / Score)</h2>
+    <table class="tags-table">
+      <thead>
+        <tr><th>Group</th><th>Tag</th><th>Japanese</th><th>Score</th></tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ r.group }}</td>
+          <td>{{ r.tag }}</td>
+          <td>{{ r.ja or "" }}</td>
+          <td>{{ "%.4f"|format(r.score) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="path">Path: {{ path }}</p>
+    <p><a href="{{ url_for('home') }}">Back to search</a></p>
+  </div>
+</section>
+{% endblock %}
