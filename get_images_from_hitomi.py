@@ -14,7 +14,7 @@ from datetime import datetime
 from CSVProcessor import CSVProcessor
 # base_url = "https://hitomi.la/group/unisonshift-all.html"
 base_urls = [
-    "https://hitomi.la/group/cube-all.html"
+    
 ]
 allowded_type_list = ["Game CG", "Image Set"]
 
@@ -166,22 +166,24 @@ for base_url in base_urls:
                         log.flush()
                     # if img_index > 2:
                     #     break
-                    response = requests.get(img_url, headers=headers)  # 添加请求头
-                    if response.status_code == 200:
-                        img_extension = img_url.split('.')[-1]  # 获取图片的扩展名，例如 'webp'
-                        img_name = f"image_{img_index}.{img_extension}"
-                        # if os.path.exists(f"webp/{game_id}/{img_name}"):
-                        #     print(f"Image {img_name} exists")
-                        #     continue
-                        with open(f"webp/{game_id}/{img_name}", 'wb') as handler:
-                            handler.write(response.content)
-                        csv_writer.writerow([base_url, title, link, type, game_id, img_index])
-                        # print(f"Image {img_index} downloaded: {img_url}")
-                    else:
-                        print(f"Failed to download Image {img_index}: {img_url} - HTTP Status: {response.status_code}")
-                        log.write(f"[WARN] Failed to download Image: {img_page}: {img_url} - HTTP Status: {response.status_code}\n")
-                        log.flush()
-                        continue
+                    for retry_count in range(4):
+                        response = requests.get(img_url, headers=headers)
+                        if response.status_code == 200:
+                            img_extension = img_url.split('.')[-1]  # 获取图片的扩展名，例如 'webp'
+                            img_name = f"image_{img_index}.{img_extension}"
+                            # if os.path.exists(f"webp/{game_id}/{img_name}"):
+                            #     print(f"Image {img_name} exists")
+                            #     continue
+                            with open(f"webp/{game_id}/{img_name}", 'wb') as handler:
+                                handler.write(response.content)
+                            csv_writer.writerow([base_url, title, link, type, game_id, img_index])
+                            # print(f"Image {img_index} downloaded: {img_url}")
+                            break
+                        else:
+                            print(f"Failed to download Image {img_index}: {title_base_url} - HTTP Status: {response.status_code}, retrying {retry_count+1}/4")
+                            log.write(f"[WARN] Failed to download Image {img_index}: {title_base_url} - HTTP Status: {response.status_code}, retrying {retry_count+1}/4\n")
+                            log.flush()
+                            time.sleep(1)
             else:
                 print(f"[WARN] No game ID found in link: {link}")
                 log.write(f"[WARN] No game ID found in link: {link}\n")
