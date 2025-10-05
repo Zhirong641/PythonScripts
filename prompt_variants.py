@@ -258,6 +258,27 @@ _URINATION_PATTERN = re.compile(
     r")\b"
 )
 
+_SEX_ACT_PATTERN = re.compile(
+    r"\b(" +
+    r"|".join([
+        r"sex", r"sexual\s+intercourse", r"having\s+sex",
+        r"group(?:\s+|[-_])sex", r"gangbangs?", r"gang(?:\s+|[-_])bangs?",
+    ]) +
+    r")\b"
+)
+
+_CENSORING_PATTERN = re.compile(
+    r"\b(" +
+    r"|".join([
+        r"censored", r"uncensored",
+        r"mosaic\s+censor(?:ing|ship)?", r"mosaic\s+censored",
+        r"pixelated\s+censor(?:ing|ship)?",
+        r"bar\s+censor(?:ing|ship)?", r"beam\s+censor(?:ing|ship)?",
+        r"light\s+censor(?:ing|ship)?",
+    ]) +
+    r")\b"
+)
+
 _PANTIES_PATTERN = re.compile(r"\b(panties|panty)\b")
 
 _BRA_PATTERN = re.compile(
@@ -379,6 +400,10 @@ _PATTERNS = [
     ("person_count_generic", lambda t: bool(_PERSON_COUNT_GENERIC_PATTERN.search(t))),
     # 排尿相关（pee/peeing/urination 等）：仅 1 个
     ("urination",    lambda t: bool(_URINATION_PATTERN.search(t))),
+    # 性行为相关（sex/gangbang/group sex 等）：仅 1 个
+    ("sex_act",     lambda t: bool(_SEX_ACT_PATTERN.search(t))),
+    # 打码情况（censored/mosaic censoring 等）：仅 1 个
+    ("censoring",    lambda t: bool(_CENSORING_PATTERN.search(t))),
     # 内裤相关（panties/side-tie panties 等）：仅 1 个
     ("panties",      lambda t: bool(_PANTIES_PATTERN.search(t))),
     # 胸罩相关（bra/brassiere/sports bra 等）：仅 1 个

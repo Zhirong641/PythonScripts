@@ -50,26 +50,23 @@ IMG2TEXT_DEVICE = os.getenv("IMG2TEXT_DEVICE", "cpu").strip().lower()  # "cpu" /
 # 1) Model registry (add/remove as needed)
 # ========================
 MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
-    "noobaiXLNAIXL_vPred10Version": {
-        "name": "noobaiXLNAIXL_vPred10Version",
-        "type": "sdxl",
-        "load": {
-            "mode": "singlefile",
-            "filename": "noobaiXLNAIXL_vPred10Version.safetensors"  # Put in current directory or fetch via repo
-        },
-        "presets": {
-            "widths":  [512, 640, 768, 896, 1024, 1152, 1232, 1280],
-            "heights": [512, 640, 768, 896, 1024, 1152, 1232, 1280],
-            "default_w": 1024,
-            "default_h": 1024,
-            "steps": 28,
-            "guidance": 4.8,
-            "default_scheduler": "dpmpp2m",
-        },
-        "scheduler_config": {
-            "prediction_type": "v_prediction",
-        },
-    },
+    # "Yunagi-SDXL": {
+    #     "name": "Yunagi-SDXL",
+    #     "type": "sdxl",
+    #     "load": {
+    #         "mode": "local",
+    #         "path": "/mnt/shared/model/yunagi-SDXL"  # Put in current directory or fetch via repo
+    #     },
+    #     "presets": {
+    #         "widths":  [512, 648, 768, 896, 1024, 1152, 1232, 1280],
+    #         "heights": [512, 648, 768, 896, 1024, 1152, 1232, 1280],
+    #         "default_w": 1152,
+    #         "default_h": 648,
+    #         "steps": 28,
+    #         "guidance": 5.5,
+    #         "default_scheduler": "euler",
+    #     },
+    # },
     "illustrious_emberveil": {
         "name": "【illustrious】EmberVeilMix (merge)",
         "type": "sdxl",
@@ -79,8 +76,8 @@ MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
             # "repo": "YourOrg/IllustriousEmberveilmix_v10",
         },
         "presets": {
-            "widths":  [512, 640, 768, 896, 1024, 1152, 1232, 1280],
-            "heights": [512, 640, 768, 896, 1024, 1152, 1232, 1280],
+            "widths":  [512, 648, 720, 768, 896, 1024, 1152, 1232, 1280],
+            "heights": [512, 648, 720, 768, 896, 1024, 1152, 1232, 1280],
             "default_w": 1024,
             "default_h": 1024,
             "steps": 28,
@@ -88,6 +85,26 @@ MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
             "default_scheduler": "euler",
         }
     },
+    # "noobaiXLNAIXL_vPred10Version": {
+    #     "name": "noobaiXLNAIXL_vPred10Version",
+    #     "type": "sdxl",
+    #     "load": {
+    #         "mode": "singlefile",
+    #         "filename": "noobaiXLNAIXL_vPred10Version.safetensors"  # Put in current directory or fetch via repo
+    #     },
+    #     "presets": {
+    #         "widths":  [512, 648, 720, 768, 896, 1024, 1152, 1232, 1280],
+    #         "heights": [512, 648, 720, 768, 896, 1024, 1152, 1232, 1280],
+    #         "default_w": 1024,
+    #         "default_h": 1024,
+    #         "steps": 28,
+    #         "guidance": 4.8,
+    #         "default_scheduler": "dpmpp2m",
+    #     },
+    #     "scheduler_config": {
+    #         "prediction_type": "v_prediction",
+    #     },
+    # },
     # "sd15_official": {
     #     "name": "SD15 Official (runwayml/stable-diffusion-v1-5)",
     #     "type": "sd15",
