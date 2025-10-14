@@ -1645,6 +1645,12 @@ def main(args):
                         "abstract",
                     ]
 
+                    exclude_artist_list = [
+                        "marushin",
+                        "m and m",
+                        "mikan",
+                    ]
+
                     def _filter_index_entry(example):
                         src_path = example.get("_image_path", "") or ""
                         if not src_path or not os.path.isfile(src_path):
@@ -1661,6 +1667,10 @@ def main(args):
                             return False
                         meta = example.get("meta", "") or ""
                         if "lowres" in meta:
+                            return False
+                        artist = example.get("artist", "") or ""
+                        artists = _split_clean_comma_list(artist)
+                        if any(ex_artist in artists for ex_artist in exclude_artist_list):
                             return False
                         return True
 
