@@ -818,9 +818,9 @@ def encode_prompt(
                 general_tags,
                 artist_tags,
                 k=1,
-                token_budget=72,
-                head_keep=random.choices([10,12,14],[0.5,0.35,0.15])[0],
-                max_general_per_variant=random.randint(14, 18),
+                token_budget=150,
+                head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
+                max_general_per_variant=40,
                 characters=character_tags,
                 ratings=rating_tags,
                 years=year_tags,
@@ -1426,9 +1426,9 @@ def main(args):
                         text = generate_variants_with_nl_list(
                             _split_clean_comma_list(general_tags[i]),
                             _split_clean_comma_list(artist_tags[i]),
-                            k=1, token_budget=72,
-                            head_keep=random.choices([10,12,14],[0.5,0.35,0.15])[0],
-                            max_general_per_variant=random.randint(14, 18),
+                            k=1, token_budget=150,
+                            head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
+                            max_general_per_variant=40,
                             characters=_split_clean_comma_list(character_tags[i]),
                             ratings=_split_clean_comma_list(rating_tags[i]),
                             years=_split_clean_comma_list(year_tags[i])
@@ -1509,9 +1509,9 @@ def main(args):
                                 prev_prompts = generate_variants_with_nl_list(
                                     _split_clean_comma_list(general_tags[0]),
                                     _split_clean_comma_list(artist_tags[0]),
-                                    k=5, token_budget=72,
-                                    head_keep=random.choices([10,12,14],[0.5,0.35,0.15])[0],
-                                    max_general_per_variant=random.randint(14, 18),
+                                    k=5, token_budget=150,
+                                    head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
+                                    max_general_per_variant=40,
                                     characters=_split_clean_comma_list(character_tags[0]),
                                     ratings=_split_clean_comma_list(rating_tags[0]),
                                     years=_split_clean_comma_list(year_tags[0])
@@ -1628,6 +1628,8 @@ def main(args):
                         "mikan",
                     ]
 
+                    rng = random.Random(args.seed if args.seed is not None else 42)
+
                     def _filter_index_entry(example):
                         src_path = example.get("_image_path", "") or ""
                         if not src_path or not os.path.isfile(src_path):
@@ -1649,6 +1651,9 @@ def main(args):
                         artists = _split_clean_comma_list(artist)
                         if any(a in artists for a in exclude_artist_list):
                             return False
+                        if "mizunezumi" in artists:
+                            if rng.random() < 0.9:
+                                return False
                         return True
 
                     dataset["train"] = dataset["train"].filter(_filter_index_entry)
@@ -2164,9 +2169,9 @@ def main(args):
                                 _split_clean_comma_list(general_tags[i] if i < len(general_tags) else ""),
                                 _split_clean_comma_list(artist_tags[i] if i < len(artist_tags) else ""),
                                 k=1,
-                                token_budget=72,
+                                token_budget=150,
                                 head_keep=random.choices([10, 12, 14], [0.5, 0.35, 0.15])[0],
-                                max_general_per_variant=random.randint(14, 18),
+                                max_general_per_variant=40,
                                 characters=_split_clean_comma_list(character_tags[i] if i < len(character_tags) else ""),
                                 ratings=_split_clean_comma_list(rating_tags[i] if i < len(rating_tags) else ""),
                                 years=_split_clean_comma_list(year_tags[i] if i < len(year_tags) else ""),
@@ -2275,9 +2280,9 @@ def main(args):
                                     _split_clean_comma_list(_first_str(general_tags)),
                                     _split_clean_comma_list(_first_str(artist_tags)),
                                     k=5,
-                                    token_budget=72,
-                                    head_keep=random.choices([10,12,14],[0.5,0.35,0.15])[0],
-                                    max_general_per_variant=random.randint(14, 18),
+                                    token_budget=150,
+                                    head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
+                                    max_general_per_variant=40,
                                     characters=_split_clean_comma_list(_first_str(character_tags)),
                                     ratings=_split_clean_comma_list(_first_str(rating_tags)),
                                     years=_split_clean_comma_list(_first_str(year_tags)),

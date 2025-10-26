@@ -37,8 +37,8 @@ import argparse, csv, io, json, os, re, sys
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 # ====== 每类默认阈值（可被 --thresh 覆盖）======
 CATEGORY_DEFAULT_THRESH = {
-    "rating": 0.6,
-    "character": 0.76,
+    "rating": 0.65,
+    "character": 0.77,
 }
 
 # ========== 通用解析 ==========
@@ -228,13 +228,13 @@ def find_artist_for_record(artist_pairs: List[Tuple[str, float]],
         for danbooru_name, _score in artist_pairs:
             for hitomi_name in artists_csv_list:
                 if same_artist(hitomi_name, danbooru_name):
-                    return [danbooru_name]
+                    return [hitomi_name]
         if len(artist_pairs) == 1:
             # 仅有一项时，若同名失败，则不再尝试第二条规则，直接回退到 CSV
             return list(artists_csv_list)
 
-    # 2) 顶项 > 0.8
-    if artist_pairs and artist_pairs[0][1] > 0.8:
+    # 2) 顶项 > 0.85
+    if artist_pairs and artist_pairs[0][1] > 0.85:
         return [artist_pairs[0][0]]
 
     # 3) 回退到 CSV

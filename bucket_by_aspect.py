@@ -69,7 +69,7 @@ BIN_RANGES = [
 def parse_args():
     ap = argparse.ArgumentParser(description="按图片宽高比分桶并输出每桶 JSONL")
     ap.add_argument("jsonl", help="输入 JSONL 文件路径（每行一个 JSON 对象，包含 'src' 键）")
-    ap.add_argument("--outdir", default="buckets", help="桶文件输出目录（默认：buckets）")
+    ap.add_argument("--outdir", default="buckets_aspect", help="桶文件输出目录（默认：buckets）")
     ap.add_argument("--mode", choices=["gcd", "nearest", "bin"], default="gcd",
                     help="分桶模式：gcd=精确比例；nearest=就近常见比例；bin=范围分箱")
     ap.add_argument("--tolerance", type=float, default=0.015,

@@ -297,9 +297,14 @@ def _artist_phrase(artists: List[str]) -> str:
     if not artists:
         return ""
     a = _normalize(random.choice(artists))
-    if len(artists) > 1 and random.random() < 0.25:
-        a = [_normalize(a) for a in random.sample(artists, 2)]
-        return f"by {a[0]} and {a[1]}"
+    artist_len = len(artists)
+    rnd = random.random()
+    if artist_len > 1 and rnd < 0.5:
+        if artist_len >= 3 and rnd < 0.2:
+            selected = [_normalize(artist) for artist in random.sample(artists, 3)]
+            return f"by {selected[0]}, {selected[1]}, and {selected[2]}"
+        selected = [_normalize(artist) for artist in random.sample(artists, 2)]
+        return f"by {selected[0]} and {selected[1]}"
     return f"by {a}"
 
 def _rating_phrase(ratings: List[str], max_ratings: int = 1) -> str:

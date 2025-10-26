@@ -96,16 +96,46 @@ def get_compel_for_sdxl(
         providers = getattr(compel_obj.conditioning_provider, "embedding_providers", None)
         dtype = getattr(first_encoder, "dtype", torch.float32)
         if providers:
-            empty_parts = [provider.empty_z.to(device=compel_device, dtype=dtype) for provider in providers]
+            empty_parts = []
+            for provider in providers:
+                if hasattr(provider, "empty_z"):
+                    part = provider.empty_z
+                else:
+                    part = provider.get_embeddings_for_weighted_prompt_fragments(
+                        [[""]],
+                        [[1.0]],
+                        should_return_tokens=False,
+                        device=compel_device,
+                    )
+                empty_parts.append(part.to(device=compel_device, dtype=dtype))
             empty_conditioning = torch.cat(empty_parts, dim=-1)
         else:
-            empty_conditioning = compel_obj.conditioning_provider.empty_z.to(device=compel_device, dtype=dtype)
+            provider = compel_obj.conditioning_provider
+            empty_source = getattr(provider, "empty_z", None)
+            if empty_source is None:
+                empty_source = provider.get_embeddings_for_weighted_prompt_fragments(
+                    [[""]],
+                    [[1.0]],
+                    should_return_tokens=False,
+                    device=compel_device,
+                )
+            empty_conditioning = empty_source.to(device=compel_device, dtype=dtype)
 
         _COMPEL_CACHE[key] = (compel_obj, empty_conditioning)
 
     target_device = text_encoders[0].device if device is None else device
     target_dtype = getattr(text_encoders[0], "dtype", torch.float32)
     empty_conditioning = empty_conditioning.to(device=target_device, dtype=target_dtype)
+
+    conditioning_provider = compel_obj.conditioning_provider
+    try:
+        conditioning_provider.empty_z = empty_conditioning
+    except AttributeError:
+        if hasattr(conditioning_provider, "__dict__"):
+            conditioning_provider.__dict__["empty_z"] = empty_conditioning
+        else:
+            object.__setattr__(conditioning_provider, "empty_z", empty_conditioning)
+
     return compel_obj, empty_conditioning
 
 
