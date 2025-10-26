@@ -8,6 +8,7 @@ from pathlib import Path
 
 import torch
 from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline
+from compel_sdxl_utils import get_compel_for_sdxl
 
 try:
     from safetensors import safe_open  # type: ignore
@@ -253,9 +254,33 @@ def run_generate(repo_out: str, args):
     if args.negative_prompt:
         print(f"[gen] neg   : {args.negative_prompt}")
 
+    # =========================
+    # 【新增】长提示分块+拼接（SDXL 双编码器）
+    # =========================
+    compel, empty_conditioning = get_compel_for_sdxl(
+        [pipe.tokenizer, pipe.tokenizer_2],
+        [pipe.text_encoder, pipe.text_encoder_2],
+        device=device,
+    )
+
+    # 正向
+    prompt_embeds, pooled_prompt_embeds = compel(args.prompt)
+    # 负向（若无，则用空串得到对齐形状）
+    neg_text = args.negative_prompt if args.negative_prompt is not None else ""
+    negative_prompt_embeds, negative_pooled_prompt_embeds = compel(neg_text)
+    (
+        prompt_embeds,
+        negative_prompt_embeds,
+    ) = compel.pad_conditioning_tensors_to_same_length(
+        [prompt_embeds, negative_prompt_embeds], precomputed_padding=empty_conditioning
+    )
+
+    # ========== 用嵌入调用 ==========
     out = pipe(
-        prompt=args.prompt,
-        negative_prompt=args.negative_prompt,
+        prompt_embeds=prompt_embeds,
+        pooled_prompt_embeds=pooled_prompt_embeds,
+        negative_prompt_embeds=negative_prompt_embeds,
+        negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
         num_inference_steps=args.steps,
         guidance_scale=args.cfg,
         width=w,
@@ -263,6 +288,7 @@ def run_generate(repo_out: str, args):
         num_images_per_prompt=args.num_images,
         generator=g,
     )
+    # =========================
     images = out.images
 
     ts = time.strftime("%Y%m%d_%H%M%S")

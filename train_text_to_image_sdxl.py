@@ -53,6 +53,7 @@ from diffusers.utils import check_min_version, is_wandb_available
 from diffusers.utils.hub_utils import load_or_create_model_card, populate_model_card
 from diffusers.utils.import_utils import is_torch_npu_available, is_xformers_available
 from diffusers.utils.torch_utils import is_compiled_module
+from compel_sdxl_utils import get_compel_for_sdxl
 
 # plotting (offscreen)
 import csv as _pycsv
@@ -775,7 +776,6 @@ def encode_prompt(
     metadata_columns=None,
     is_train=True,
 ):
-    prompt_embeds_list = []
     prompt_batch = batch[caption_column] if caption_column is not None and caption_column in batch else None
 
     metadata_batch = None
@@ -847,32 +847,19 @@ def encode_prompt(
         else:
             captions.append(str(caption))
 
+    device = text_encoders[0].device
+    compel_obj, _ = get_compel_for_sdxl(tokenizers, text_encoders, device)
+
     with torch.no_grad():
-        for tokenizer, text_encoder in zip(tokenizers, text_encoders):
-            text_inputs = tokenizer(
-                captions,
-                padding="max_length",
-                max_length=tokenizer.model_max_length,
-                truncation=True,
-                return_tensors="pt",
-            )
-            text_input_ids = text_inputs.input_ids
-            prompt_embeds = text_encoder(
-                text_input_ids.to(text_encoder.device),
-                output_hidden_states=True,
-                return_dict=False,
-            )
+        prompt_embeds, pooled_prompt_embeds = compel_obj(captions)
 
-            # We are only ALWAYS interested in the pooled output of the final text encoder
-            pooled_prompt_embeds = prompt_embeds[0]
-            prompt_embeds = prompt_embeds[-1][-2]
-            bs_embed, seq_len, _ = prompt_embeds.shape
-            prompt_embeds = prompt_embeds.view(bs_embed, seq_len, -1)
-            prompt_embeds_list.append(prompt_embeds)
+    prompt_embeds = prompt_embeds.to(device=device, dtype=text_encoders[0].dtype)
+    pooled_prompt_embeds = pooled_prompt_embeds.to(device=device, dtype=text_encoders[-1].dtype)
 
-    prompt_embeds = torch.concat(prompt_embeds_list, dim=-1)
-    pooled_prompt_embeds = pooled_prompt_embeds.view(bs_embed, -1)
-    return {"prompt_embeds": prompt_embeds.cpu(), "pooled_prompt_embeds": pooled_prompt_embeds.cpu()}
+    return {
+        "prompt_embeds": prompt_embeds.cpu(),
+        "pooled_prompt_embeds": pooled_prompt_embeds.cpu(),
+    }
 
 
 def compute_vae_encodings(batch, vae):
@@ -1337,25 +1324,14 @@ def main(args):
 
         # ====== Text encode helper ======
         def encode_texts_runtime(texts):
+            compel_obj, _ = get_compel_for_sdxl(
+                [tokenizer_one, tokenizer_two], [text_encoder_one, text_encoder_two], text_encoder_one.device
+            )
             with torch.no_grad():
-                # encoder 1
-                inputs1 = tokenizer_one(
-                    texts, padding="max_length", max_length=tokenizer_one.model_max_length,
-                    truncation=True, return_tensors="pt"
-                ).input_ids.to(text_encoder_one.device)
-                out1 = text_encoder_one(inputs1, output_hidden_states=True, return_dict=False)
-                # encoder 2
-                inputs2 = tokenizer_two(
-                    texts, padding="max_length", max_length=tokenizer_two.model_max_length,
-                    truncation=True, return_tensors="pt"
-                ).input_ids.to(text_encoder_two.device)
-                out2 = text_encoder_two(inputs2, output_hidden_states=True, return_dict=False)
-                pooled = out2[0]
-                hid1 = out1[-1][-2]
-                hid2 = out2[-1][-2]
-                bs, L, _ = hid2.shape
-                pe = torch.cat([hid1, hid2], dim=-1).view(bs, L, -1)
-                return pe.to(accelerator.device, dtype=weight_dtype), pooled.to(accelerator.device, dtype=weight_dtype)
+                prompt_embeds, pooled_prompt_embeds = compel_obj(texts)
+            prompt_embeds = prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+            pooled_prompt_embeds = pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+            return prompt_embeds, pooled_prompt_embeds
 
         # ====== Train (latent path) ======
         total_batch_size = args.train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
@@ -1671,7 +1647,7 @@ def main(args):
                             return False
                         artist = example.get("artist", "") or ""
                         artists = _split_clean_comma_list(artist)
-                        if any(ex_artist in artists for ex_artist in exclude_artist_list):
+                        if any(a in artists for a in exclude_artist_list):
                             return False
                         return True
 
@@ -2109,35 +2085,14 @@ def main(args):
 
     if not using_precomputed_dataset:
         def encode_texts_runtime(texts):
+            compel_obj, _ = get_compel_for_sdxl(
+                [tokenizer_one, tokenizer_two], [text_encoder_one, text_encoder_two], text_encoder_one.device
+            )
             with torch.no_grad():
-                inputs1 = tokenizer_one(
-                    texts,
-                    padding="max_length",
-                    max_length=tokenizer_one.model_max_length,
-                    truncation=True,
-                    return_tensors="pt",
-                ).input_ids.to(text_encoder_one.device)
-                out1 = text_encoder_one(inputs1, output_hidden_states=True, return_dict=False)
-
-                inputs2 = tokenizer_two(
-                    texts,
-                    padding="max_length",
-                    max_length=tokenizer_two.model_max_length,
-                    truncation=True,
-                    return_tensors="pt",
-                ).input_ids.to(text_encoder_two.device)
-                out2 = text_encoder_two(inputs2, output_hidden_states=True, return_dict=False)
-
-                pooled = out2[0]
-                hid1 = out1[-1][-2]
-                hid2 = out2[-1][-2]
-                bs, seq_len, _ = hid2.shape
-                prompt_embeds = torch.cat([hid1, hid2], dim=-1).view(bs, seq_len, -1)
-
-                return (
-                    prompt_embeds.to(accelerator.device, dtype=weight_dtype),
-                    pooled.to(accelerator.device, dtype=weight_dtype),
-                )
+                prompt_embeds, pooled_prompt_embeds = compel_obj(texts)
+            prompt_embeds = prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+            pooled_prompt_embeds = pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+            return prompt_embeds, pooled_prompt_embeds
 
     for epoch in range(first_epoch, args.num_train_epochs):
         train_loss = 0.0

@@ -14,6 +14,7 @@ from diffusers import (
     DDIMScheduler,
     DPMSolverMultistepScheduler,
 )
+from compel_sdxl_utils import get_compel_for_sdxl
 
 # HF Hub
 try:
@@ -50,18 +51,18 @@ IMG2TEXT_DEVICE = os.getenv("IMG2TEXT_DEVICE", "cpu").strip().lower()  # "cpu" /
 # 1) Model registry (add/remove as needed)
 # ========================
 MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
-    # "Yunagi-SDXL": {
-    #     "name": "Yunagi-SDXL",
+    # "Yuunagi-SDXL": {
+    #     "name": "Yuunagi-SDXL",
     #     "type": "sdxl",
     #     "load": {
     #         "mode": "local",
-    #         "path": "/mnt/shared/model/yunagi-SDXL"  # Put in current directory or fetch via repo
+    #         "path": "/mnt/shared/model/yuunagi-SDXL"  # Put in current directory or fetch via repo
     #     },
     #     "presets": {
-    #         "widths":  [512, 648, 768, 896, 1024, 1152, 1232, 1280],
-    #         "heights": [512, 648, 768, 896, 1024, 1152, 1232, 1280],
-    #         "default_w": 1152,
-    #         "default_h": 648,
+    #         "widths":  [512, 648, 720, 768, 896, 1024, 1152, 1232, 1280],
+    #         "heights": [512, 648, 720, 768, 896, 1024, 1152, 1232, 1280],
+    #         "default_w": 1280,
+    #         "default_h": 720,
     #         "steps": 28,
     #         "guidance": 5.5,
     #         "default_scheduler": "euler",
@@ -76,8 +77,8 @@ MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
             # "repo": "YourOrg/IllustriousEmberveilmix_v10",
         },
         "presets": {
-            "widths":  [512, 648, 720, 768, 896, 1024, 1152, 1232, 1280],
-            "heights": [512, 648, 720, 768, 896, 1024, 1152, 1232, 1280],
+            "widths":  [512, 648, 720, 768, 896, 1024],
+            "heights": [512, 648, 720, 768, 896, 1024],
             "default_w": 1024,
             "default_h": 1024,
             "steps": 28,
@@ -1065,15 +1066,55 @@ def generate(model_key: str, prompt: str, neg: Optional[str], steps: int, guidan
     if seed and str(seed).strip() != '':
         g = torch.Generator(device=DEVICE if torch.cuda.is_available() else "cpu").manual_seed(int(seed))
 
-    image = CACHE.pipe(
-        prompt=prompt,
-        negative_prompt=(neg or None),
-        num_inference_steps=int(steps),
-        guidance_scale=float(guidance),
-        width=int(width),
-        height=int(height),
-        generator=g,
-    ).images[0]
+    pipe_cfg_type = cfg.get('type')
+    if pipe_cfg_type == 'sdxl' and isinstance(CACHE.pipe, StableDiffusionXLPipeline):
+        exec_device = getattr(CACHE.pipe, "_execution_device", CACHE.pipe.text_encoder.device)
+        compel_obj, empty_conditioning = get_compel_for_sdxl(
+            [CACHE.pipe.tokenizer, getattr(CACHE.pipe, "tokenizer_2", None)],
+            [CACHE.pipe.text_encoder, getattr(CACHE.pipe, "text_encoder_2", None)],
+            device=exec_device,
+        )
+        text_dtype = CACHE.pipe.text_encoder.dtype
+        pooled_dtype = getattr(CACHE.pipe.text_encoder_2, "dtype", text_dtype)
+
+        pos_list = [prompt]
+        neg_text = neg if (neg is not None) else ""
+        neg_list = [neg_text]
+
+        with torch.no_grad():
+            prompt_embeds, pooled_prompt_embeds = compel_obj(pos_list)
+            negative_prompt_embeds, negative_pooled_prompt_embeds = compel_obj(neg_list)
+
+        prompt_embeds, negative_prompt_embeds = compel_obj.pad_conditioning_tensors_to_same_length(
+            [prompt_embeds, negative_prompt_embeds], precomputed_padding=empty_conditioning
+        )
+
+        prompt_embeds = prompt_embeds.to(device=exec_device, dtype=text_dtype)
+        negative_prompt_embeds = negative_prompt_embeds.to(device=exec_device, dtype=text_dtype)
+        pooled_prompt_embeds = pooled_prompt_embeds.to(device=exec_device, dtype=pooled_dtype)
+        negative_pooled_prompt_embeds = negative_pooled_prompt_embeds.to(device=exec_device, dtype=pooled_dtype)
+
+        image = CACHE.pipe(
+            prompt_embeds=prompt_embeds,
+            pooled_prompt_embeds=pooled_prompt_embeds,
+            negative_prompt_embeds=negative_prompt_embeds,
+            negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
+            num_inference_steps=int(steps),
+            guidance_scale=float(guidance),
+            width=int(width),
+            height=int(height),
+            generator=g,
+        ).images[0]
+    else:
+        image = CACHE.pipe(
+            prompt=prompt,
+            negative_prompt=(neg or None),
+            num_inference_steps=int(steps),
+            guidance_scale=float(guidance),
+            width=int(width),
+            height=int(height),
+            generator=g,
+        ).images[0]
     return image
 
 # text-to-image + img2text
@@ -1188,14 +1229,14 @@ TOKEN_LIMIT_INFO_MD = {
     "en": (
         "### Text Encoder Basics\n"
         "- SD1.5 uses a single CLIP text encoder and only reads the first 77 tokens. Anything beyond that is truncated.\n"
-        "- SDXL feeds the same prompt into two CLIP text encoders, but each still keeps only the first 77 tokens, so extra tokens past 77 are dropped.\n"
-        "- The [BOS] (beginning of sentence) and [EOS] (end of sentence) tokens take up 2 tokens, so the effective prompt length is up to 75 tokens."
+        "- SDXL feeds the same prompt into two CLIP text encoders. In this app, prompts longer than 77 tokens are automatically chunked into multiple 77-token blocks so no text is lost.\n"
+        "- The [BOS] (beginning of sentence) and [EOS] (end of sentence) tokens take up 2 tokens per block."
     ),
     "ja": (
         "### テキストエンコーダの基本\n"
         "- SD1.5はCLIPテキストエンコーダを1つだけ使い、先頭から**77トークン**までしか読みません。これを超えた部分は切り捨てられます。\n"
-        "- SDXLは同じプロンプトを2種類のテキストエンコーダに流しますが、どちらも**77トークン**までしか処理しないため、超過分は同様に切り捨てられます。\n"
-        "- [BOS]・[EOS] に2トークン取られるため有効プロンプト長は最大75トークンです。"
+        "- SDXLは同じプロンプトを2種類のテキストエンコーダに流します。このアプリでは77トークンを超えると自動的に複数ブロック（各77トークン）に分割して全てのテキストを処理します。\n"
+        "- 各ブロックごとに[BOS]・[EOS]で2トークンを消費します。"
     ),
 }
 
@@ -1236,11 +1277,18 @@ def token_count_handle(text: str, lang_choice: str) -> str:
             else f"SDXLトークナイザの読み込みに失敗しました: {exc}"
         )
 
-    def _format_line(label_en: str, label_ja: str, length: int, limit: int) -> str:
-        over = max(0, length - limit)
+    def _format_line(label_en: str, label_ja: str, length: int, limit: int, chunked: bool = False) -> str:
         blocks = max(1, (length + limit - 1) // limit)
         effective = min(length, limit)
         usable = max(effective - 2, 0)
+        if chunked:
+            if lang == "en":
+                status = f"auto-chunked into {blocks} block(s); all tokens are kept."
+                return f"- {label_en}: **{length}** tokens (block size {limit}, usable {usable} per block) – {status}"
+            status = f"自動的に{blocks}ブロックへ分割され、全トークンが処理されます。"
+            return f"- {label_ja}: トークン数{length}（ブロック長{limit}・各ブロック有効{usable}） – {status}"
+
+        over = max(0, length - limit)
         if over > 0:
             status_en = f"truncates {over} token(s)"
             status_ja = f"超過分{over}トークンが切り捨てられます"
@@ -1248,14 +1296,30 @@ def token_count_handle(text: str, lang_choice: str) -> str:
             status_en = "fits within the limit"
             status_ja = "制限内に収まります"
         if lang == "en":
-            return f"- {label_en}: **{length}** tokens (usable {usable}/{limit}, blocks {blocks}) – {status_en}."
-        return f"- {label_ja}: トークン数{length}（有効{usable}/{limit}・ブロック{blocks}） – {status_ja}。"
+            return f"- {label_en}: **{length}** tokens (usable {usable}/{limit}) – {status_en}."
+        return f"- {label_ja}: トークン数{length}（有効{usable}/{limit}） – {status_ja}。"
 
     header = "### Token counts" if lang == "en" else "### トークン数"
     lines = [header]
     lines.append(_format_line("SD1.5 CLIP", "SD1.5のCLIP", len(sd15_ids), SD15_TOKEN_LIMIT))
-    lines.append(_format_line("SDXL text encoder 1", "SDXLテキストエンコーダ1", len(sdxl_ids_primary), SDXL_TOKEN_LIMIT))
-    lines.append(_format_line("SDXL text encoder 2", "SDXLテキストエンコーダ2", len(sdxl_ids_secondary), SDXL_TOKEN_LIMIT))
+    lines.append(
+        _format_line(
+            "SDXL text encoder 1",
+            "SDXLテキストエンコーダ1",
+            len(sdxl_ids_primary),
+            SDXL_TOKEN_LIMIT,
+            chunked=True,
+        )
+    )
+    lines.append(
+        _format_line(
+            "SDXL text encoder 2",
+            "SDXLテキストエンコーダ2",
+            len(sdxl_ids_secondary),
+            SDXL_TOKEN_LIMIT,
+            chunked=True,
+        )
+    )
 
     return "\n".join(lines)
 
