@@ -62,6 +62,7 @@ import matplotlib.pyplot as plt
 from prompt_variants import generate_variants_with_nl_list
 from PIL import Image
 
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Will error if the minimal version of diffusers is not installed. Remove at your own risks.
 check_min_version("0.36.0.dev0")
