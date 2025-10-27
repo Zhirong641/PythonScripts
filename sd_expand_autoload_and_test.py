@@ -275,6 +275,21 @@ def run_generate(repo_out: str, args):
         [prompt_embeds, negative_prompt_embeds], precomputed_padding=empty_conditioning
     )
 
+    time_ids = torch.tensor(
+        [
+            [
+                h,
+                w,
+                0,
+                0,
+                h,
+                w,
+            ]
+        ],
+        device=device,
+        dtype=prompt_embeds.dtype,
+    )
+
     # ========== 用嵌入调用 ==========
     out = pipe(
         prompt_embeds=prompt_embeds,
@@ -287,6 +302,7 @@ def run_generate(repo_out: str, args):
         height=h,
         num_images_per_prompt=args.num_images,
         generator=g,
+        added_cond_kwargs={"time_ids": time_ids},
     )
     # =========================
     images = out.images

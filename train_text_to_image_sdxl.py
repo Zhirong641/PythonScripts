@@ -1260,19 +1260,22 @@ def main(args):
 
         # ====== Preview helper ======
         preview_pipe = None
+        preview_compel = None
+        preview_empty_conditioning = None
 
         @torch.no_grad()
         def save_preview(step: int, prompt: str):
-            nonlocal preview_pipe
+            nonlocal preview_pipe, preview_compel, preview_empty_conditioning
             if not prompt:
                 return
             if preview_pipe is None:
+                vae_dtype = vae.dtype if hasattr(vae, "dtype") else torch.float32
                 vae_local = AutoencoderKL.from_pretrained(
                     vae_path,
                     subfolder="vae" if args.pretrained_vae_model_name_or_path is None else None,
                     revision=args.revision,
                     variant=args.variant,
-                    torch_dtype=weight_dtype,
+                    torch_dtype=vae_dtype,
                 )
                 preview_pipe = StableDiffusionXLPipeline.from_pretrained(
                     args.pretrained_model_name_or_path,
@@ -1282,17 +1285,39 @@ def main(args):
                     variant=args.variant,
                     torch_dtype=weight_dtype,
                 ).to(accelerator.device)
+                preview_pipe.vae.to(accelerator.device, dtype=vae_dtype)
                 preview_pipe.set_progress_bar_config(disable=True)
             else:
-                # refresh UNet weights
                 preview_pipe.unet = unwrap_model(unet)
+
+            if preview_compel is None:
+                preview_compel, preview_empty_conditioning = get_compel_for_sdxl(
+                    [preview_pipe.tokenizer, preview_pipe.tokenizer_2],
+                    [preview_pipe.text_encoder, preview_pipe.text_encoder_2],
+                    device=accelerator.device,
+                )
+
+            with torch.no_grad():
+                prompt_embeds, pooled_prompt_embeds = preview_compel([prompt])
+                negative_text = getattr(args, "preview_negative", "")
+                negative_prompt_embeds, negative_pooled_prompt_embeds = preview_compel([negative_text])
+                (
+                    prompt_embeds,
+                    negative_prompt_embeds,
+                ) = preview_compel.pad_conditioning_tensors_to_same_length(
+                    [prompt_embeds, negative_prompt_embeds], precomputed_padding=preview_empty_conditioning
+                )
+
+            prompt_embeds = prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+            negative_prompt_embeds = negative_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+            pooled_prompt_embeds = pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+            negative_pooled_prompt_embeds = negative_pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
 
             generator = (
                 torch.Generator(device=accelerator.device).manual_seed(args.preview_seed)
-                if args.preview_seed is not None else None
+                if args.preview_seed is not None
+                else None
             )
-            # Build added cond kwargs (time_ids + pooled)
-            pe, pooled = encode_texts_runtime([prompt])
             add_time_ids = torch.tensor(
                 [
                     [
@@ -1307,19 +1332,21 @@ def main(args):
                 device=accelerator.device,
                 dtype=weight_dtype,
             )
-            add_kw = {"text_embeds": pooled, "time_ids": add_time_ids}
 
             out = preview_pipe(
-                prompt_embeds=pe,
-                pooled_prompt_embeds=pooled,
+                prompt_embeds=prompt_embeds,
+                pooled_prompt_embeds=pooled_prompt_embeds,
+                negative_prompt_embeds=negative_prompt_embeds,
+                negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
                 num_inference_steps=int(args.preview_steps),
                 guidance_scale=float(args.preview_scale),
                 width=args.resolution_width,
                 height=args.resolution_height,
                 generator=generator,
-                added_cond_kwargs=add_kw,
+                added_cond_kwargs={"time_ids": add_time_ids},
             ).images[0]
-            out_dir = os.path.join(args.output_dir, "preview"); os.makedirs(out_dir, exist_ok=True)
+            out_dir = os.path.join(args.output_dir, "preview")
+            os.makedirs(out_dir, exist_ok=True)
             out.save(os.path.join(out_dir, f"step_{step:08d}.png"))
 
         # ====== Text encode helper ======
@@ -2018,10 +2045,12 @@ def main(args):
         initial_global_step = 0
 
     preview_pipe = None
+    preview_compel = None
+    preview_empty_conditioning = None
 
     @torch.no_grad()
     def save_preview(step: int, prompt: str):
-        nonlocal preview_pipe
+        nonlocal preview_pipe, preview_compel, preview_empty_conditioning
         if not prompt:
             return
         if preview_pipe is None:
@@ -2046,6 +2075,29 @@ def main(args):
         else:
             preview_pipe.unet = unwrap_model(unet)
 
+        if preview_compel is None:
+            preview_compel, preview_empty_conditioning = get_compel_for_sdxl(
+                [preview_pipe.tokenizer, preview_pipe.tokenizer_2],
+                [preview_pipe.text_encoder, preview_pipe.text_encoder_2],
+                device=accelerator.device,
+            )
+
+        with torch.no_grad():
+            prompt_embeds, pooled_prompt_embeds = preview_compel([prompt])
+            negative_text = getattr(args, "preview_negative", "")
+            negative_prompt_embeds, negative_pooled_prompt_embeds = preview_compel([negative_text])
+            (
+                prompt_embeds,
+                negative_prompt_embeds,
+            ) = preview_compel.pad_conditioning_tensors_to_same_length(
+                [prompt_embeds, negative_prompt_embeds], precomputed_padding=preview_empty_conditioning
+            )
+
+        prompt_embeds = prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+        negative_prompt_embeds = negative_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+        pooled_prompt_embeds = pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+        negative_pooled_prompt_embeds = negative_pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+
         generator = (
             torch.Generator(device=accelerator.device).manual_seed(args.preview_seed)
             if args.preview_seed is not None
@@ -2067,7 +2119,10 @@ def main(args):
         )
 
         result = preview_pipe(
-            prompt=prompt,
+            prompt_embeds=prompt_embeds,
+            pooled_prompt_embeds=pooled_prompt_embeds,
+            negative_prompt_embeds=negative_prompt_embeds,
+            negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
             num_inference_steps=int(args.preview_steps),
             guidance_scale=float(args.preview_scale),
             width=args.resolution_width,

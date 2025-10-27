@@ -1094,6 +1094,21 @@ def generate(model_key: str, prompt: str, neg: Optional[str], steps: int, guidan
         pooled_prompt_embeds = pooled_prompt_embeds.to(device=exec_device, dtype=pooled_dtype)
         negative_pooled_prompt_embeds = negative_pooled_prompt_embeds.to(device=exec_device, dtype=pooled_dtype)
 
+        add_time_ids = torch.tensor(
+            [
+                [
+                    int(height),
+                    int(width),
+                    0,
+                    0,
+                    int(height),
+                    int(width),
+                ]
+            ],
+            device=exec_device,
+            dtype=text_dtype,
+        )
+
         image = CACHE.pipe(
             prompt_embeds=prompt_embeds,
             pooled_prompt_embeds=pooled_prompt_embeds,
@@ -1104,6 +1119,7 @@ def generate(model_key: str, prompt: str, neg: Optional[str], steps: int, guidan
             width=int(width),
             height=int(height),
             generator=g,
+            added_cond_kwargs={"time_ids": add_time_ids},
         ).images[0]
     else:
         image = CACHE.pipe(

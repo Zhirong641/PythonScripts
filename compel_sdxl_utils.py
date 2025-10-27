@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+import math
 from typing import Sequence, Tuple, Union
 
 import torch
@@ -43,6 +44,14 @@ def _patch_compel_padding(compel_obj: Compel) -> None:
             tokens = _orig(texts, include_start_and_end_markers, padding, truncation_override)
             if not isinstance(tokens, list):
                 return tokens
+            if truncation_override:
+                truncated = []
+                for token_list in tokens:
+                    if isinstance(token_list, list) and len(token_list) > _max_len:
+                        truncated.append(token_list[:_max_len])
+                    else:
+                        truncated.append(token_list)
+                return truncated
             trimmed = []
             for token_list in tokens:
                 if not isinstance(token_list, list):
@@ -51,7 +60,13 @@ def _patch_compel_padding(compel_obj: Compel) -> None:
                 if len(token_list) > _max_len:
                     remainder = len(token_list) % _max_len
                     if remainder:
-                        token_list = token_list[: len(token_list) - remainder]
+                        padding_needed = _max_len - remainder
+                        pad_token_id = getattr(self.tokenizer, "pad_token_id", None)
+                        if pad_token_id is None:
+                            pad_token_id = getattr(self.tokenizer, "eos_token_id", None)
+                        if pad_token_id is None:
+                            pad_token_id = getattr(self.tokenizer, "bos_token_id", 0)
+                        token_list = token_list + [pad_token_id] * padding_needed
                 trimmed.append(token_list)
             return trimmed
 
@@ -80,6 +95,7 @@ def get_compel_for_sdxl(
     if key in _COMPEL_CACHE:
         compel_obj, cached_empty = _COMPEL_CACHE[key]
         empty_conditioning = cached_empty
+        provider_empty_chunks = getattr(compel_obj, "_codex_provider_empty_chunks", None)
     else:
         first_encoder = text_encoders[0]
         compel_device = first_encoder.device if device is None else device
@@ -97,6 +113,7 @@ def get_compel_for_sdxl(
         dtype = getattr(first_encoder, "dtype", torch.float32)
         if providers:
             empty_parts = []
+            provider_empty_chunks = []
             for provider in providers:
                 if hasattr(provider, "empty_z"):
                     part = provider.empty_z
@@ -107,7 +124,9 @@ def get_compel_for_sdxl(
                         should_return_tokens=False,
                         device=compel_device,
                     )
-                empty_parts.append(part.to(device=compel_device, dtype=dtype))
+                part = part.to(device=compel_device, dtype=dtype)
+                empty_parts.append(part)
+                provider_empty_chunks.append(part)
             empty_conditioning = torch.cat(empty_parts, dim=-1)
         else:
             provider = compel_obj.conditioning_provider
@@ -120,7 +139,9 @@ def get_compel_for_sdxl(
                     device=compel_device,
                 )
             empty_conditioning = empty_source.to(device=compel_device, dtype=dtype)
+            provider_empty_chunks = [empty_conditioning]
 
+        compel_obj._codex_provider_empty_chunks = provider_empty_chunks
         _COMPEL_CACHE[key] = (compel_obj, empty_conditioning)
 
     target_device = text_encoders[0].device if device is None else device
@@ -135,6 +156,82 @@ def get_compel_for_sdxl(
             conditioning_provider.__dict__["empty_z"] = empty_conditioning
         else:
             object.__setattr__(conditioning_provider, "empty_z", empty_conditioning)
+
+    providers = getattr(conditioning_provider, "embedding_providers", None)
+    if provider_empty_chunks is None:
+        if providers:
+            provider_empty_chunks = []
+            for provider in providers:
+                part = getattr(provider, "empty_z", None)
+                if part is None:
+                    part = provider.get_embeddings_for_weighted_prompt_fragments(
+                        [[""]],
+                        [[1.0]],
+                        should_return_tokens=False,
+                        device=device or conditioning_provider.text_encoder.device,  # type: ignore[attr-defined]
+                    )
+                provider_empty_chunks.append(part)
+        else:
+            provider_empty_chunks = [empty_conditioning]
+        compel_obj._codex_provider_empty_chunks = provider_empty_chunks
+
+    if providers and not hasattr(conditioning_provider, "_codex_equalize_lengths"):
+
+        def _pad_provider_embeddings(tensors):
+            if not tensors:
+                return tensors
+            max_tokens = max(t.shape[1] for t in tensors)
+            if max_tokens == 0:
+                return tensors
+            padded = []
+            for idx, tensor in enumerate(tensors):
+                if tensor.shape[1] == max_tokens:
+                    padded.append(tensor)
+                    continue
+                pad_len = max_tokens - tensor.shape[1]
+                base = provider_empty_chunks[idx].to(device=tensor.device, dtype=tensor.dtype)
+                if base.dim() == 2:
+                    base = base.unsqueeze(0)
+                base_tokens = base.shape[1]
+                if base_tokens == 0:
+                    padded.append(tensor)
+                    continue
+                repeats = math.ceil(pad_len / base_tokens)
+                base_expanded = base.expand(tensor.shape[0], base_tokens, base.shape[2])
+                pad_chunk = base_expanded.repeat(1, repeats, 1)[:, :pad_len, :]
+                padded.append(torch.cat([tensor, pad_chunk], dim=1))
+            return padded
+
+        def patched_get_embeddings_for_weighted_prompt_fragments(
+            text_batch,
+            fragment_weights_batch,
+            should_return_tokens=False,
+            device="cpu",
+        ):
+            outputs = [
+                provider.get_embeddings_for_weighted_prompt_fragments(
+                    text_batch,
+                    fragment_weights_batch,
+                    should_return_tokens=should_return_tokens,
+                    device=device,
+                )
+                for provider in conditioning_provider.embedding_providers
+            ]
+
+            if should_return_tokens:
+                text_embeddings = [o[0] for o in outputs]
+                tokens = [o[1] for o in outputs]
+                if conditioning_provider.concat_along_embedding_dim:
+                    text_embeddings = torch.cat(_pad_provider_embeddings(text_embeddings), dim=-1)
+                return text_embeddings, tokens
+
+            text_embeddings = outputs
+            if conditioning_provider.concat_along_embedding_dim:
+                text_embeddings = torch.cat(_pad_provider_embeddings(text_embeddings), dim=-1)
+            return text_embeddings
+
+        conditioning_provider.get_embeddings_for_weighted_prompt_fragments = patched_get_embeddings_for_weighted_prompt_fragments  # type: ignore[assignment]
+        conditioning_provider._codex_equalize_lengths = True
 
     return compel_obj, empty_conditioning
 
