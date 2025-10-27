@@ -13,9 +13,19 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1146404, 12, 13, None, "shiramori yuse"),
     (1146404, 407, 582, None, "shiramori yuse"),
     (1146404, 891, 1017, None, "shiramori yuse"),
-
-
-    
+    (3000014, 35, 137, None, "kimishima ao"),
+    (3000014, 220, 324, None, "shiratama"),
+    (2746430, 13, 74, None, "shiratama"),
+    (2746430, 219, 259, None, "shiratama"),
+    (2746430, 278, 340, None, "shiratama"),
+    (1920176, 2, 66, None, "shiratama"),
+    (1920176, 116, 212, None, "shiratama"),
+    (1920176, 259, 380, None, "shiratama"),
+    (1920176, 429, 474, None, "shiratama"),
+    (1562101, 50, 89, None, "shiratama"),
+    (1562101, 155, 196, None, "shiratama"),
+    (868607, 39, 141, None, "kimishima ao"),
+    (868607, 224, 328, None, "shiratama"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
