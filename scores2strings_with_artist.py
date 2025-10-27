@@ -229,7 +229,7 @@ def find_artist_for_record(artist_pairs: List[Tuple[str, float]],
             for hitomi_name in artists_csv_list:
                 if same_artist(hitomi_name, danbooru_name):
                     return [hitomi_name]
-        if len(artist_pairs) == 1:
+        if len(artists_csv_list) == 1:
             # 仅有一项时，若同名失败，则不再尝试第二条规则，直接回退到 CSV
             return list(artists_csv_list)
 
