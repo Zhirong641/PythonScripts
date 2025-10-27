@@ -80,6 +80,10 @@ def parse_args():
                     help="把桶计数另存为 CSV（可选），例如 counts.csv")
     ap.add_argument("--errors-file", default="errors.jsonl",
                     help="无法读取图片的行写到该文件（默认 errors.jsonl）")
+    ap.add_argument("--min-width", type=int, default=0,
+                    help="只对宽度不少于该值的图片进行分桶（默认 0，无下限）")
+    ap.add_argument("--min-height", type=int, default=0,
+                    help="只对高度不少于该值的图片进行分桶（默认 0，无下限）")
     return ap.parse_args()
 
 
@@ -159,6 +163,7 @@ def main():
 
     # 统计计数
     counts: Counter = Counter()
+    skipped_small = 0
 
     # LRU 文件缓存
     file_cache = LRUFileCache(capacity=args.max_open)
@@ -195,6 +200,10 @@ def main():
                 errors_fp.write(json.dumps({"error": "invalid size", "size": [w, h], "src": src, "line": obj}, ensure_ascii=False) + "\n")
                 continue
 
+            if w < args.min_width or h < args.min_height:
+                skipped_small += 1
+                continue
+
             # 生成桶标签
             if args.mode == "gcd":
                 label = ratio_label_gcd(w, h)
@@ -220,6 +229,9 @@ def main():
     print("\n=== Bucket counts ===")
     for label, c in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
         print(f"{label:>10s} : {c}")
+
+    if skipped_small:
+        print(f"\nSkipped {skipped_small} images smaller than {args.min_width}x{args.min_height}.")
 
     # 可选导出到 CSV
     if args.save_counts:
