@@ -1661,6 +1661,13 @@ def main(args):
                         src_path = example.get("_image_path", "") or ""
                         if not src_path or not os.path.isfile(src_path):
                             return False
+                        # 文件后缀名检查（小写）
+                        valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tif", ".tiff", ".avif", ".heic"}
+                        _, ext = os.path.splitext(src_path)
+                        ext = ext.split("?")[0].lower()
+                        if ext not in valid_exts:
+                            return False
+
                         general = example.get("general", "") or ""
                         if any(word in general for word in exclude_word_list):
                             return False

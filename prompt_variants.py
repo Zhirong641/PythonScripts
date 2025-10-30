@@ -293,19 +293,34 @@ _BRA_PATTERN = re.compile(
 def _normalize(tag: str) -> str:
     return tag.strip().replace("_", " ").lower()
 
-def _artist_phrase(artists: List[str]) -> str:
+def _artist_phrase(artists: List[str], p: float = 2.0) -> str:
+    """
+    n == 1: 返回 1 个
+    n > 1 : 从 1..min(5,n) 中按权重 k**p 随机选取返回个数 k，再随机抽取 k 个
+    p > 0 越大越偏向返回更多个
+    """
     if not artists:
         return ""
-    a = _normalize(random.choice(artists))
-    artist_len = len(artists)
-    rnd = random.random()
-    if artist_len > 1 and rnd < 0.5:
-        if artist_len >= 3 and rnd < 0.2:
-            selected = [_normalize(artist) for artist in random.sample(artists, 3)]
-            return f"by {selected[0]}, {selected[1]}, and {selected[2]}"
-        selected = [_normalize(artist) for artist in random.sample(artists, 2)]
-        return f"by {selected[0]} and {selected[1]}"
-    return f"by {a}"
+
+    n = len(artists)
+    if n == 1:
+        names = [_normalize(artists[0])]
+    else:
+        k_max = min(5, n)
+        ks = list(range(1, k_max + 1))
+        if p <= 0:
+            p = 1.0  # 防御式：非正则退回线性权重
+        weights = [k ** p for k in ks]
+        k = random.choices(ks, weights=weights, k=1)[0]
+        picked = random.sample(artists, k)
+        names = [_normalize(a) for a in picked]
+
+    if len(names) == 1:
+        return f"by {names[0]}"
+    elif len(names) == 2:
+        return f"by {names[0]} and {names[1]}"
+    else:
+        return "by " + ", ".join(names[:-1]) + f", and {names[-1]}"
 
 def _rating_phrase(ratings: List[str], max_ratings: int = 1) -> str:
     if not ratings:

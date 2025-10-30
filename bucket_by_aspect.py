@@ -195,6 +195,9 @@ def main():
             except (FileNotFoundError, UnidentifiedImageError, OSError) as e:
                 errors_fp.write(json.dumps({"error": f"{type(e).__name__}: {str(e)}", "src": src, "line": obj}, ensure_ascii=False) + "\n")
                 continue
+            except Exception as e:
+                errors_fp.write(json.dumps({"error": f"Exception: {str(e)}", "src": src, "line": obj}, ensure_ascii=False) + "\n")
+                continue
 
             if w <= 0 or h <= 0:
                 errors_fp.write(json.dumps({"error": "invalid size", "size": [w, h], "src": src, "line": obj}, ensure_ascii=False) + "\n")
