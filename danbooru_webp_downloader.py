@@ -33,7 +33,7 @@ import csv
 import argparse
 import hashlib
 import threading
-from typing import List, Optional, Dict, Tuple, Iterable
+from typing import List, Optional, Dict, Tuple, Iterable, Set
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
@@ -197,44 +197,69 @@ def write_json_sidecar(post: Dict, image_path: str, final_ext: str,
 
 def append_manifest_row(manifest_path: str, post: Dict, saved_path: str, final_ext: str,
                         artist_input: Optional[str] = None,
-                        artist_canonical: Optional[str] = None):
-    exists = os.path.exists(manifest_path)
-    fieldnames = [
-        "id","post_url","md5","rating","score","fav_count","source",
-        "image_width","image_height","file_size","created_at","uploader_id",
-        "saved_path","saved_ext",
-        "tags_general","tags_character","tags_copyright","tags_artist","tags_meta","tags_all",
-        "artist_input","artist_canonical"
-    ]
-    row = {
-        "id": post.get("id"),
-        "post_url": build_post_url(post.get("id")),
-        "md5": post.get("md5"),
-        "rating": post.get("rating"),
-        "score": post.get("score"),
-        "fav_count": post.get("fav_count"),
-        "source": post.get("source"),
-        "image_width": post.get("image_width"),
-        "image_height": post.get("image_height"),
-        "file_size": post.get("file_size"),
-        "created_at": post.get("created_at"),
-        "uploader_id": post.get("uploader_id"),
-        "saved_path": os.path.abspath(saved_path),
-        "saved_ext": final_ext,
-        "tags_general": " ".join(split_tags(post.get("tag_string_general"))),
-        "tags_character": " ".join(split_tags(post.get("tag_string_character"))),
-        "tags_copyright": " ".join(split_tags(post.get("tag_string_copyright"))),
-        "tags_artist": " ".join(split_tags(post.get("tag_string_artist"))),
-        "tags_meta": " ".join(split_tags(post.get("tag_string_meta"))),
-        "tags_all": " ".join(split_tags(post.get("tag_string"))),
-        "artist_input": artist_input or "",
-        "artist_canonical": artist_canonical or "",
-    }
-    with open(manifest_path, "a", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=fieldnames)
-        if not exists:
-            w.writeheader()
-        w.writerow(row)
+                        artist_canonical: Optional[str] = None,
+                        existing_ids: Optional[Set[str]] = None):
+    post_id = post.get("id")
+    post_id_str = str(post_id) if post_id is not None else ""
+    with LOCK:
+        if existing_ids is not None and post_id_str and post_id_str in existing_ids:
+            return
+        exists = os.path.exists(manifest_path)
+        fieldnames = [
+            "id","post_url","md5","rating","score","fav_count","source",
+            "image_width","image_height","file_size","created_at","uploader_id",
+            "saved_path","saved_ext",
+            "tags_general","tags_character","tags_copyright","tags_artist","tags_meta","tags_all",
+            "artist_input","artist_canonical"
+        ]
+        row = {
+            "id": post.get("id"),
+            "post_url": build_post_url(post.get("id")),
+            "md5": post.get("md5"),
+            "rating": post.get("rating"),
+            "score": post.get("score"),
+            "fav_count": post.get("fav_count"),
+            "source": post.get("source"),
+            "image_width": post.get("image_width"),
+            "image_height": post.get("image_height"),
+            "file_size": post.get("file_size"),
+            "created_at": post.get("created_at"),
+            "uploader_id": post.get("uploader_id"),
+            "saved_path": os.path.abspath(saved_path),
+            "saved_ext": final_ext,
+            "tags_general": " ".join(split_tags(post.get("tag_string_general"))),
+            "tags_character": " ".join(split_tags(post.get("tag_string_character"))),
+            "tags_copyright": " ".join(split_tags(post.get("tag_string_copyright"))),
+            "tags_artist": " ".join(split_tags(post.get("tag_string_artist"))),
+            "tags_meta": " ".join(split_tags(post.get("tag_string_meta"))),
+            "tags_all": " ".join(split_tags(post.get("tag_string"))),
+            "artist_input": artist_input or "",
+            "artist_canonical": artist_canonical or "",
+        }
+        with open(manifest_path, "a", encoding="utf-8", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=fieldnames)
+            if not exists:
+                w.writeheader()
+            w.writerow(row)
+        if existing_ids is not None and post_id_str:
+            existing_ids.add(post_id_str)
+
+def load_manifest_ids(manifest_path: Optional[str]) -> Set[str]:
+    ids: Set[str] = set()
+    if not manifest_path or not os.path.exists(manifest_path):
+        return ids
+    try:
+        with open(manifest_path, "r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if not row:
+                    continue
+                pid = row.get("id")
+                if pid:
+                    ids.add(str(pid).strip())
+    except Exception as e:
+        print(f"[WARN] 读取 manifest 失败：{e}", file=sys.stderr)
+    return ids
 
 # ============== API 抓取 ==============
 def api_fetch_posts(
@@ -364,7 +389,8 @@ def collect_download_tasks_for_tags(
     only_webp: bool,
     convert_to_webp: bool,
     save_json: bool,
-    manifest: bool,
+    manifest_path: Optional[str],
+    manifest_ids: Optional[Set[str]],
     login: Optional[str],
     api_key: Optional[str],
     interval: float,
@@ -396,6 +422,10 @@ def collect_download_tasks_for_tags(
         for p in posts:
             if not should_keep_post_as_webp(p, only_webp):
                 continue
+            post_id = p.get("id")
+            post_id_str = str(post_id) if post_id is not None else ""
+            if manifest_ids and post_id_str and post_id_str in manifest_ids:
+                continue
             url = pick_best_url(p)
             if not url:
                 continue
@@ -407,9 +437,14 @@ def collect_download_tasks_for_tags(
                 # 已存在：可选写 sidecar/manifest（幂等）
                 if save_json:
                     write_json_sidecar(p, dst, (final_ext or ext_from_url(url)))
-                if manifest:
-                    append_manifest_row(os.path.join(os.path.dirname(out_dir), "manifest.csv"),
-                                        p, dst, (final_ext or ext_from_url(url)))
+                if manifest_path:
+                    append_manifest_row(
+                        manifest_path,
+                        p,
+                        dst,
+                        (final_ext or ext_from_url(url)),
+                        existing_ids=manifest_ids,
+                    )
                 continue
 
             to_download.append((p, url, dst))
@@ -430,10 +465,11 @@ def collect_download_tasks_for_tags(
 def execute_downloads(
     items: List[Tuple[Dict, str, str]],
     workers: int,
-    convert_to_webp: bool,
+    convert_to_webp_flag: bool,
     quality: int,
     save_json: bool,
     manifest_path: Optional[str],
+    manifest_ids: Optional[Set[str]] = None,
     artist_input: Optional[str] = None,
     artist_canonical: Optional[str] = None,
 ) -> int:
@@ -445,11 +481,12 @@ def execute_downloads(
                                artist_input=artist_input, artist_canonical=artist_canonical)
         if manifest_path:
             append_manifest_row(manifest_path, p, saved_path, final_ext,
-                                artist_input=artist_input, artist_canonical=artist_canonical)
+                                artist_input=artist_input, artist_canonical=artist_canonical,
+                                existing_ids=manifest_ids)
 
     def worker(item: Tuple[Dict, str, str]) -> bool:
         p, url, dst = item
-        if convert_to_webp:
+        if convert_to_webp_flag:
             tmp_src = dst + ".orig"
             if (not os.path.exists(tmp_src)) and (not download_one(s, url, tmp_src)):
                 return False
@@ -535,16 +572,18 @@ def main():
 
     ensure_dir(args.out)
     s_meta = build_session()
-    interval = args.request-interval if args.request_interval is not None else (
+    interval = args.request_interval if args.request_interval is not None else (
         0.35 if (args.login and args.api_key) else 1.0
     )
 
     # manifest 统一路径
-    manifest_path = None
+    manifest_path: Optional[str] = None
+    manifest_ids: Optional[Set[str]] = None
     if args.manifest:
         manifest_path = args.manifest_path or os.path.join(args.out, "manifest.csv")
         # 提前创建文件夹
         ensure_dir(os.path.dirname(manifest_path))
+        manifest_ids = load_manifest_ids(manifest_path)
 
     # ========= 分支1：多作者模式 =========
     if args.artists_file:
@@ -586,7 +625,8 @@ def main():
                 only_webp=args.only_webp,
                 convert_to_webp=args.convert_to_webp,
                 save_json=args.save_json,
-                manifest=args.manifest,
+                manifest_path=manifest_path,
+                manifest_ids=manifest_ids,
                 login=args.login,
                 api_key=args.api_key,
                 interval=interval,
@@ -602,10 +642,11 @@ def main():
             ok = execute_downloads(
                 items=items,
                 workers=args.workers,
-                convert_to_webp=args.convert_to_webp,
+                convert_to_webp_flag=args.convert_to_webp,
                 quality=args.quality,
                 save_json=args.save_json,
                 manifest_path=manifest_path,
+                manifest_ids=manifest_ids,
                 artist_input=input_name,
                 artist_canonical=canonical,
             )
@@ -644,7 +685,8 @@ def main():
         only_webp=args.only_webp,
         convert_to_webp=args.convert_to_webp,
         save_json=args.save_json,
-        manifest=args.manifest,
+        manifest_path=manifest_path,
+        manifest_ids=manifest_ids,
         login=args.login,
         api_key=args.api_key,
         interval=interval,
@@ -660,10 +702,11 @@ def main():
     ok = execute_downloads(
         items=items,
         workers=args.workers,
-        convert_to_webp=args.convert_to_webp,
+        convert_to_webp_flag=args.convert_to_webp,
         quality=args.quality,
         save_json=args.save_json,
         manifest_path=manifest_path,
+        manifest_ids=manifest_ids,
         artist_input=None,
         artist_canonical=None,
     )
