@@ -10,6 +10,7 @@ from PIL import Image
 from diffusers import (
     StableDiffusionPipeline,
     StableDiffusionXLPipeline,
+    StableDiffusionXLImg2ImgPipeline,
     EulerDiscreteScheduler,
     DDIMScheduler,
     DPMSolverMultistepScheduler,
@@ -147,6 +148,7 @@ apply_env_overrides(MODEL_REGISTRY)
 class PipeCache:
     pipe: Optional[object] = None
     model_key: Optional[str] = None
+    kind: str = "txt2img"
 CACHE = PipeCache()
 
 # Allow keeping recently used pipelines in memory to avoid repeated disk loads.
@@ -222,9 +224,12 @@ def _free_pipe():
         return
 
     model_key = CACHE.model_key
+    cache_kind = CACHE.kind
     pipe = CACHE.pipe
 
-    if PIPE_CACHE_MODE == "off" or PIPE_CACHE_LIMIT <= 0 or model_key is None:
+    stash_key = None if model_key is None else f"{model_key}::{cache_kind or 'txt2img'}"
+
+    if PIPE_CACHE_MODE == "off" or PIPE_CACHE_LIMIT <= 0 or stash_key is None:
         _release_pipe(pipe, move_to_cpu=(PIPE_CACHE_MODE != "gpu"))
     else:
         if PIPE_CACHE_MODE == "cpu":
@@ -233,14 +238,14 @@ def _free_pipe():
             except Exception:
                 pass
         if PIPE_CACHE_DEBUG:
-            print(f"[PIPE CACHE] stash {model_key} (mode={PIPE_CACHE_MODE})")
-        if model_key in PIPE_STASH:
-            _release_pipe(PIPE_STASH.pop(model_key), move_to_cpu=(PIPE_CACHE_MODE != "gpu"))
+            print(f"[PIPE CACHE] stash {stash_key} (mode={PIPE_CACHE_MODE})")
+        if stash_key in PIPE_STASH:
+            _release_pipe(PIPE_STASH.pop(stash_key), move_to_cpu=(PIPE_CACHE_MODE != "gpu"))
         _maybe_evict_for_memory()
-        PIPE_STASH[model_key] = pipe
-        PIPE_STASH.move_to_end(model_key, last=True)
+        PIPE_STASH[stash_key] = pipe
+        PIPE_STASH.move_to_end(stash_key, last=True)
         if PIPE_CACHE_DEBUG:
-            print(f"[PIPE CACHE] stash set {model_key} (size={len(PIPE_STASH)})")
+            print(f"[PIPE CACHE] stash set {stash_key} (size={len(PIPE_STASH)})")
         while len(PIPE_STASH) > PIPE_CACHE_LIMIT:
             _, old_pipe = PIPE_STASH.popitem(last=False)
             _release_pipe(old_pipe, move_to_cpu=(PIPE_CACHE_MODE != "gpu"))
@@ -249,16 +254,19 @@ def _free_pipe():
 
     CACHE.pipe = None
     CACHE.model_key = None
+    CACHE.kind = "txt2img"
     if torch.cuda.is_available() and PIPE_CACHE_MODE != "gpu":
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
 
-def _load_from_cfg(cfg: Dict[str, Any]):
+def _load_from_cfg(cfg: Dict[str, Any], kind: str = "txt2img"):
     mtype = cfg['type']
     load = cfg['load']
     mode = load.get('mode', 'local')
 
     if mtype == 'sd15':
+        if kind != "txt2img":
+            raise ValueError(f"SD15 models do not support pipeline kind '{kind}' in this app")
         if mode == 'local':
             p = StableDiffusionPipeline.from_pretrained(load['path'], torch_dtype=DTYPE)
         elif mode == 'pretrained':
@@ -266,16 +274,17 @@ def _load_from_cfg(cfg: Dict[str, Any]):
         else:
             raise ValueError(f"SD15 unsupported mode: {mode}")
     elif mtype == 'sdxl':
+        pipe_cls = StableDiffusionXLImg2ImgPipeline if kind == "img2img" else StableDiffusionXLPipeline
         if mode == 'local':
-            p = StableDiffusionXLPipeline.from_pretrained(load['path'], torch_dtype=DTYPE, use_safetensors=True, low_cpu_mem_usage=False)
+            p = pipe_cls.from_pretrained(load['path'], torch_dtype=DTYPE, use_safetensors=True, low_cpu_mem_usage=False)
         elif mode == 'pretrained':
-            p = StableDiffusionXLPipeline.from_pretrained(load['repo'], torch_dtype=DTYPE, use_safetensors=True, low_cpu_mem_usage=False)
+            p = pipe_cls.from_pretrained(load['repo'], torch_dtype=DTYPE, use_safetensors=True, low_cpu_mem_usage=False)
         elif mode == 'singlefile':
             if hf_hub_download is None or "repo" not in load:
                 file_path = load['filename']
             else:
                 file_path = hf_hub_download(repo_id=load['repo'], filename=load['filename'])
-            p = StableDiffusionXLPipeline.from_single_file(file_path, torch_dtype=DTYPE)
+            p = pipe_cls.from_single_file(file_path, torch_dtype=DTYPE)
         else:
             raise ValueError(f"SDXL unsupported mode: {mode}")
     else:
@@ -297,11 +306,12 @@ def _load_from_cfg(cfg: Dict[str, Any]):
     p.enable_vae_slicing(); p.enable_vae_tiling()
     return p
 
-def ensure_pipe(model_key: str):
-    if CACHE.pipe is not None and CACHE.model_key == model_key:
+def ensure_pipe(model_key: str, kind: str = "txt2img"):
+    if CACHE.pipe is not None and CACHE.model_key == model_key and CACHE.kind == kind:
         return
     _free_pipe()
-    reused = PIPE_STASH.pop(model_key, None)
+    stash_key = f"{model_key}::{kind}"
+    reused = PIPE_STASH.pop(stash_key, None)
     if reused is not None:
         if PIPE_CACHE_MODE == "cpu":
             try:
@@ -310,15 +320,16 @@ def ensure_pipe(model_key: str):
                 reused = reused.to(DEVICE)
         pipe = reused
         if PIPE_CACHE_DEBUG:
-            print(f"[PIPE CACHE] reuse pipeline {model_key}")
+            print(f"[PIPE CACHE] reuse pipeline {stash_key}")
     else:
         cfg = MODEL_REGISTRY[model_key]
-        pipe = _load_from_cfg(cfg)
+        pipe = _load_from_cfg(cfg, kind=kind)
         if PIPE_CACHE_DEBUG:
-            print(f"[PIPE CACHE] load pipeline {model_key} from config")
+            print(f"[PIPE CACHE] load pipeline {stash_key} from config")
 
     CACHE.pipe = pipe
     CACHE.model_key = model_key
+    CACHE.kind = kind
 
 # ==================================
 # 3) WD-EVA02 tagger (ONNXRuntime)
@@ -1048,10 +1059,7 @@ def blip2_caption(img: Image.Image, prompt: Optional[str] = None, max_new_tokens
 # =================
 # 5) SD inference functions
 # =================
-def generate(model_key: str, prompt: str, neg: Optional[str], steps: int, guidance: float,
-             width: int, height: int, scheduler: str, seed: Optional[str]):
-    ensure_pipe(model_key)
-
+def _prepare_scheduler(model_key: str, scheduler: str) -> Dict[str, Any]:
     Sched = scheduler_map.get(scheduler, EulerDiscreteScheduler)
     CACHE.pipe.scheduler = Sched.from_config(CACHE.pipe.scheduler.config)
 
@@ -1061,6 +1069,14 @@ def generate(model_key: str, prompt: str, neg: Optional[str], steps: int, guidan
         base_config = dict(CACHE.pipe.scheduler.config)
         base_config.update(sched_cfg_overrides)
         CACHE.pipe.scheduler = CACHE.pipe.scheduler.__class__.from_config(base_config)
+    return cfg
+
+
+def generate(model_key: str, prompt: str, neg: Optional[str], steps: int, guidance: float,
+             width: int, height: int, scheduler: str, seed: Optional[str]):
+    ensure_pipe(model_key, kind="txt2img")
+
+    cfg = _prepare_scheduler(model_key, scheduler)
 
     g = None
     if seed and str(seed).strip() != '':
@@ -1132,6 +1148,109 @@ def generate(model_key: str, prompt: str, neg: Optional[str], steps: int, guidan
             generator=g,
         ).images[0]
     return image
+
+
+def generate_img2img(
+    model_key: str,
+    init_image: Image.Image,
+    prompt: str,
+    neg: Optional[str],
+    steps: int,
+    guidance: float,
+    scheduler: str,
+    seed: Optional[str],
+    strength: float,
+    width: Optional[int] = None,
+    height: Optional[int] = None,
+):
+    if init_image is None:
+        raise ValueError("An input image is required for img2img generation")
+
+    ensure_pipe(model_key, kind="img2img")
+
+    cfg = _prepare_scheduler(model_key, scheduler)
+
+    g = None
+    if seed and str(seed).strip() != '':
+        g = torch.Generator(device=DEVICE if torch.cuda.is_available() else "cpu").manual_seed(int(seed))
+
+    image = init_image.convert("RGB")
+    target_w = int(width) if width else image.width
+    target_h = int(height) if height else image.height
+    if (target_w, target_h) != image.size:
+        image = image.resize((target_w, target_h), Image.LANCZOS)
+
+    pipe_cfg_type = cfg.get('type')
+    strength = float(max(0.0, min(1.0, strength)))
+
+    if pipe_cfg_type == 'sdxl' and isinstance(CACHE.pipe, StableDiffusionXLImg2ImgPipeline):
+        exec_device = getattr(CACHE.pipe, "_execution_device", CACHE.pipe.text_encoder.device)
+        compel_obj, empty_conditioning = get_compel_for_sdxl(
+            [CACHE.pipe.tokenizer, getattr(CACHE.pipe, "tokenizer_2", None)],
+            [CACHE.pipe.text_encoder, getattr(CACHE.pipe, "text_encoder_2", None)],
+            device=exec_device,
+        )
+        text_dtype = CACHE.pipe.text_encoder.dtype
+        pooled_dtype = getattr(CACHE.pipe.text_encoder_2, "dtype", text_dtype)
+
+        pos_list = [prompt]
+        neg_text = neg if (neg is not None) else ""
+        neg_list = [neg_text]
+
+        with torch.no_grad():
+            prompt_embeds, pooled_prompt_embeds = compel_obj(pos_list)
+            negative_prompt_embeds, negative_pooled_prompt_embeds = compel_obj(neg_list)
+
+        prompt_embeds, negative_prompt_embeds = compel_obj.pad_conditioning_tensors_to_same_length(
+            [prompt_embeds, negative_prompt_embeds], precomputed_padding=empty_conditioning
+        )
+
+        prompt_embeds = prompt_embeds.to(device=exec_device, dtype=text_dtype)
+        negative_prompt_embeds = negative_prompt_embeds.to(device=exec_device, dtype=text_dtype)
+        pooled_prompt_embeds = pooled_prompt_embeds.to(device=exec_device, dtype=pooled_dtype)
+        negative_pooled_prompt_embeds = negative_pooled_prompt_embeds.to(device=exec_device, dtype=pooled_dtype)
+
+        add_time_ids = torch.tensor(
+            [
+                [
+                    int(target_h),
+                    int(target_w),
+                    0,
+                    0,
+                    int(target_h),
+                    int(target_w),
+                ]
+            ],
+            device=exec_device,
+            dtype=text_dtype,
+        )
+
+        out = CACHE.pipe(
+            image=image,
+            strength=strength,
+            prompt_embeds=prompt_embeds,
+            pooled_prompt_embeds=pooled_prompt_embeds,
+            negative_prompt_embeds=negative_prompt_embeds,
+            negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
+            num_inference_steps=int(steps),
+            guidance_scale=float(guidance),
+            width=int(target_w),
+            height=int(target_h),
+            generator=g,
+            added_cond_kwargs={"time_ids": add_time_ids},
+        ).images[0]
+    else:
+        out = CACHE.pipe(
+            prompt=prompt,
+            negative_prompt=(neg or None),
+            image=image,
+            strength=strength,
+            num_inference_steps=int(steps),
+            guidance_scale=float(guidance),
+            generator=g,
+        ).images[0]
+
+    return out
 
 # text-to-image + img2text
 def generate_then_interrogate(model_name: str, prompt: str, neg: str, steps: int, guidance: float,
@@ -1243,15 +1362,15 @@ LANG_CHOICES = {
 
 TOKEN_LIMIT_INFO_MD = {
     "en": (
-        "### Text Encoder Basics\n"
-        "- SD1.5 uses a single CLIP text encoder and only reads the first 77 tokens. Anything beyond that is truncated.\n"
-        "- SDXL feeds the same prompt into two CLIP text encoders. In this app, prompts longer than 77 tokens are automatically chunked into multiple 77-token blocks so no text is lost.\n"
+        "### Stable Diffusion Text Encoding\n"
+        "- Stable Diffusion uses CLIP text encoders that read prompts in 77-token blocks. Tooling that supports long prompts typically chunks anything beyond 77 tokens into consecutive blocks so nothing past the limit is lost.\n"
+        "- Increasing the block count raises the total number of tokens competing for attention, so long prompts often benefit from emphasis tricks (weighting, repeats) to keep key phrases impactful.\n"
         "- The [BOS] (beginning of sentence) and [EOS] (end of sentence) tokens take up 2 tokens per block."
     ),
     "ja": (
-        "### テキストエンコーダの基本\n"
-        "- SD1.5はCLIPテキストエンコーダを1つだけ使い、先頭から**77トークン**までしか読みません。これを超えた部分は切り捨てられます。\n"
-        "- SDXLは同じプロンプトを2種類のテキストエンコーダに流します。このアプリでは77トークンを超えると自動的に複数ブロック（各77トークン）に分割して全てのテキストを処理します。\n"
+        "### Stable Diffusionのテキストエンコード\n"
+        "- Stable DiffusionはCLIPテキストエンコーダを用いてプロンプトを77トークン単位で処理します。77トークンを超える部分はブロックに分割され、再結合された埋め込みがUNetへ渡されます。\n"
+        "- ブロック数が増えると総トークン数が増え、注意が分散しやすくなるため、長いプロンプトで重要な語句を扱う際は重み付けや繰り返しなどで強調すると安定しやすくなります。\n"
         "- 各ブロックごとに[BOS]・[EOS]で2トークンを消費します。"
     ),
 }
@@ -1432,6 +1551,101 @@ with gr.Blocks(title='Stable Diffusion Toolkit') as demo:
                 _run_interrogate,
                 inputs=[out_img, th_general, camie_general_thr, camie_character_thr, blip_prompt, max_tokens],
                 outputs=[out_wd_sentence, out_blip, tag_sections_group, *tag_section_component_list],
+            )
+
+        with gr.Tab("Image to Image"):
+            with gr.Row():
+                model_sel_name_i2i = gr.Dropdown(model_names, value=DEFAULT_NAME, label='Model')
+                strength_i2i = gr.Slider(0.05, 1.0, value=0.6, step=0.01, label='Denoising strength (lower = closer to input)')
+            init_image = gr.Image(label="Input image", type="pil")
+            with gr.Row():
+                prompt_i2i = gr.Textbox(label='Prompt (what to emphasize)', value='masterpiece, best quality')
+                neg_i2i = gr.Textbox(label='Negative (what to avoid)', value='nsfw, lowres, blurry, watermark')
+            with gr.Row():
+                steps_i2i = gr.Slider(5, 100, value=MODEL_REGISTRY[DEFAULT_KEY]['presets']['steps'], step=1, label='Steps (more = better, slower)')
+                guidance_i2i = gr.Slider(0.5, 20.0, value=MODEL_REGISTRY[DEFAULT_KEY]['presets']['guidance'], step=0.1, label='Guidance (higher = follow prompt)')
+            with gr.Row():
+                width_i2i = gr.Dropdown(choices=MODEL_REGISTRY[DEFAULT_KEY]['presets']['widths'], value=MODEL_REGISTRY[DEFAULT_KEY]['presets']['default_w'], label='Output width (px)')
+                height_i2i = gr.Dropdown(choices=MODEL_REGISTRY[DEFAULT_KEY]['presets']['heights'], value=MODEL_REGISTRY[DEFAULT_KEY]['presets']['default_h'], label='Output height (px)')
+            with gr.Row():
+                scheduler_i2i = gr.Dropdown(
+                    choices=['euler', 'ddim', 'dpmpp2m'],
+                    value=MODEL_REGISTRY[DEFAULT_KEY]['presets'].get('default_scheduler', 'euler'),
+                    label='Sampler (scheduler)'
+                )
+                seed_i2i = gr.Textbox(label='Seed (leave blank for random)', value='')
+                match_input_size = gr.Checkbox(value=True, label='Match input image size')
+
+            with gr.Accordion("Auto description settings", open=False):
+                th_general3 = gr.Slider(0.0, 1.0, 0.35, 0.01, label="WD tagger threshold (general)")
+                with gr.Row():
+                    camie_general_thr3 = gr.Slider(0.05, 1.0, 0.492, 0.01, label="Camie tagger threshold (copyright/artist/meta/year)")
+                    camie_character_thr3 = gr.Slider(0.05, 1.0, 0.75, 0.01, label="Camie tagger threshold (character)")
+                with gr.Row():
+                    blip_prompt3 = gr.Textbox(label="Caption prompt (optional)", value="")
+                    max_tokens3 = gr.Slider(8, 120, 40, 1, label="Caption length (max tokens)")
+
+            btn_img2img = gr.Button('Generate Variant')
+            out_img_i2i = gr.Image(label='Generated image', type='pil', interactive=False, sources=[])
+            btn_img2img_interrogate = gr.Button('Describe Image')
+            out_wd_sentence_i2i = gr.Textbox(label="Tag summary", lines=6, show_copy_button=True)
+            out_blip_i2i = gr.Textbox(label="Caption", lines=6, show_copy_button=True)
+            with gr.Group(visible=False) as tag_sections_group_i2i:
+                gr.Markdown("### Tag Details")
+                tag_section_components_i2i: Dict[str, gr.Markdown] = {}
+                for key, title in TAG_SECTION_ORDER:
+                    tag_section_components_i2i[key] = gr.Markdown(label=title, value="", show_label=False)
+                tag_section_component_list_i2i = [tag_section_components_i2i[key] for key, _ in TAG_SECTION_ORDER]
+
+            model_sel_name_i2i.change(
+                on_model_change,
+                inputs=[model_sel_name_i2i],
+                outputs=[width_i2i, height_i2i, guidance_i2i, steps_i2i, scheduler_i2i],
+            )
+
+            def _on_img2img_generate(model_name, init_img_in, prm, neg_prompt, steps_v, guidance_v, width_v, height_v, scheduler_v, seed_v, strength_v, match_size):
+                if init_img_in is None:
+                    raise gr.Error("Please provide an input image for img2img.")
+                width_out = None if match_size else int(width_v)
+                height_out = None if match_size else int(height_v)
+                img = generate_img2img(
+                    key_by_name.get(model_name, DEFAULT_KEY),
+                    init_img_in,
+                    prm,
+                    neg_prompt,
+                    steps_v,
+                    guidance_v,
+                    scheduler_v,
+                    seed_v,
+                    strength_v,
+                    width=width_out,
+                    height=height_out,
+                )
+                return (img, *_reset_tag_updates())
+
+            btn_img2img.click(
+                _on_img2img_generate,
+                inputs=[
+                    model_sel_name_i2i,
+                    init_image,
+                    prompt_i2i,
+                    neg_i2i,
+                    steps_i2i,
+                    guidance_i2i,
+                    width_i2i,
+                    height_i2i,
+                    scheduler_i2i,
+                    seed_i2i,
+                    strength_i2i,
+                    match_input_size,
+                ],
+                outputs=[out_img_i2i, tag_sections_group_i2i, *tag_section_component_list_i2i],
+            )
+
+            btn_img2img_interrogate.click(
+                _run_interrogate,
+                inputs=[out_img_i2i, th_general3, camie_general_thr3, camie_character_thr3, blip_prompt3, max_tokens3],
+                outputs=[out_wd_sentence_i2i, out_blip_i2i, tag_sections_group_i2i, *tag_section_component_list_i2i],
             )
 
         with gr.Tab("Describe Image"):
