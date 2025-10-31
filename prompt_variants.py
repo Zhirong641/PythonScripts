@@ -490,7 +490,7 @@ def generate_phrase_variants(
     artists: List[str],
     k: int = 6,
     token_budget: int = 70,
-    dropout: float = 0.20,
+    dropout: float = 0.15,
     max_general_per_variant: int = 10,
     head_keep: int = 24,
     characters: Optional[List[str]] = None,
@@ -581,7 +581,7 @@ def generate_variants_with_nl_list(
     k: int = 6,
     token_budget: int = 70,
     phrase_ratio: float = 1.0,       # 约 80% 短语式 + 20% 自然语言
-    dropout: float = 0.20,
+    dropout: float = 0.15,
     max_general_per_variant: int = 10,
     head_keep: int = 24,
     characters: Optional[List[str]] = None,

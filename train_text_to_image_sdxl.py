@@ -61,9 +61,11 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from prompt_variants import generate_variants_with_nl_list
-from PIL import Image
+from PIL import Image, ImageFile
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+Image.MAX_IMAGE_PIXELS = None
+ImageFile.LOAD_TRUNCATED_IMAGES = True  # Allow partially downloaded/corrupted files instead of crashing.
 
 # Will error if the minimal version of diffusers is not installed. Remove at your own risks.
 check_min_version("0.36.0.dev0")
@@ -1536,7 +1538,7 @@ def main(args):
                                 prev_prompts = generate_variants_with_nl_list(
                                     _split_clean_comma_list(general_tags[0]),
                                     _split_clean_comma_list(artist_tags[0]),
-                                    k=5, token_budget=150,
+                                    k=2, token_budget=150,
                                     head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
                                     max_general_per_variant=40,
                                     characters=_split_clean_comma_list(character_tags[0]),
@@ -1653,6 +1655,42 @@ def main(args):
                         "marushin",
                         "m and m",
                         "mikan",
+                        "cle_masahiro",
+                        "cle masahiro",
+                        "kaisen_chuui",
+                        "takatsuki_ichi",
+                        "takatsuki ichi",
+                        "fu-ta",
+                        "kimura_takahiro",
+                        "kimura takahiro",
+                        "cuvie",
+                        "may",
+                    ]
+
+                    exclude_danbooru_artists = [
+                        "cut",
+                        "obui",
+                        "sky",
+                        "alp",
+                        "edo",
+                        "mos",
+                        "jam",
+                        "rim",
+                        "isao",
+                        "momi",
+                        "nini",
+                        "niki",
+                        "acorn",
+                        "asanagi",
+                        "aldehyde",
+                        "murakami_suigun",
+                        "kichihachi",
+                        "kusaka_souji",
+                        "harada_takehito",
+                        "watanabe_akio",
+                        "maru",
+                        "kirishima_satoshi",
+                        "tsunashima_shirou"
                     ]
 
                     rng = random.Random(args.seed if args.seed is not None else 42)
@@ -1684,6 +1722,8 @@ def main(args):
                         artist = example.get("artist", "") or ""
                         artists = _split_clean_comma_list(artist)
                         if any(a in artists for a in exclude_artist_list):
+                            return False
+                        if "danbooru" in src_path and any(a in artists for a in exclude_danbooru_artists):
                             return False
                         if "mizunezumi" in artists:
                             if rng.random() < 0.9:
@@ -2341,7 +2381,7 @@ def main(args):
                                 preview_prompts = generate_variants_with_nl_list(
                                     _split_clean_comma_list(_first_str(general_tags)),
                                     _split_clean_comma_list(_first_str(artist_tags)),
-                                    k=5,
+                                    k=2,
                                     token_budget=150,
                                     head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
                                     max_general_per_variant=40,
