@@ -335,8 +335,8 @@ def main():
         help="scheduler prediction_type: auto/epsilon/v_prediction (vpred 模型请选择 v_prediction)",
     )
 
-    ap.add_argument("--prompt", type=str, default="a cinematic anime-style girl, soft lighting, highly detailed, masterpiece")
-    ap.add_argument("--negative_prompt", type=str, default="low quality, worst quality, blurry, extra fingers")
+    ap.add_argument("--prompt", type=str, default="karyl (princess connect!), by miwa futaba, rating:questionable, 1girl, animal ear fluff, animal ears, bar censor, black hair, blush, bottomless, breasts, cat ears, cat girl, cat tail, cowboy shot, cropped shirt, day, twintails, small breasts, page number, wet hair, tail, outdoors, ripples, water, nipples, skin fang, partially submerged, sleeveless, shirt, tail raised, open mouth, looking at viewer, navel, sidelocks, streaked hair, long hair, stomach, wet, fang, era:newest")
+    ap.add_argument("--negative_prompt", type=str, default="")
     ap.add_argument("--steps", type=int, default=28)
     ap.add_argument("--cfg", type=float, default=5.5)
     ap.add_argument("--width", type=int, default=-1, help="未指定或<=0时按模型类型给默认: SD1.5→512, SDXL→1024")

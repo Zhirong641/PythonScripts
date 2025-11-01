@@ -233,6 +233,11 @@ def get_compel_for_sdxl(
         conditioning_provider.get_embeddings_for_weighted_prompt_fragments = patched_get_embeddings_for_weighted_prompt_fragments  # type: ignore[assignment]
         conditioning_provider._codex_equalize_lengths = True
 
+    if not hasattr(compel_obj, "_codex_call_with_grad"):
+        raw_call = compel_obj.__class__.__call__
+        grad_impl = getattr(raw_call, "__wrapped__", raw_call)
+        compel_obj._codex_call_with_grad = grad_impl.__get__(compel_obj, compel_obj.__class__)
+
     return compel_obj, empty_conditioning
 
 

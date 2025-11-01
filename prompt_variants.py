@@ -394,52 +394,52 @@ def _era_tag(year_tags: List[str]) -> str:
 # - 这些不是“分类”，而是为一组近义/同槽位标签设置“每条 caption 仅取 ≤1~2 个”的限额，避免堆砌。
 # - 覆盖发色/发长/发型、眼色、胸围、衣物款式、腿部着装、鞋履、视角裁切等，在 Camie 的 general 里很常见。:contentReference[oaicite:1]{index=1}
 _PATTERNS = [
-    # 发色（Camie metadata 常见 color hair 标签）：仅选 1 个
-    ("hair_color",   lambda t: _is_color_tag(t, "hair")),
-    # 发长（long/shoulder length/waist length 等）：仅 1 个
-    ("hair_length",  lambda t: bool(_HAIR_LENGTH_PATTERN.search(t))),
-    # 发型（braid/twintails/bun/pixie cut 等）：仅 1 个
-    ("hairstyle",    lambda t: bool(_HAIRSTYLE_PATTERN.search(t))),
-    # 眼睛颜色（Camie metadata 常见 color eyes 标签）：仅选 1 个
-    ("eyes_color",   lambda t: _is_color_tag(t, "eyes")),
-    # 胸围尺寸（flat/small/large/huge 等）：仅 1 个
-    ("bust_size",    lambda t: bool(_BUST_PATTERN.search(t))),
-    # 上衣袖长（sleeveless/short sleeves/off-shoulder 等）：仅 1 个
-    ("sleeves",      lambda t: bool(_SLEEVE_PATTERN.search(t))),
-    # 连衣裙/裙装（dress/skirt/gown 等）：仅 1 个
-    ("dress_skirt",  lambda t: bool(_DRESS_SKIRT_PATTERN.search(t))),
-    # 腿部着装（thighhighs/knee highs/leggings/stockings/pantyhose/bare legs 等）：仅 1 个
-    ("legwear",      lambda t: bool(_LEGWEAR_PATTERN.search(t))),
-    # 鞋履（boots/heels/sandals/sneakers/barefoot 等）：仅 1 个
-    ("footwear",     lambda t: bool(_FOOTWEAR_PATTERN.search(t))),
-    # 蝴蝶结/丝带：仅 1 个
-    ("ribbon",       lambda t: bool(_RIBBON_PATTERN.search(t))),
+    # # 发色（Camie metadata 常见 color hair 标签）：仅选 1 个
+    # ("hair_color",   lambda t: _is_color_tag(t, "hair")),
+    # # 发长（long/shoulder length/waist length 等）：仅 1 个
+    # ("hair_length",  lambda t: bool(_HAIR_LENGTH_PATTERN.search(t))),
+    # # 发型（braid/twintails/bun/pixie cut 等）：仅 1 个
+    # ("hairstyle",    lambda t: bool(_HAIRSTYLE_PATTERN.search(t))),
+    # # 眼睛颜色（Camie metadata 常见 color eyes 标签）：仅选 1 个
+    # ("eyes_color",   lambda t: _is_color_tag(t, "eyes")),
+    # # 胸围尺寸（flat/small/large/huge 等）：仅 1 个
+    # ("bust_size",    lambda t: bool(_BUST_PATTERN.search(t))),
+    # # 上衣袖长（sleeveless/short sleeves/off-shoulder 等）：仅 1 个
+    # ("sleeves",      lambda t: bool(_SLEEVE_PATTERN.search(t))),
+    # # 连衣裙/裙装（dress/skirt/gown 等）：仅 1 个
+    # ("dress_skirt",  lambda t: bool(_DRESS_SKIRT_PATTERN.search(t))),
+    # # 腿部着装（thighhighs/knee highs/leggings/stockings/pantyhose/bare legs 等）：仅 1 个
+    # ("legwear",      lambda t: bool(_LEGWEAR_PATTERN.search(t))),
+    # # 鞋履（boots/heels/sandals/sneakers/barefoot 等）：仅 1 个
+    # ("footwear",     lambda t: bool(_FOOTWEAR_PATTERN.search(t))),
+    # # 蝴蝶结/丝带：仅 1 个
+    # ("ribbon",       lambda t: bool(_RIBBON_PATTERN.search(t))),
     # 人数（1girl/2girls 等按性别区分；solo/group 等归入通用）：各自仅 1 个
-    ("person_count_f", lambda t: bool(_PERSON_COUNT_F_PATTERN.search(t))),
-    ("person_count_m", lambda t: bool(_PERSON_COUNT_M_PATTERN.search(t))),
-    ("person_count_generic", lambda t: bool(_PERSON_COUNT_GENERIC_PATTERN.search(t))),
-    # 排尿相关（pee/peeing/urination 等）：仅 1 个
-    ("urination",    lambda t: bool(_URINATION_PATTERN.search(t))),
-    # 性行为相关（sex/gangbang/group sex 等）：仅 1 个
-    ("sex_act",     lambda t: bool(_SEX_ACT_PATTERN.search(t))),
+    # ("person_count_f", lambda t: bool(_PERSON_COUNT_F_PATTERN.search(t))),
+    # ("person_count_m", lambda t: bool(_PERSON_COUNT_M_PATTERN.search(t))),
+    # ("person_count_generic", lambda t: bool(_PERSON_COUNT_GENERIC_PATTERN.search(t))),
+    # # 排尿相关（pee/peeing/urination 等）：仅 1 个
+    # ("urination",    lambda t: bool(_URINATION_PATTERN.search(t))),
+    # # 性行为相关（sex/gangbang/group sex 等）：仅 1 个
+    # ("sex_act",     lambda t: bool(_SEX_ACT_PATTERN.search(t))),
     # 打码情况（censored/mosaic censoring 等）：仅 1 个
-    ("censoring",    lambda t: bool(_CENSORING_PATTERN.search(t))),
-    # 内裤相关（panties/side-tie panties 等）：仅 1 个
-    ("panties",      lambda t: bool(_PANTIES_PATTERN.search(t))),
-    # 胸罩相关（bra/brassiere/sports bra 等）：仅 1 个
-    ("bra",          lambda t: bool(_BRA_PATTERN.search(t))),
-    # 包/挎包：仅 1 个
-    ("bag",          lambda t: bool(_BAG_PATTERN.search(t))),
-    # 眼镜类：仅 1 个
-    ("glasses",      lambda t: bool(_GLASSES_PATTERN.search(t))),
-    # 头饰：仅 1 个
-    ("headwear",     lambda t: bool(_HEADWEAR_PATTERN.search(t))),
-    # 构图裁切：仅 1 个
-    ("body_view",    lambda t: bool(_BODY_VIEW_PATTERN.search(t))),
-    # 视角方向：仅 1 个
-    ("camera_angle", lambda t: bool(_CAMERA_ANGLE_PATTERN.search(t))),
-    # 姿态：仅 1 个
-    ("pose_basic",   lambda t: bool(_POSE_PATTERN.search(t))),
+    # ("censoring",    lambda t: bool(_CENSORING_PATTERN.search(t))),
+    # # 内裤相关（panties/side-tie panties 等）：仅 1 个
+    # ("panties",      lambda t: bool(_PANTIES_PATTERN.search(t))),
+    # # 胸罩相关（bra/brassiere/sports bra 等）：仅 1 个
+    # ("bra",          lambda t: bool(_BRA_PATTERN.search(t))),
+    # # 包/挎包：仅 1 个
+    # ("bag",          lambda t: bool(_BAG_PATTERN.search(t))),
+    # # 眼镜类：仅 1 个
+    # ("glasses",      lambda t: bool(_GLASSES_PATTERN.search(t))),
+    # # 头饰：仅 1 个
+    # ("headwear",     lambda t: bool(_HEADWEAR_PATTERN.search(t))),
+    # # 构图裁切：仅 1 个
+    # ("body_view",    lambda t: bool(_BODY_VIEW_PATTERN.search(t))),
+    # # 视角方向：仅 1 个
+    # ("camera_angle", lambda t: bool(_CAMERA_ANGLE_PATTERN.search(t))),
+    # # 姿态：仅 1 个
+    # ("pose_basic",   lambda t: bool(_POSE_PATTERN.search(t))),
 ]
 
 # 黑名单（不进训练 caption 的“元信息 / 平台工艺 / 文件属性”）
@@ -447,15 +447,15 @@ _PATTERNS = [
 # rating 标签单独作为锚点处理，此处不剔除。:contentReference[oaicite:2]{index=2}
 _BLACKLIST = {
     # 背景/导出
-    # "simple background", "transparent background", "white background", "gradient background",
-    "sprite", "tachi-e", "official art", "game cg",
-    # 文件/画质/站点痕迹
-    "watermark", "logo", "signature", "jpeg artifacts", "upscaled", "vector",
-    "lowres", "highres", "absurdres", "incredibly absurdres", "huge filesize",
-    # 文本/翻译/字幕
-    "translated", "check translation", "speech bubble", "text focus",
-    # 其他不建议进入提示的“分类标签”
-    "general", "sensitive", "questionable", "explicit"
+    # # "simple background", "transparent background", "white background", "gradient background",
+    # "sprite", "tachi-e", "official art", "game cg",
+    # # 文件/画质/站点痕迹
+    # "watermark", "logo", "signature", "jpeg artifacts", "upscaled", "vector",
+    # "lowres", "highres", "absurdres", "incredibly absurdres", "huge filesize",
+    # # 文本/翻译/字幕
+    # "translated", "check translation", "speech bubble", "text focus",
+    # # 其他不建议进入提示的“分类标签”
+    # "general", "sensitive", "questionable", "explicit"
     # 年份序列（如 year_2017）：训练提示里通常无意义
     # 你也可以用正则整体拦截：^year_\d{4}$
 }

@@ -26,6 +26,7 @@ import shutil
 from contextlib import nullcontext
 from pathlib import Path
 import json
+from itertools import chain
 
 import accelerate
 import datasets
@@ -682,6 +683,20 @@ def parse_args(input_args=None):
     )
     parser.add_argument("--noise_offset", type=float, default=0, help="The scale of noise offset.")
     parser.add_argument(
+        "--train_text_encoder",
+        action="store_true",
+        help="Fine-tune both text encoders alongside the UNet.",
+    )
+    parser.add_argument(
+        "--text_encoder_lr",
+        type=float,
+        default=None,
+        help=(
+            "Learning rate applied to text encoder parameters when `--train_text_encoder` is set."
+            " Defaults to 10%% of the UNet learning rate if not provided."
+        ),
+    )
+    parser.add_argument(
         "--image_interpolation_mode",
         type=str,
         default="lanczos",
@@ -752,6 +767,11 @@ def parse_args(input_args=None):
             "`--precompute_vae_latents` requires text embeddings to be precomputed as well."
             " Use `--no-precompute-vae-latents` when disabling text precomputation."
         )
+    if args.train_text_encoder and args.precompute_text_embeddings:
+        raise ValueError(
+            "`--train_text_encoder` cannot be combined with precomputed text embeddings."
+            " Remove `--precompute_text_embeddings` to allow gradient updates."
+        )
 
     if args.precompute_text_embeddings:
         if args.text_encode_batch_size is None or args.text_encode_batch_size <= 0:
@@ -820,9 +840,9 @@ def encode_prompt(
                 general_tags,
                 artist_tags,
                 k=1,
-                token_budget=150,
+                token_budget=220,
                 head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
-                max_general_per_variant=40,
+                max_general_per_variant=50,
                 characters=character_tags,
                 ratings=rating_tags,
                 years=year_tags,
@@ -1029,10 +1049,119 @@ def main(args):
         args.pretrained_model_name_or_path, subfolder="unet", revision=args.revision, variant=args.variant
     )
 
-    # Freeze vae and text encoders.
+    if args.train_text_encoder:
+
+        def _tokenize_long_prompt(tokenizer, text, device):
+            max_len = tokenizer.model_max_length
+            chunk_capacity = max_len - 2
+            bos = tokenizer.bos_token_id
+            eos = tokenizer.eos_token_id
+            pad = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else eos
+
+            tokens = tokenizer(
+                text,
+                add_special_tokens=False,
+                padding=False,
+                truncation=False,
+            )["input_ids"]
+
+            token_chunks = []
+            mask_chunks = []
+            if not tokens:
+                tokens = []
+            for start in range(0, len(tokens), chunk_capacity):
+                chunk_tokens = tokens[start : start + chunk_capacity]
+                chunk = [bos] + chunk_tokens + [eos]
+                mask = [1] * len(chunk)
+                if len(chunk) < max_len:
+                    pad_len = max_len - len(chunk)
+                    chunk.extend([pad] * pad_len)
+                    mask.extend([0] * pad_len)
+                token_chunks.append(chunk)
+                mask_chunks.append(mask)
+
+            if not token_chunks:
+                base = [bos, eos]
+                pad_len = max_len - len(base)
+                token_chunks.append(base + [pad] * pad_len)
+                mask_chunks.append([1, 1] + [0] * pad_len)
+
+            input_ids = torch.tensor(token_chunks, dtype=torch.long, device=device)
+            attention_mask = torch.tensor(mask_chunks, dtype=torch.long, device=device)
+            return input_ids, attention_mask
+
+        def _forward_encoder(encoder, input_ids, attention_mask):
+            outputs = encoder(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                output_hidden_states=True,
+                return_dict=True,
+            )
+            hidden_states = outputs.hidden_states[-2]
+            flat_hidden = hidden_states.reshape(-1, hidden_states.shape[-1])
+            flat_mask = attention_mask.reshape(-1).bool()
+            gathered = flat_hidden[flat_mask].unsqueeze(0)
+            pooled = getattr(outputs, "pooler_output", None)
+            if pooled is not None:
+                pooled = pooled[:1]
+            return gathered, pooled
+
+        def _encode_texts_with_trainable_encoders(texts):
+            prompt_tensors = []
+            pooled_tensors = []
+            max_tokens = 0
+
+            for text in texts:
+                ids_one, mask_one = _tokenize_long_prompt(tokenizer_one, text, text_encoder_one.device)
+                ids_two, mask_two = _tokenize_long_prompt(tokenizer_two, text, text_encoder_two.device)
+
+                hidden_one, _ = _forward_encoder(text_encoder_one, ids_one, mask_one)
+                hidden_two, pooled_two = _forward_encoder(text_encoder_two, ids_two, mask_two)
+
+                seq_len = max(hidden_one.shape[1], hidden_two.shape[1])
+                if hidden_one.shape[1] != seq_len:
+                    pad_len = seq_len - hidden_one.shape[1]
+                    pad = hidden_one.new_zeros((1, pad_len, hidden_one.shape[2]))
+                    hidden_one = torch.cat([hidden_one, pad], dim=1)
+                if hidden_two.shape[1] != seq_len:
+                    pad_len = seq_len - hidden_two.shape[1]
+                    pad = hidden_two.new_zeros((1, pad_len, hidden_two.shape[2]))
+                    hidden_two = torch.cat([hidden_two, pad], dim=1)
+
+                combined = torch.cat([hidden_one, hidden_two], dim=-1)
+                prompt_tensors.append(combined)
+                if pooled_two is None:
+                    pooled_two = hidden_two[:, 0, :]
+                pooled_tensors.append(pooled_two)
+                max_tokens = max(max_tokens, combined.shape[1])
+
+            padded_prompts = []
+            for prompt in prompt_tensors:
+                if prompt.shape[1] < max_tokens:
+                    pad_len = max_tokens - prompt.shape[1]
+                    pad = prompt.new_zeros((prompt.shape[0], pad_len, prompt.shape[2]))
+                    prompt = torch.cat([prompt, pad], dim=1)
+                padded_prompts.append(prompt)
+
+            prompt_batch = torch.cat(padded_prompts, dim=0)
+            pooled_batch = torch.cat(pooled_tensors, dim=0)
+
+            prompt_batch = prompt_batch.to(accelerator.device, dtype=weight_dtype)
+            pooled_batch = pooled_batch.to(accelerator.device, dtype=weight_dtype)
+            return prompt_batch, pooled_batch
+
+    # Freeze vae and optionally text encoders.
     vae.requires_grad_(False)
-    text_encoder_one.requires_grad_(False)
-    text_encoder_two.requires_grad_(False)
+    text_encoder_one.requires_grad_(args.train_text_encoder)
+    text_encoder_two.requires_grad_(args.train_text_encoder)
+
+    if args.train_text_encoder:
+        text_encoder_one.train()
+        text_encoder_two.train()
+    else:
+        text_encoder_one.eval()
+        text_encoder_two.eval()
+
     # Set unet as trainable.
     unet.train()
 
@@ -1044,11 +1173,15 @@ def main(args):
     elif accelerator.mixed_precision == "bf16":
         weight_dtype = torch.bfloat16
 
+    text_encoder_dtype = (
+        torch.float32 if args.train_text_encoder and accelerator.mixed_precision == "fp16" else weight_dtype
+    )
+
     # Move unet, vae and text_encoder to device and cast to weight_dtype
     # The VAE is in float32 to avoid NaN losses.
     vae.to(accelerator.device, dtype=torch.float32)
-    text_encoder_one.to(accelerator.device, dtype=weight_dtype)
-    text_encoder_two.to(accelerator.device, dtype=weight_dtype)
+    text_encoder_one.to(accelerator.device, dtype=text_encoder_dtype)
+    text_encoder_two.to(accelerator.device, dtype=text_encoder_dtype)
 
     # Create EMA for the unet.
     if args.use_ema:
@@ -1083,12 +1216,25 @@ def main(args):
                 if args.use_ema:
                     ema_unet.save_pretrained(os.path.join(output_dir, "unet_ema"))
 
-                for i, model in enumerate(models):
-                    model.save_pretrained(os.path.join(output_dir, "unet"))
+                to_save = [("unet", accelerator.unwrap_model(unet))]
+                if args.train_text_encoder:
+                    to_save.extend(
+                        [
+                            ("text_encoder", accelerator.unwrap_model(text_encoder_one)),
+                            ("text_encoder_2", accelerator.unwrap_model(text_encoder_two)),
+                        ]
+                    )
 
-                    # make sure to pop weight so that corresponding model is not saved again
-                    if weights:
-                        weights.pop()
+                for name, model_to_save in to_save:
+                    save_path = os.path.join(output_dir, name)
+                    model_to_save.save_pretrained(save_path)
+                torch.save({}, os.path.join(output_dir, "pytorch_model.bin"))
+
+            # pop everything so accelerate doesn't try to handle it again
+            while weights:
+                weights.pop()
+            while models:
+                models.pop()
 
         def load_model_hook(models, input_dir):
             if args.use_ema:
@@ -1097,16 +1243,34 @@ def main(args):
                 ema_unet.to(accelerator.device)
                 del load_model
 
-            for _ in range(len(models)):
-                # pop models so that they are not loaded again
-                model = models.pop()
+            load_targets = [
+                ("unet", unet, UNet2DConditionModel, "unet"),
+            ]
+            if args.train_text_encoder:
+                load_targets.extend(
+                    [
+                        ("text_encoder", text_encoder_one, type(accelerator.unwrap_model(text_encoder_one)), "text_encoder"),
+                        ("text_encoder_2", text_encoder_two, type(accelerator.unwrap_model(text_encoder_two)), "text_encoder_2"),
+                    ]
+                )
 
-                # load diffusers style into model
-                load_model = UNet2DConditionModel.from_pretrained(input_dir, subfolder="unet")
-                model.register_to_config(**load_model.config)
-
-                model.load_state_dict(load_model.state_dict())
+            for name, model_ref, model_cls, subfolder in load_targets:
+                target = accelerator.unwrap_model(model_ref)
+                target_dtype = next(target.parameters()).dtype
+                load_path = os.path.join(input_dir, name)
+                if not os.path.isdir(load_path):
+                    # Fallback to default location (for backwards compatibility)
+                    load_model = model_cls.from_pretrained(input_dir, subfolder=subfolder)
+                else:
+                    load_model = model_cls.from_pretrained(load_path)
+                if isinstance(target, UNet2DConditionModel):
+                    target.register_to_config(**load_model.config)
+                target.load_state_dict(load_model.state_dict())
+                target.to(accelerator.device, dtype=target_dtype)
                 del load_model
+
+            while models:
+                models.pop()
 
         accelerator.register_save_state_pre_hook(save_model_hook)
         accelerator.register_load_state_pre_hook(load_model_hook)
@@ -1119,10 +1283,14 @@ def main(args):
     if args.allow_tf32:
         torch.backends.cuda.matmul.allow_tf32 = True
 
+    lr_scale = args.gradient_accumulation_steps * args.train_batch_size * accelerator.num_processes
     if args.scale_lr:
-        args.learning_rate = (
-            args.learning_rate * args.gradient_accumulation_steps * args.train_batch_size * accelerator.num_processes
-        )
+        args.learning_rate = args.learning_rate * lr_scale
+        if args.text_encoder_lr is not None:
+            args.text_encoder_lr = args.text_encoder_lr * lr_scale
+
+    if args.train_text_encoder and args.text_encoder_lr is None:
+        args.text_encoder_lr = args.learning_rate * 0.1
 
     # Use 8-bit Adam for lower memory usage or to fine-tune the model in 16GB GPUs
     if args.use_8bit_adam:
@@ -1138,7 +1306,14 @@ def main(args):
         optimizer_class = torch.optim.AdamW
 
     # Optimizer creation
-    params_to_optimize = unet.parameters()
+    if args.train_text_encoder:
+        text_encoder_params = chain(text_encoder_one.parameters(), text_encoder_two.parameters())
+        params_to_optimize = [
+            {"params": unet.parameters(), "lr": args.learning_rate},
+            {"params": text_encoder_params, "lr": args.text_encoder_lr},
+        ]
+    else:
+        params_to_optimize = unet.parameters()
     optimizer = optimizer_class(
         params_to_optimize,
         lr=args.learning_rate,
@@ -1200,9 +1375,23 @@ def main(args):
         )
 
         # Prepare modules
-        unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
-            unet, optimizer, train_dataloader, lr_scheduler
-        )
+        if args.train_text_encoder:
+            (
+                unet,
+                text_encoder_one,
+                text_encoder_two,
+                optimizer,
+                train_dataloader,
+                lr_scheduler,
+            ) = accelerator.prepare(
+                unet, text_encoder_one, text_encoder_two, optimizer, train_dataloader, lr_scheduler
+            )
+            text_encoder_one.train()
+            text_encoder_two.train()
+        else:
+            unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
+                unet, optimizer, train_dataloader, lr_scheduler
+            )
         if args.use_ema:
             ema_unet.to(accelerator.device)
 
@@ -1352,15 +1541,21 @@ def main(args):
             out.save(os.path.join(out_dir, f"step_{step:08d}.png"))
 
         # ====== Text encode helper ======
-        def encode_texts_runtime(texts):
-            compel_obj, _ = get_compel_for_sdxl(
+        if args.train_text_encoder:
+            def encode_texts_runtime(texts):
+                return _encode_texts_with_trainable_encoders(texts)
+
+        else:
+            compel_obj_runtime, _ = get_compel_for_sdxl(
                 [tokenizer_one, tokenizer_two], [text_encoder_one, text_encoder_two], text_encoder_one.device
             )
-            with torch.no_grad():
-                prompt_embeds, pooled_prompt_embeds = compel_obj(texts)
-            prompt_embeds = prompt_embeds.to(accelerator.device, dtype=weight_dtype)
-            pooled_prompt_embeds = pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
-            return prompt_embeds, pooled_prompt_embeds
+
+            def encode_texts_runtime(texts):
+                with torch.no_grad():
+                    prompt_embeds, pooled_prompt_embeds = compel_obj_runtime(texts)
+                prompt_embeds = prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+                pooled_prompt_embeds = pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+                return prompt_embeds, pooled_prompt_embeds
 
         # ====== Train (latent path) ======
         total_batch_size = args.train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
@@ -1455,9 +1650,10 @@ def main(args):
                         text = generate_variants_with_nl_list(
                             _split_clean_comma_list(general_tags[i]),
                             _split_clean_comma_list(artist_tags[i]),
-                            k=1, token_budget=150,
+                            k=1,
+                            token_budget=220,
                             head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
-                            max_general_per_variant=40,
+                            max_general_per_variant=50,
                             characters=_split_clean_comma_list(character_tags[i]),
                             ratings=_split_clean_comma_list(rating_tags[i]),
                             years=_split_clean_comma_list(year_tags[i])
@@ -1538,9 +1734,10 @@ def main(args):
                                 prev_prompts = generate_variants_with_nl_list(
                                     _split_clean_comma_list(general_tags[0]),
                                     _split_clean_comma_list(artist_tags[0]),
-                                    k=2, token_budget=150,
+                                    k=2,
+                                    token_budget=220,
                                     head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
-                                    max_general_per_variant=40,
+                                    max_general_per_variant=50,
                                     characters=_split_clean_comma_list(character_tags[0]),
                                     ratings=_split_clean_comma_list(rating_tags[0]),
                                     years=_split_clean_comma_list(year_tags[0])
@@ -1582,6 +1779,11 @@ def main(args):
             u = unwrap_model(unet)
             if args.use_ema:
                 ema_unet.copy_to(u.parameters())
+            text_encoder_kwargs = {}
+            if args.train_text_encoder:
+                te1 = unwrap_model(text_encoder_one).to(device=torch.device("cpu"), dtype=torch.float32)
+                te2 = unwrap_model(text_encoder_two).to(device=torch.device("cpu"), dtype=torch.float32)
+                text_encoder_kwargs.update({"text_encoder": te1, "text_encoder_2": te2})
             vae_local = AutoencoderKL.from_pretrained(
                 vae_path,
                 subfolder="vae" if args.pretrained_vae_model_name_or_path is None else None,
@@ -1596,6 +1798,7 @@ def main(args):
                 revision=args.revision,
                 variant=args.variant,
                 torch_dtype=weight_dtype,
+                **text_encoder_kwargs,
             )
             if args.prediction_type is not None:
                 scheduler_args = {"prediction_type": args.prediction_type}
@@ -1604,7 +1807,7 @@ def main(args):
 
         accelerator.end_training()
         return
-    else:
+    if not using_latent_db:
         # Branch B: raw image dataset via datasets/imagefolder
         # In distributed training, the load_dataset function guarantees that only one local process can concurrently
         # download the dataset.
@@ -1665,6 +1868,17 @@ def main(args):
                         "kimura takahiro",
                         "cuvie",
                         "may",
+                        "takeda_hiromitsu",
+                        "takeda hiromitsu",
+                        "oono_tsutomu",
+                        "oono tsutomu",
+                        "aoi_manabu",
+                        "aoi manabu",
+                        "shikei",
+                        "bubuzuke",
+                        "kloah",
+                        "akagi_rio",
+                        "akagi rio",
                     ]
 
                     exclude_danbooru_artists = [
@@ -1690,7 +1904,12 @@ def main(args):
                         "watanabe_akio",
                         "maru",
                         "kirishima_satoshi",
-                        "tsunashima_shirou"
+                        "tsunashima_shirou",
+                        "ishii_hisao",
+                        "kana",
+                        "untue",
+                        "tedain",
+                        "kuuchuu_yousai",               
                     ]
 
                     rng = random.Random(args.seed if args.seed is not None else 42)
@@ -2020,9 +2239,21 @@ def main(args):
     )
 
     # Prepare everything with our `accelerator`.
-    unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
-        unet, optimizer, train_dataloader, lr_scheduler
-    )
+    if args.train_text_encoder:
+        (
+            unet,
+            text_encoder_one,
+            text_encoder_two,
+            optimizer,
+            train_dataloader,
+            lr_scheduler,
+        ) = accelerator.prepare(unet, text_encoder_one, text_encoder_two, optimizer, train_dataloader, lr_scheduler)
+        text_encoder_one.train()
+        text_encoder_two.train()
+    else:
+        unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
+            unet, optimizer, train_dataloader, lr_scheduler
+        )
 
     if args.use_ema:
         ema_unet.to(accelerator.device)
@@ -2191,15 +2422,22 @@ def main(args):
     )
 
     if not using_precomputed_dataset:
-        def encode_texts_runtime(texts):
-            compel_obj, _ = get_compel_for_sdxl(
-                [tokenizer_one, tokenizer_two], [text_encoder_one, text_encoder_two], text_encoder_one.device
+        if args.train_text_encoder:
+
+            def encode_texts_runtime(texts):
+                return _encode_texts_with_trainable_encoders(texts)
+
+        else:
+            runtime_compel, _ = get_compel_for_sdxl(
+                [tokenizer_one, tokenizer_two], [text_encoder_one, text_encoder_two], accelerator.device
             )
-            with torch.no_grad():
-                prompt_embeds, pooled_prompt_embeds = compel_obj(texts)
-            prompt_embeds = prompt_embeds.to(accelerator.device, dtype=weight_dtype)
-            pooled_prompt_embeds = pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
-            return prompt_embeds, pooled_prompt_embeds
+
+            def encode_texts_runtime(texts):
+                with torch.no_grad():
+                    prompt_embeds, pooled_prompt_embeds = runtime_compel(texts)
+                prompt_embeds = prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+                pooled_prompt_embeds = pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+                return prompt_embeds, pooled_prompt_embeds
 
     for epoch in range(first_epoch, args.num_train_epochs):
         train_loss = 0.0
@@ -2271,9 +2509,9 @@ def main(args):
                                 _split_clean_comma_list(general_tags[i] if i < len(general_tags) else ""),
                                 _split_clean_comma_list(artist_tags[i] if i < len(artist_tags) else ""),
                                 k=1,
-                                token_budget=150,
+                                token_budget=220,
                                 head_keep=random.choices([10, 12, 14], [0.5, 0.35, 0.15])[0],
-                                max_general_per_variant=40,
+                                max_general_per_variant=50,
                                 characters=_split_clean_comma_list(character_tags[i] if i < len(character_tags) else ""),
                                 ratings=_split_clean_comma_list(rating_tags[i] if i < len(rating_tags) else ""),
                                 years=_split_clean_comma_list(year_tags[i] if i < len(year_tags) else ""),
@@ -2344,7 +2582,12 @@ def main(args):
                 # Backpropagate
                 accelerator.backward(loss)
                 if accelerator.sync_gradients:
-                    params_to_clip = unet.parameters()
+                    if args.train_text_encoder:
+                        params_to_clip = chain(
+                            unet.parameters(), text_encoder_one.parameters(), text_encoder_two.parameters()
+                        )
+                    else:
+                        params_to_clip = unet.parameters()
                     accelerator.clip_grad_norm_(params_to_clip, args.max_grad_norm)
                 optimizer.step()
                 lr_scheduler.step()
@@ -2382,9 +2625,9 @@ def main(args):
                                     _split_clean_comma_list(_first_str(general_tags)),
                                     _split_clean_comma_list(_first_str(artist_tags)),
                                     k=2,
-                                    token_budget=150,
+                                    token_budget=220,
                                     head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
-                                    max_general_per_variant=40,
+                                    max_general_per_variant=50,
                                     characters=_split_clean_comma_list(_first_str(character_tags)),
                                     ratings=_split_clean_comma_list(_first_str(rating_tags)),
                                     years=_split_clean_comma_list(_first_str(year_tags)),
@@ -2466,6 +2709,14 @@ def main(args):
                     revision=args.revision,
                     variant=args.variant,
                     torch_dtype=weight_dtype,
+                    **(
+                        {
+                            "text_encoder": accelerator.unwrap_model(text_encoder_one),
+                            "text_encoder_2": accelerator.unwrap_model(text_encoder_two),
+                        }
+                        if args.train_text_encoder
+                        else {}
+                    ),
                 )
                 if args.prediction_type is not None:
                     scheduler_args = {"prediction_type": args.prediction_type}
@@ -2507,6 +2758,9 @@ def main(args):
                     torch_npu.npu.empty_cache()
                 elif torch.cuda.is_available():
                     torch.cuda.empty_cache()
+                if args.train_text_encoder:
+                    text_encoder_one.train()
+                    text_encoder_two.train()
 
                 if args.use_ema:
                     # Switch back to the original UNet parameters.
@@ -2517,6 +2771,11 @@ def main(args):
         unet = unwrap_model(unet)
         if args.use_ema:
             ema_unet.copy_to(unet.parameters())
+        text_encoder_kwargs = {}
+        if args.train_text_encoder:
+            te1 = unwrap_model(text_encoder_one).to(device=torch.device("cpu"), dtype=torch.float32)
+            te2 = unwrap_model(text_encoder_two).to(device=torch.device("cpu"), dtype=torch.float32)
+            text_encoder_kwargs.update({"text_encoder": te1, "text_encoder_2": te2})
 
         # Serialize pipeline.
         vae = AutoencoderKL.from_pretrained(
@@ -2533,6 +2792,7 @@ def main(args):
             revision=args.revision,
             variant=args.variant,
             torch_dtype=weight_dtype,
+            **text_encoder_kwargs,
         )
         if args.prediction_type is not None:
             scheduler_args = {"prediction_type": args.prediction_type}
