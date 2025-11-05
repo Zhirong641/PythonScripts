@@ -1432,6 +1432,7 @@ def main(args):
         loss_png = os.path.join(args.output_dir, "loss.png")
         os.makedirs(args.output_dir, exist_ok=True)
         loss_steps, loss_vals = [], []
+        loss_history_limit = int(os.environ.get("PLOT_LOSS_HISTORY_LIMIT", "100000"))
 
         def read_y_range(file_path="range.txt"):
             if not os.path.isfile(file_path):
@@ -1731,16 +1732,11 @@ def main(args):
                     global_step += 1
                     accelerator.log({"train_loss": train_loss}, step=global_step)
                     if accelerator.is_main_process:
-                        loss_steps.append(global_step); loss_vals.append(train_loss)
-                        # write csv
-                        try:
-                            with open(loss_csv, "w", newline="", encoding="utf-8") as f:
-                                w = _pycsv.writer(f)
-                                w.writerow(["step", "loss"]) 
-                                for s,v in zip(loss_steps, loss_vals):
-                                    w.writerow([s, f"{v:.6f}"])
-                        except Exception:
-                            pass
+                        loss_steps.append(global_step)
+                        loss_vals.append(train_loss)
+                        if len(loss_steps) > loss_history_limit:
+                            loss_steps.pop(0); loss_vals.pop(0)
+                        # CSV logging temporarily disabled; keep data in memory for plotting only.
                         if args.plot_interval and (global_step % int(args.plot_interval) == 0):
                             _save_plot()
                         if args.preview_save_steps and (global_step % int(args.preview_save_steps) == 0 or global_step == 1):
@@ -1928,6 +1924,8 @@ def main(args):
                         "yuzuki kotona",
                         "ayakaze_ryuushou",
                         "ayakaze ryuushou",
+                        "kusano_houki",
+                        "kusano houki",
                     ]
 
                     exclude_danbooru_artists = [
@@ -1980,6 +1978,9 @@ def main(args):
                         "ukyo_rst",
                         "gijang",
                         "niro",
+                        "popqn",
+                        "horosuke",
+                        "kinta"
                     ]
 
                     rng = random.Random(args.seed if args.seed is not None else 42)
@@ -1997,6 +1998,8 @@ def main(args):
 
                         general = example.get("general", "") or ""
                         if any(word in general for word in exclude_word_list):
+                            return False
+                        if "dakimakura_(medium)" not in general:
                             return False
                         year_tags = example.get("year", "") or ""
                         years = []
@@ -2401,6 +2404,44 @@ def main(args):
     preview_compel = None
     preview_empty_conditioning = None
 
+    loss_csv = os.path.join(args.output_dir, "loss.csv")
+    loss_png = os.path.join(args.output_dir, "loss.png")
+    os.makedirs(args.output_dir, exist_ok=True)
+    loss_steps, loss_vals = [], []
+    loss_history_limit = int(os.environ.get("PLOT_LOSS_HISTORY_LIMIT", "100000"))
+
+    def _read_y_range(file_path="range.txt"):
+        if not os.path.isfile(file_path):
+            return None
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                parts = f.read().strip().split()
+                if len(parts) != 2:
+                    return None
+                ymin, ymax = float(parts[0]), float(parts[1])
+                if ymin >= ymax:
+                    return None
+                return (ymin, ymax)
+        except Exception:
+            return None
+
+    def _save_plot():
+        if not loss_steps:
+            return
+        y_range = _read_y_range("range.txt")
+        plt.figure(figsize=(8, 4.5), dpi=150)
+        plt.plot(loss_steps, loss_vals, label="loss", linewidth=1.0)
+        plt.xlabel("step")
+        plt.ylabel("loss")
+        plt.title("Training Loss")
+        plt.grid(True, linewidth=0.3)
+        plt.legend(loc="best")
+        if y_range is not None:
+            plt.ylim(*y_range)
+        plt.tight_layout()
+        plt.savefig(loss_png)
+        plt.close()
+
     @torch.no_grad()
     def save_preview(step: int, prompt: str):
         nonlocal preview_pipe, preview_compel, preview_empty_conditioning
@@ -2683,6 +2724,14 @@ def main(args):
                 progress_bar.update(1)
                 global_step += 1
                 accelerator.log({"train_loss": train_loss}, step=global_step)
+                if accelerator.is_main_process:
+                    loss_steps.append(global_step)
+                    loss_vals.append(train_loss)
+                    if len(loss_steps) > loss_history_limit:
+                        loss_steps.pop(0); loss_vals.pop(0)
+                    # CSV logging temporarily disabled; retain values in memory for plotting only.
+                    if args.plot_interval and (global_step % int(args.plot_interval) == 0):
+                        _save_plot()
                 train_loss = 0.0
 
                 if accelerator.is_main_process and args.preview_save_steps:
