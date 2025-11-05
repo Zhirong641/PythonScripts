@@ -331,6 +331,12 @@ def parse_args(input_args=None):
         ),
     )
     parser.add_argument(
+        "--index_file",
+        type=str,
+        default=None,
+        help="Path to the index file (index.jsonl) for the dataset."
+    )
+    parser.add_argument(
         "--dataset_dir",
         type=str,
         default=None,
@@ -757,7 +763,12 @@ def parse_args(input_args=None):
     args.resolution_width = res_width
 
     # Sanity checks
-    if args.dataset_dir is None and args.dataset_name is None and args.train_data_dir is None:
+    if (
+        args.dataset_dir is None
+        and args.dataset_name is None
+        and args.train_data_dir is None
+        and args.index_file is None
+    ):
         raise ValueError("Need either a latent dataset_dir or a dataset name or a training folder.")
     if args.proportion_empty_prompts < 0 or args.proportion_empty_prompts > 1:
         raise ValueError("`--proportion_empty_prompts` must be in the range [0, 1].")
@@ -1459,86 +1470,93 @@ def main(args):
             nonlocal preview_pipe, preview_compel, preview_empty_conditioning
             if not prompt:
                 return
-            if preview_pipe is None:
-                vae_dtype = vae.dtype if hasattr(vae, "dtype") else torch.float32
-                vae_local = AutoencoderKL.from_pretrained(
-                    vae_path,
-                    subfolder="vae" if args.pretrained_vae_model_name_or_path is None else None,
-                    revision=args.revision,
-                    variant=args.variant,
-                    torch_dtype=vae_dtype,
+            if args.use_ema:
+                ema_unet.store(unet.parameters())
+                ema_unet.copy_to(unet.parameters())
+            try:
+                if preview_pipe is None:
+                    vae_dtype = vae.dtype if hasattr(vae, "dtype") else torch.float32
+                    vae_local = AutoencoderKL.from_pretrained(
+                        vae_path,
+                        subfolder="vae" if args.pretrained_vae_model_name_or_path is None else None,
+                        revision=args.revision,
+                        variant=args.variant,
+                        torch_dtype=vae_dtype,
+                    )
+                    preview_pipe = StableDiffusionXLPipeline.from_pretrained(
+                        args.pretrained_model_name_or_path,
+                        vae=vae_local,
+                        unet=unwrap_model(unet),
+                        revision=args.revision,
+                        variant=args.variant,
+                        torch_dtype=weight_dtype,
+                    ).to(accelerator.device)
+                    preview_pipe.vae.to(accelerator.device, dtype=vae_dtype)
+                    preview_pipe.set_progress_bar_config(disable=True)
+                else:
+                    preview_pipe.unet = unwrap_model(unet)
+
+                if preview_compel is None:
+                    preview_compel, preview_empty_conditioning = get_compel_for_sdxl(
+                        [preview_pipe.tokenizer, preview_pipe.tokenizer_2],
+                        [preview_pipe.text_encoder, preview_pipe.text_encoder_2],
+                        device=accelerator.device,
+                    )
+
+                with torch.no_grad():
+                    prompt_embeds, pooled_prompt_embeds = preview_compel([prompt])
+                    negative_text = getattr(args, "preview_negative", "")
+                    negative_prompt_embeds, negative_pooled_prompt_embeds = preview_compel([negative_text])
+                    (
+                        prompt_embeds,
+                        negative_prompt_embeds,
+                    ) = preview_compel.pad_conditioning_tensors_to_same_length(
+                        [prompt_embeds, negative_prompt_embeds], precomputed_padding=preview_empty_conditioning
+                    )
+
+                prompt_embeds = prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+                negative_prompt_embeds = negative_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+                pooled_prompt_embeds = pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+                negative_pooled_prompt_embeds = negative_pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+
+                generator = (
+                    torch.Generator(device=accelerator.device).manual_seed(args.preview_seed)
+                    if args.preview_seed is not None
+                    else None
                 )
-                preview_pipe = StableDiffusionXLPipeline.from_pretrained(
-                    args.pretrained_model_name_or_path,
-                    vae=vae_local,
-                    unet=unwrap_model(unet),
-                    revision=args.revision,
-                    variant=args.variant,
-                    torch_dtype=weight_dtype,
-                ).to(accelerator.device)
-                preview_pipe.vae.to(accelerator.device, dtype=vae_dtype)
-                preview_pipe.set_progress_bar_config(disable=True)
-            else:
-                preview_pipe.unet = unwrap_model(unet)
-
-            if preview_compel is None:
-                preview_compel, preview_empty_conditioning = get_compel_for_sdxl(
-                    [preview_pipe.tokenizer, preview_pipe.tokenizer_2],
-                    [preview_pipe.text_encoder, preview_pipe.text_encoder_2],
-                    device=accelerator.device,
-                )
-
-            with torch.no_grad():
-                prompt_embeds, pooled_prompt_embeds = preview_compel([prompt])
-                negative_text = getattr(args, "preview_negative", "")
-                negative_prompt_embeds, negative_pooled_prompt_embeds = preview_compel([negative_text])
-                (
-                    prompt_embeds,
-                    negative_prompt_embeds,
-                ) = preview_compel.pad_conditioning_tensors_to_same_length(
-                    [prompt_embeds, negative_prompt_embeds], precomputed_padding=preview_empty_conditioning
-                )
-
-            prompt_embeds = prompt_embeds.to(accelerator.device, dtype=weight_dtype)
-            negative_prompt_embeds = negative_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
-            pooled_prompt_embeds = pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
-            negative_pooled_prompt_embeds = negative_pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
-
-            generator = (
-                torch.Generator(device=accelerator.device).manual_seed(args.preview_seed)
-                if args.preview_seed is not None
-                else None
-            )
-            add_time_ids = torch.tensor(
-                [
+                add_time_ids = torch.tensor(
                     [
-                        args.resolution_height,
-                        args.resolution_width,
-                        0,
-                        0,
-                        args.resolution_height,
-                        args.resolution_width,
-                    ]
-                ],
-                device=accelerator.device,
-                dtype=weight_dtype,
-            )
+                        [
+                            args.resolution_height,
+                            args.resolution_width,
+                            0,
+                            0,
+                            args.resolution_height,
+                            args.resolution_width,
+                        ]
+                    ],
+                    device=accelerator.device,
+                    dtype=weight_dtype,
+                )
 
-            out = preview_pipe(
-                prompt_embeds=prompt_embeds,
-                pooled_prompt_embeds=pooled_prompt_embeds,
-                negative_prompt_embeds=negative_prompt_embeds,
-                negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
-                num_inference_steps=int(args.preview_steps),
-                guidance_scale=float(args.preview_scale),
-                width=args.resolution_width,
-                height=args.resolution_height,
-                generator=generator,
-                added_cond_kwargs={"time_ids": add_time_ids},
-            ).images[0]
-            out_dir = os.path.join(args.output_dir, "preview")
-            os.makedirs(out_dir, exist_ok=True)
-            out.save(os.path.join(out_dir, f"step_{step:08d}.png"))
+                out = preview_pipe(
+                    prompt_embeds=prompt_embeds,
+                    pooled_prompt_embeds=pooled_prompt_embeds,
+                    negative_prompt_embeds=negative_prompt_embeds,
+                    negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
+                    num_inference_steps=int(args.preview_steps),
+                    guidance_scale=float(args.preview_scale),
+                    width=args.resolution_width,
+                    height=args.resolution_height,
+                    generator=generator,
+                    added_cond_kwargs={"time_ids": add_time_ids},
+                ).images[0]
+                out_dir = os.path.join(args.output_dir, "preview")
+                os.makedirs(out_dir, exist_ok=True)
+                out.save(os.path.join(out_dir, f"step_{step:08d}.png"))
+            finally:
+                if args.use_ema:
+                    ema_unet.restore(unet.parameters())
 
         # ====== Text encode helper ======
         if args.train_text_encoder:
@@ -1656,7 +1674,8 @@ def main(args):
                             max_general_per_variant=50,
                             characters=_split_clean_comma_list(character_tags[i]),
                             ratings=_split_clean_comma_list(rating_tags[i]),
-                            years=_split_clean_comma_list(year_tags[i])
+                            years=_split_clean_comma_list(year_tags[i]),
+                            cfg_dropout=args.proportion_empty_prompts,
                         )
                         chosen.append(text[0])
 
@@ -1727,30 +1746,22 @@ def main(args):
                         if args.preview_save_steps and (global_step % int(args.preview_save_steps) == 0 or global_step == 1):
                             # Use a random preview prompt from current batch
                             prev_prompt = random.choice(chosen) if chosen else ""
-                            try:
-                                # EMA preview if available
-                                if args.use_ema:
-                                    ema_unet.store(unet.parameters()); ema_unet.copy_to(unet.parameters())
-                                prev_prompts = generate_variants_with_nl_list(
-                                    _split_clean_comma_list(general_tags[0]),
-                                    _split_clean_comma_list(artist_tags[0]),
-                                    k=2,
-                                    token_budget=220,
-                                    head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
-                                    max_general_per_variant=50,
-                                    characters=_split_clean_comma_list(character_tags[0]),
-                                    ratings=_split_clean_comma_list(rating_tags[0]),
-                                    years=_split_clean_comma_list(year_tags[0])
-                                )
-                                for i, prev_prompt in enumerate(prev_prompts):
-                                    save_preview(global_step + i, prev_prompt)
-                                    os.makedirs(os.path.join(args.output_dir, "preview"), exist_ok=True)
-                                    with open(os.path.join(args.output_dir, "preview", f"prompt-{global_step + i}.txt"), "w") as f:
-                                        f.write(prev_prompt)
-
-                            finally:
-                                if args.use_ema:
-                                    ema_unet.restore(unet.parameters())
+                            prev_prompts = generate_variants_with_nl_list(
+                                _split_clean_comma_list(general_tags[0]),
+                                _split_clean_comma_list(artist_tags[0]),
+                                k=2,
+                                token_budget=220,
+                                head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
+                                max_general_per_variant=50,
+                                characters=_split_clean_comma_list(character_tags[0]),
+                                ratings=_split_clean_comma_list(rating_tags[0]),
+                                years=_split_clean_comma_list(year_tags[0])
+                            )
+                            for i, prev_prompt in enumerate(prev_prompts):
+                                save_preview(global_step + i, prev_prompt)
+                                os.makedirs(os.path.join(args.output_dir, "preview"), exist_ok=True)
+                                with open(os.path.join(args.output_dir, "preview", f"prompt-{global_step + i}.txt"), "w") as f:
+                                    f.write(prev_prompt)
                     train_loss = 0.0
 
                     # checkpointing
@@ -1819,9 +1830,10 @@ def main(args):
         else:
             dataset = None
             index_path = None
-            if args.train_data_dir is not None:
-                index_path = os.path.join(args.train_data_dir, "index.jsonl")
+            if args.train_data_dir is not None or args.index_file is not None:
+                index_path = args.index_file if args.index_file else os.path.join(args.train_data_dir, "index.jsonl")
                 if os.path.isfile(index_path):
+                    base_dir = args.train_data_dir if args.train_data_dir else os.path.dirname(index_path)
                     dataset = load_dataset(
                         "json",
                         data_files={"train": index_path},
@@ -1831,7 +1843,7 @@ def main(args):
                     def _resolve_src(example):
                         src = example.get("src", "") or example.get("path", "") or ""
                         if src and not os.path.isabs(src):
-                            src_path = os.path.join(args.train_data_dir, src)
+                            src_path = os.path.join(base_dir, src) if base_dir else src
                         else:
                             src_path = src
                         example["_image_path"] = src_path
@@ -1879,6 +1891,43 @@ def main(args):
                         "kloah",
                         "akagi_rio",
                         "akagi rio",
+                        "kakogawa_tarou",
+                        "kakogawa tarou",
+                        "himuro_shunsuke",
+                        "himuro shunsuke",
+                        "gustav",
+                        "yaegashi_nan",
+                        "yaegashi nan",
+                        "nakayama_miyuki",
+                        "nakayama miyuki",
+                        "uni8",
+                        "goban",
+                        "shindol",
+                        "miyamoto_issa",
+                        "miyamoto issa",
+                        "tamahiro",
+                        "aonaga_heri",
+                        "aonaga heri",
+                        "ryuuta",
+                        "hanazawa_suou",
+                        "hanazawa suou",
+                        "yamaura_tamaki",
+                        "yamaura tamaki",
+                        "ishigaki_takashi",
+                        "ishigaki takashi",
+                        "sansyoku_amido.",
+                        "sansyoku amido.",
+                        "mibu_natsuki",
+                        "mibu natsuki",
+                        "umekichi",
+                        "yuuki_shin",
+                        "yuuki shin",
+                        "narumi_suzune",
+                        "narumi suzune",
+                        "yuzuki_kotona",
+                        "yuzuki kotona",
+                        "ayakaze_ryuushou",
+                        "ayakaze ryuushou",
                     ]
 
                     exclude_danbooru_artists = [
@@ -1909,7 +1958,28 @@ def main(args):
                         "kana",
                         "untue",
                         "tedain",
-                        "kuuchuu_yousai",               
+                        "kuuchuu_yousai",
+                        "barasui",
+                        "naruko",
+                        "pinta",
+                        "tajima_ryuushi",
+                        "ebifly",
+                        "sody",
+                        "smash_daisaku",
+                        "ajishio",
+                        "nectar",
+                        "isse",
+                        "chikuwa",
+                        "shirosuzu",
+                        "sawada_yuusuke",
+                        "asahina_hikage",
+                        "b-ginga",
+                        "sakurazawa_izumi",
+                        "uonuma_yuu",
+                        "cccpo",
+                        "ukyo_rst",
+                        "gijang",
+                        "niro",
                     ]
 
                     rng = random.Random(args.seed if args.seed is not None else 42)
@@ -1933,8 +2003,13 @@ def main(args):
                         for y in _split_clean_comma_list(year_tags):
                             if y.startswith("year_") and y[5:].isdigit():
                                 years.append(int(y[5:]))
-                        if years and min(years) <= 2005:
-                            return False
+                        if years:
+                            if min(years) <= 2005:
+                                return False
+                            if min(years) <= 2007 and rng.random() < 0.8:
+                                return False
+                            if min(years) <= 2009 and rng.random() < 0.5:
+                                return False
                         meta = example.get("meta", "") or ""
                         if "lowres" in meta:
                             return False
@@ -2331,87 +2406,94 @@ def main(args):
         nonlocal preview_pipe, preview_compel, preview_empty_conditioning
         if not prompt:
             return
-        if preview_pipe is None:
-            vae_dtype = vae.dtype if hasattr(vae, "dtype") else torch.float32
-            vae_local = AutoencoderKL.from_pretrained(
-                vae_path,
-                subfolder="vae" if args.pretrained_vae_model_name_or_path is None else None,
-                revision=args.revision,
-                variant=args.variant,
-                torch_dtype=vae_dtype,
+        if args.use_ema:
+            ema_unet.store(unet.parameters())
+            ema_unet.copy_to(unet.parameters())
+        try:
+            if preview_pipe is None:
+                vae_dtype = vae.dtype if hasattr(vae, "dtype") else torch.float32
+                vae_local = AutoencoderKL.from_pretrained(
+                    vae_path,
+                    subfolder="vae" if args.pretrained_vae_model_name_or_path is None else None,
+                    revision=args.revision,
+                    variant=args.variant,
+                    torch_dtype=vae_dtype,
+                )
+                preview_pipe = StableDiffusionXLPipeline.from_pretrained(
+                    args.pretrained_model_name_or_path,
+                    vae=vae_local,
+                    unet=unwrap_model(unet),
+                    revision=args.revision,
+                    variant=args.variant,
+                    torch_dtype=weight_dtype,
+                ).to(accelerator.device)
+                preview_pipe.vae.to(accelerator.device, dtype=vae_dtype)
+                preview_pipe.set_progress_bar_config(disable=True)
+            else:
+                preview_pipe.unet = unwrap_model(unet)
+
+            if preview_compel is None:
+                preview_compel, preview_empty_conditioning = get_compel_for_sdxl(
+                    [preview_pipe.tokenizer, preview_pipe.tokenizer_2],
+                    [preview_pipe.text_encoder, preview_pipe.text_encoder_2],
+                    device=accelerator.device,
+                )
+
+            with torch.no_grad():
+                prompt_embeds, pooled_prompt_embeds = preview_compel([prompt])
+                negative_text = getattr(args, "preview_negative", "")
+                negative_prompt_embeds, negative_pooled_prompt_embeds = preview_compel([negative_text])
+                (
+                    prompt_embeds,
+                    negative_prompt_embeds,
+                ) = preview_compel.pad_conditioning_tensors_to_same_length(
+                    [prompt_embeds, negative_prompt_embeds], precomputed_padding=preview_empty_conditioning
+                )
+
+            prompt_embeds = prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+            negative_prompt_embeds = negative_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+            pooled_prompt_embeds = pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+            negative_pooled_prompt_embeds = negative_pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
+
+            generator = (
+                torch.Generator(device=accelerator.device).manual_seed(args.preview_seed)
+                if args.preview_seed is not None
+                else None
             )
-            preview_pipe = StableDiffusionXLPipeline.from_pretrained(
-                args.pretrained_model_name_or_path,
-                vae=vae_local,
-                unet=unwrap_model(unet),
-                revision=args.revision,
-                variant=args.variant,
-                torch_dtype=weight_dtype,
-            ).to(accelerator.device)
-            preview_pipe.vae.to(accelerator.device, dtype=vae_dtype)
-            preview_pipe.set_progress_bar_config(disable=True)
-        else:
-            preview_pipe.unet = unwrap_model(unet)
-
-        if preview_compel is None:
-            preview_compel, preview_empty_conditioning = get_compel_for_sdxl(
-                [preview_pipe.tokenizer, preview_pipe.tokenizer_2],
-                [preview_pipe.text_encoder, preview_pipe.text_encoder_2],
-                device=accelerator.device,
-            )
-
-        with torch.no_grad():
-            prompt_embeds, pooled_prompt_embeds = preview_compel([prompt])
-            negative_text = getattr(args, "preview_negative", "")
-            negative_prompt_embeds, negative_pooled_prompt_embeds = preview_compel([negative_text])
-            (
-                prompt_embeds,
-                negative_prompt_embeds,
-            ) = preview_compel.pad_conditioning_tensors_to_same_length(
-                [prompt_embeds, negative_prompt_embeds], precomputed_padding=preview_empty_conditioning
-            )
-
-        prompt_embeds = prompt_embeds.to(accelerator.device, dtype=weight_dtype)
-        negative_prompt_embeds = negative_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
-        pooled_prompt_embeds = pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
-        negative_pooled_prompt_embeds = negative_pooled_prompt_embeds.to(accelerator.device, dtype=weight_dtype)
-
-        generator = (
-            torch.Generator(device=accelerator.device).manual_seed(args.preview_seed)
-            if args.preview_seed is not None
-            else None
-        )
-        add_time_ids = torch.tensor(
-            [
+            add_time_ids = torch.tensor(
                 [
-                    args.resolution_height,
-                    args.resolution_width,
-                    0,
-                    0,
-                    args.resolution_height,
-                    args.resolution_width,
-                ]
-            ],
-            device=accelerator.device,
-            dtype=weight_dtype,
-        )
+                    [
+                        args.resolution_height,
+                        args.resolution_width,
+                        0,
+                        0,
+                        args.resolution_height,
+                        args.resolution_width,
+                    ]
+                ],
+                device=accelerator.device,
+                dtype=weight_dtype,
+            )
 
-        result = preview_pipe(
-            prompt_embeds=prompt_embeds,
-            pooled_prompt_embeds=pooled_prompt_embeds,
-            negative_prompt_embeds=negative_prompt_embeds,
-            negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
-            num_inference_steps=int(args.preview_steps),
-            guidance_scale=float(args.preview_scale),
-            width=args.resolution_width,
-            height=args.resolution_height,
-            generator=generator,
-            added_cond_kwargs={"time_ids": add_time_ids},
-        )
-        image = result.images[0]
-        out_dir = os.path.join(args.output_dir, "preview")
-        os.makedirs(out_dir, exist_ok=True)
-        image.save(os.path.join(out_dir, f"step_{step:08d}.png"))
+            result = preview_pipe(
+                prompt_embeds=prompt_embeds,
+                pooled_prompt_embeds=pooled_prompt_embeds,
+                negative_prompt_embeds=negative_prompt_embeds,
+                negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
+                num_inference_steps=int(args.preview_steps),
+                guidance_scale=float(args.preview_scale),
+                width=args.resolution_width,
+                height=args.resolution_height,
+                generator=generator,
+                added_cond_kwargs={"time_ids": add_time_ids},
+            )
+            image = result.images[0]
+            out_dir = os.path.join(args.output_dir, "preview")
+            os.makedirs(out_dir, exist_ok=True)
+            image.save(os.path.join(out_dir, f"step_{step:08d}.png"))
+        finally:
+            if args.use_ema:
+                ema_unet.restore(unet.parameters())
 
     progress_bar = tqdm(
         range(0, args.max_train_steps),
@@ -2516,6 +2598,7 @@ def main(args):
                                 ratings=_split_clean_comma_list(rating_tags[i] if i < len(rating_tags) else ""),
                                 years=_split_clean_comma_list(year_tags[i] if i < len(year_tags) else ""),
                                 nl_texts=_split_clean_comma_list(meta_tags[i] if i < len(meta_tags) else ""),
+                                cfg_dropout=args.proportion_empty_prompts,
                             )
                             chosen_prompts.append(variants[0] if variants else "")
                     else:

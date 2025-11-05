@@ -8,7 +8,14 @@ from typing import List, Tuple, Optional
 RANGES: List[Tuple[int, int, int, str, str]] = [
     (727768, 345, 461, "rindou tsubame", "chikotam"),
     (727768, 630, 647, "rindou tsubame", "chikotam"),
+    (727768, 3, 25, "takakura anzu", "primil"),
+    (727768, 31, 106, "takakura anzu", "primil"),
+    (727768, 107, 220, "takakura anri", "primil"),
     (688336, 625, 741, "rindou tsubame", "chikotam"),
+    (688336, 34, 147, "takakura anri", "primil"),
+    (688336, 173, 195, "takakura anzu", "primil"),
+    (688336, 173, 195, "takakura anzu", "primil"),
+    (688336, 201, 276, "takakura anzu", "primil"),
     (1093883, 1130, 1829, "misuzu sasa", "chikotam"),
     (1146404, 12, 13, None, "shiramori yuse"),
     (1146404, 407, 582, None, "shiramori yuse"),
@@ -26,6 +33,18 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1562101, 155, 196, None, "shiratama"),
     (868607, 39, 141, None, "kimishima ao"),
     (868607, 224, 328, None, "shiratama"),
+    (1245707, 13, 23, "amanogawa saya", "yashima takahiro"),
+    (1245707, 48, 72, "amanogawa saya", "yashima takahiro"),
+    (1245707, 107, 130, "amanogawa saya", "yashima takahiro"),
+    (1245707, 305, 318, "amanogawa saya", "yashima takahiro"),
+    (943537, 618, 837, "amanogawa saya", "yashima takahiro"),
+    (900491, 1283, 1540, "amanogawa saya", "yashima takahiro"),
+    (634594, 11, 13, "futaba hisui", "nanase meruchi"),
+    (634594, 17, 19, "futaba hisui", "nanase meruchi"),
+    (634594, 221, 292, "futaba hisui", "nanase meruchi"),
+    (899895, 3, 26, "yanase hitomi", "primil"),
+    (522375, 46, 191, "hondou ayano", "primil"),
+    (522375, 298, 440, "amamoto louis", "primil"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
@@ -62,7 +81,7 @@ def process_file(in_path: str, out_path: str) -> int:
                 if targets:
                     target_character, target_artist = targets
                     # 命中范围：覆盖 character 与 artist
-                    if obj.get("character") != target_character or obj.get("artist") != target_artist:
+                    if (target_character and obj.get("character") != target_character) or (target_artist and obj.get("artist") != target_artist):
                         obj["character"] = target_character if target_character else obj.get("character", "")
                         obj["artist"] = target_artist if target_artist else obj.get("artist", "")
                         modified += 1

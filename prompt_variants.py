@@ -293,6 +293,14 @@ _BRA_PATTERN = re.compile(
 def _normalize(tag: str) -> str:
     return tag.strip().replace("_", " ").lower()
 
+_ARTIST_ALIAS_PATTERN = re.compile(r"\s*\([^()]*\)\s*$")
+
+def _normalize_artist(artist: str) -> str:
+    """Normalize artist tags and drop trailing alias hints like name_(alias)."""
+    norm = _normalize(artist)
+    cleaned = _ARTIST_ALIAS_PATTERN.sub("", norm).strip()
+    return cleaned if cleaned else norm
+
 def _artist_phrase(artists: List[str], p: float = 2.0) -> str:
     """
     n == 1: 返回 1 个
@@ -304,7 +312,7 @@ def _artist_phrase(artists: List[str], p: float = 2.0) -> str:
 
     n = len(artists)
     if n == 1:
-        names = [_normalize(artists[0])]
+        names = [_normalize_artist(artists[0])]
     else:
         k_max = min(5, n)
         ks = list(range(1, k_max + 1))
@@ -313,7 +321,7 @@ def _artist_phrase(artists: List[str], p: float = 2.0) -> str:
         weights = [k ** p for k in ks]
         k = random.choices(ks, weights=weights, k=1)[0]
         picked = random.sample(artists, k)
-        names = [_normalize(a) for a in picked]
+        names = [_normalize_artist(a) for a in picked]
 
     if len(names) == 1:
         return f"by {names[0]}"
@@ -342,10 +350,10 @@ def _rating_phrase(ratings: List[str], max_ratings: int = 1) -> str:
             break
     return ", ".join(picked)
 
-def _character_phrase(characters: List[str], max_chars: int = 1, joiner: str = " and ") -> str:
+def _character_phrase(characters: List[str], max_chars: int = 4, joiner: str = ", ") -> str:
     """
     将 Camie/booru 风格的角色标签转成自然短语。
-    - 默认只取前 1 个（`max_chars=1`），必要时可设为 2。
+    - 默认只取前 4 个（`max_chars=4`）
     - 规则：下划线->空格，去空格；不强制加前缀（如 'character '），更贴近常见提示。
     """
     if not characters:
@@ -361,6 +369,8 @@ def _character_phrase(characters: List[str], max_chars: int = 1, joiner: str = "
         norm.append(t)
     if not norm:
         return ""
+    # 随机打乱顺序
+    norm = random.sample(norm, len(norm))
     return joiner.join(norm[:max_chars])
 
 
@@ -496,7 +506,7 @@ def generate_phrase_variants(
     characters: Optional[List[str]] = None,
     ratings: Optional[List[str]] = None,
     years: Optional[List[str]] = None,
-    max_chars: int = 1,
+    max_chars: int = 4,
 ) -> List[str]:
     # 预清洗 general
     g0 = []
@@ -589,6 +599,7 @@ def generate_variants_with_nl_list(
     years: Optional[List[str]] = None,
     nl_texts:  Optional[List[str]] = None,
     seed: Optional[int] = None,
+    cfg_dropout: float = 0.0,
 ) -> List[str]:
     """
     general_tags: 已按权重降序
@@ -598,6 +609,7 @@ def generate_variants_with_nl_list(
     dropout:      general 的随机丢弃率（制造差异）
     max_general_per_variant: 每条最多放多少个 general 短语
     head_keep:    头部保序的候选数量（尾部会洗牌）
+    cfg_dropout:  返回空 prompt 的概率（用于 CFG drop）
     """
     if seed is not None:
         random.seed(seed)
@@ -625,7 +637,7 @@ def generate_variants_with_nl_list(
                 continue
             # 与 artist 锚定（50/50 放头或尾）
             anchors = []
-            char_anchor = _character_phrase(characters or [], max_chars=1)
+            char_anchor = _character_phrase(characters or [], max_chars=4)
             if char_anchor:
                 anchors.append(char_anchor)
             art = _artist_phrase(artists)
@@ -663,7 +675,14 @@ def generate_variants_with_nl_list(
         if not extra: break
         if extra[0] not in seen:
             uniq.append(extra[0]); seen.add(extra[0])
-    return uniq[:k]
+    results = []
+    drop_rate = max(0.0, min(1.0, cfg_dropout or 0.0))
+    for v in uniq[:k]:
+        if drop_rate > 0.0 and random.random() < drop_rate:
+            results.append("")
+        else:
+            results.append(v)
+    return results
 
 # ===== 用法示例 =====
 if __name__ == "__main__":
