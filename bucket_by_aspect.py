@@ -59,10 +59,21 @@ COMMON_RATIOS = {
 #     ("ultra_wide",    1.78,   float("inf")),
 # ]
 
+# BIN_RANGES = [
+#     ("fullbody", 0.2, 0.4),      # 超竖图（w/h < 0.4）→ 全身图
+#     ("portrait", 0.4, 0.95),     # 竖向（0.4 <= w/h < 0.95）→ 肖像
+#     ("cg",      0.95, 3),         # 方图与横向（w/h >= 0.95）→ 一般CG
+# ]
+
 BIN_RANGES = [
-    ("fullbody", 0.2, 0.4),      # 超竖图（w/h < 0.4）→ 全身图
-    ("portrait", 0.4, 0.95),     # 竖向（0.4 <= w/h < 0.95）→ 肖像
-    ("cg",      0.95, 3),         # 方图与横向（w/h >= 0.95）→ 一般CG
+    # (name,         min_ratio_inclusive, max_ratio_exclusive)   # 目标比例
+    ("ratio_3_10",    0.0,                0.43125),              # 3:10
+    ("ratio_9_16",    0.43125,            0.6145833333),         # 9:16
+    ("ratio_2_3",     0.6145833333,       0.7083333333),         # 2:3
+    ("ratio_3_4",     0.7083333333,       0.875),                # 3:4
+    ("ratio_1_1",     0.875,              1.1666666667),         # 1:1
+    ("ratio_4_3",     1.1666666667,       1.5555555556),         # 4:3
+    ("ratio_16_9",    1.5555555556,       float("inf")),         # 16:9
 ]
 
 
@@ -85,6 +96,8 @@ def parse_args():
                     help="只对宽度不少于该值的图片进行分桶（默认 0，无下限）")
     ap.add_argument("--min-height", type=int, default=0,
                     help="只对高度不少于该值的图片进行分桶（默认 0，无下限）")
+    ap.add_argument("--min-pixels", type=int, default=0,
+                    help="只对像素数量不少于该值（宽x高）的图片进行分桶（默认 0，无下限）")
     return ap.parse_args()
 
 
@@ -164,7 +177,8 @@ def main():
 
     # 统计计数
     counts: Counter = Counter()
-    skipped_small = 0
+    skipped_small_dim = 0
+    skipped_low_pixels = 0
 
     # LRU 文件缓存
     file_cache = LRUFileCache(capacity=args.max_open)
@@ -205,7 +219,11 @@ def main():
                 continue
 
             if w < args.min_width or h < args.min_height:
-                skipped_small += 1
+                skipped_small_dim += 1
+                continue
+
+            if w * h < args.min_pixels:
+                skipped_low_pixels += 1
                 continue
 
             # 生成桶标签
@@ -234,8 +252,11 @@ def main():
     for label, c in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
         print(f"{label:>10s} : {c}")
 
-    if skipped_small:
-        print(f"\nSkipped {skipped_small} images smaller than {args.min_width}x{args.min_height}.")
+    if skipped_small_dim:
+        print(f"\nSkipped {skipped_small_dim} images smaller than {args.min_width}x{args.min_height}.")
+    if skipped_low_pixels:
+        prefix = "\n" if not skipped_small_dim else ""
+        print(f"{prefix}Skipped {skipped_low_pixels} images with fewer than {args.min_pixels} pixels.")
 
     # 可选导出到 CSV
     if args.save_counts:

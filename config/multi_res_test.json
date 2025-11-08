@@ -1,0 +1,22 @@
+[
+  {
+    "label": "portrait_768x1152",
+    "resolution": "768x1152",
+    "index_file": "/mnt/shared/data/index_portrait.jsonl"
+  },
+  {
+    "label": "fullbody_512x1728",
+    "resolution": "512x1728",
+    "index_file": "/mnt/shared/data/index_fullbody.jsonl"
+  },
+  {
+    "label": "portrait_2_768x1152",
+    "resolution": "768x1152",
+    "index_file": "/mnt/shared/data/index_portrait.jsonl"
+  },
+  {
+    "label": "fullbody_2_512x1728",
+    "resolution": "512x1728",
+    "index_file": "/mnt/shared/data/index_fullbody.jsonl"
+  }
+]

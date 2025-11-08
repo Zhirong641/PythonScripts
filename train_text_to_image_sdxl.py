@@ -27,6 +27,9 @@ from contextlib import nullcontext
 from pathlib import Path
 import json
 from itertools import chain
+from typing import Optional
+from collections import defaultdict
+import time
 
 import accelerate
 import datasets
@@ -45,6 +48,7 @@ from torchvision import transforms
 from torchvision.transforms.functional import crop, resize
 from tqdm.auto import tqdm
 from transformers import AutoTokenizer, PretrainedConfig
+from torch.utils.data import Sampler
 
 import diffusers
 from diffusers import AutoencoderKL, DDPMScheduler, StableDiffusionXLPipeline, UNet2DConditionModel
@@ -139,6 +143,172 @@ def _load_filter_list(filename: str):
                 continue
             entries.append(item)
     return entries
+
+
+def _build_filter_name_set(entries):
+    names = set()
+    for name in entries:
+        if not name:
+            continue
+        names.add(name)
+        names.add(name.replace("_", " "))
+    return {n for n in names if n}
+
+
+def _annotate_target_size(example, height, width, label=None):
+    example["target_height"] = int(height)
+    example["target_width"] = int(width)
+    if label is not None:
+        example["resolution_tag"] = label
+    return example
+
+
+class ResolutionBucketBatchSampler(Sampler):
+    def __init__(self, bucket_map, batch_size, shuffle=True, seed=None):
+        if batch_size <= 0:
+            raise ValueError("batch_size must be positive for ResolutionBucketBatchSampler.")
+        self.bucket_map = {k: list(v) for k, v in bucket_map.items()}
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.seed = seed
+
+    def __iter__(self):
+        rng = random.Random(self.seed + int(time.time())) if self.seed is not None else random
+        batches = []
+        for _, indices in self.bucket_map.items():
+            if self.shuffle:
+                rng.shuffle(indices)
+            for i in range(0, len(indices), self.batch_size):
+                batch = indices[i : i + self.batch_size]
+                if len(batch) == self.batch_size:
+                    batches.append(batch)
+        if self.shuffle:
+            rng.shuffle(batches)
+        for batch in batches:
+            yield batch
+
+    def __len__(self):
+        total = 0
+        for indices in self.bucket_map.values():
+            total += len(indices) // self.batch_size
+        return total
+
+
+def _load_resolution_sets_config(config_path: str, default_train_dir: Optional[str]):
+    with open(config_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    if not isinstance(data, list) or not data:
+        raise ValueError("`--resolution_sets` must point to a JSON list with at least one entry.")
+    configs = []
+    for idx, entry in enumerate(data):
+        if not isinstance(entry, dict):
+            raise ValueError("Each entry inside `--resolution_sets` must be a JSON object.")
+        res_value = entry.get("resolution")
+        if not res_value:
+            raise ValueError("Each resolution set must define a 'resolution' field.")
+        height, width = _parse_resolution(res_value)
+        index_file = entry.get("index_file")
+        if not index_file:
+            raise ValueError("Each resolution set must define an 'index_file'.")
+        index_file = os.path.abspath(os.path.expanduser(index_file))
+        train_dir = entry.get("train_data_dir", default_train_dir)
+        if train_dir is not None:
+            train_dir = os.path.abspath(os.path.expanduser(train_dir))
+        label = entry.get("label") or entry.get("name") or f"set_{idx}"
+        configs.append(
+            {
+                "resolution_height": height,
+                "resolution_width": width,
+                "index_file": index_file,
+                "train_data_dir": train_dir,
+                "label": label,
+            }
+        )
+    return configs
+
+
+def _load_and_filter_index_dataset(
+    index_path,
+    train_data_dir,
+    cache_dir,
+    exclude_word_list,
+    exclude_artist_set,
+    exclude_danbooru_set,
+    seed,
+):
+    if not os.path.isfile(index_path):
+        raise FileNotFoundError(f"index.jsonl not found: {index_path}")
+    dataset = load_dataset(
+        "json",
+        data_files={"train": index_path},
+        cache_dir=cache_dir,
+    )
+    base_dir = train_data_dir if train_data_dir else os.path.dirname(index_path)
+
+    def _resolve_src(example):
+        src = example.get("src", "") or example.get("path", "") or ""
+        if src and not os.path.isabs(src):
+            src_path = os.path.join(base_dir, src) if base_dir else src
+        else:
+            src_path = src
+        example["_image_path"] = src_path
+        return example
+
+    dataset["train"] = dataset["train"].map(_resolve_src)
+
+    rng = random.Random(seed if seed is not None else 42)
+
+    total_exclude_set = set()
+    if exclude_artist_set:
+        total_exclude_set |= exclude_artist_set
+    if exclude_danbooru_set:
+        total_exclude_set |= exclude_danbooru_set
+
+    def _filter_index_entry(example):
+        src_path = example.get("_image_path", "") or ""
+        if not src_path or not os.path.isfile(src_path):
+            return False
+        valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tif", ".tiff", ".avif", ".heic"}
+        _, ext = os.path.splitext(src_path)
+        ext = ext.split("?")[0].lower()
+        if ext not in valid_exts:
+            return False
+
+        general = example.get("general", "") or ""
+        if any(word in general for word in exclude_word_list):
+            return False
+        year_tags = example.get("year", "") or ""
+        years = []
+        for y in _split_clean_comma_list(year_tags):
+            if y.startswith("year_") and y[5:].isdigit():
+                years.append(int(y[5:]))
+        if years:
+            if min(years) <= 2005:
+                return False
+            if min(years) <= 2007 and rng.random() < 0.8:
+                return False
+            if min(years) <= 2009 and rng.random() < 0.5:
+                return False
+        meta = example.get("meta", "") or ""
+        if "lowres" in meta:
+            return False
+        artist = example.get("artist", "") or ""
+        artists = _split_clean_comma_list(artist)
+        if exclude_artist_set and any(a in exclude_artist_set for a in artists):
+            return False
+        if total_exclude_set and artists and all(a in total_exclude_set for a in artists):
+            return False
+        if "mizunezumi" in artists and rng.random() < 0.9:
+            return False
+        return True
+
+    dataset["train"] = dataset["train"].filter(_filter_index_entry)
+    if len(dataset["train"]) == 0:
+        raise RuntimeError(f"No valid samples found in {index_path}")
+
+    dataset["train"] = dataset["train"].cast_column("_image_path", datasets.Image())
+    dataset["train"] = dataset["train"].rename_column("_image_path", "image")
+    return dataset
 
 
 # ===== Resolution helpers =====
@@ -427,6 +597,15 @@ def parse_args(input_args=None):
         help=(
             "The target resolution for input images. Provide a single integer for square training or"
             " a WIDTHxHEIGHT pair (e.g. 1024x768) for non-square images."
+        ),
+    )
+    parser.add_argument(
+        "--resolution_sets",
+        type=str,
+        default=None,
+        help=(
+            "JSON file describing multiple resolution/index configurations. Each entry should contain"
+            " at least 'resolution' and 'index_file', and optionally 'train_data_dir'."
         ),
     )
     parser.add_argument(
@@ -769,15 +948,26 @@ def parse_args(input_args=None):
     if env_local_rank != -1 and env_local_rank != args.local_rank:
         args.local_rank = env_local_rank
 
-    try:
-        res_height, res_width = _parse_resolution(args.resolution)
-    except ValueError as err:
-        raise ValueError(
-            "`--resolution` must be a positive integer or WIDTHxHEIGHT pair (e.g. 1024x768)."
-        ) from err
-    args.resolution = (res_height, res_width)
-    args.resolution_height = res_height
-    args.resolution_width = res_width
+    if args.resolution_sets:
+        config_path = os.path.abspath(os.path.expanduser(args.resolution_sets))
+        if not os.path.isfile(config_path):
+            raise FileNotFoundError(f"`--resolution_sets` file not found: {config_path}")
+        args.resolution_sets_config = _load_resolution_sets_config(config_path, args.train_data_dir)
+        first = args.resolution_sets_config[0]
+        args.resolution_height = first["resolution_height"]
+        args.resolution_width = first["resolution_width"]
+        args.resolution = (args.resolution_height, args.resolution_width)
+    else:
+        try:
+            res_height, res_width = _parse_resolution(args.resolution)
+        except ValueError as err:
+            raise ValueError(
+                "`--resolution` must be a positive integer or WIDTHxHEIGHT pair (e.g. 1024x768)."
+            ) from err
+        args.resolution = (res_height, res_width)
+        args.resolution_height = res_height
+        args.resolution_width = res_width
+        args.resolution_sets_config = None
 
     # Sanity checks
     if (
@@ -785,8 +975,11 @@ def parse_args(input_args=None):
         and args.dataset_name is None
         and args.train_data_dir is None
         and args.index_file is None
+        and not args.resolution_sets
     ):
-        raise ValueError("Need either a latent dataset_dir or a dataset name or a training folder.")
+        raise ValueError(
+            "Need either a latent dataset_dir, a dataset name, a training folder, or to provide `--resolution_sets`."
+        )
     if args.proportion_empty_prompts < 0 or args.proportion_empty_prompts > 1:
         raise ValueError("`--proportion_empty_prompts` must be in the range [0, 1].")
 
@@ -1484,10 +1677,12 @@ def main(args):
         preview_empty_conditioning = None
 
         @torch.no_grad()
-        def save_preview(step: int, prompt: str):
+        def save_preview(step: int, prompt: str, height: Optional[int] = None, width: Optional[int] = None):
             nonlocal preview_pipe, preview_compel, preview_empty_conditioning
             if not prompt:
                 return
+            preview_height = int(height) if height else args.resolution_height
+            preview_width = int(width) if width else args.resolution_width
             if args.use_ema:
                 ema_unet.store(unet.parameters())
                 ema_unet.copy_to(unet.parameters())
@@ -1545,12 +1740,12 @@ def main(args):
                 add_time_ids = torch.tensor(
                     [
                         [
-                            args.resolution_height,
-                            args.resolution_width,
+                            preview_height,
+                            preview_width,
                             0,
                             0,
-                            args.resolution_height,
-                            args.resolution_width,
+                            preview_height,
+                            preview_width,
                         ]
                     ],
                     device=accelerator.device,
@@ -1564,8 +1759,8 @@ def main(args):
                     negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
                     num_inference_steps=int(args.preview_steps),
                     guidance_scale=float(args.preview_scale),
-                    width=args.resolution_width,
-                    height=args.resolution_height,
+                    width=preview_width,
+                    height=preview_height,
                     generator=generator,
                     added_cond_kwargs={"time_ids": add_time_ids},
                 ).images[0]
@@ -1831,10 +2026,14 @@ def main(args):
 
         accelerator.end_training()
         return
+    bucket_map = None
     if not using_latent_db:
         # Branch B: raw image dataset via datasets/imagefolder
         # In distributed training, the load_dataset function guarantees that only one local process can concurrently
         # download the dataset.
+        resolution_sets_config = getattr(args, "resolution_sets_config", None)
+        if args.dataset_name is not None and resolution_sets_config:
+            raise ValueError("`--resolution_sets` cannot be combined with `--dataset_name`.")
         if args.dataset_name is not None:
             # Downloading and loading a dataset from the hub.
             dataset = load_dataset(
@@ -1842,102 +2041,70 @@ def main(args):
             )
         else:
             dataset = None
-            index_path = None
-            if args.train_data_dir is not None or args.index_file is not None:
+            exclude_word_list = [
+                "no_humans",
+                "chibi",
+                "character_profile",
+                "lineart",
+                "sketch",
+                "monochrome",
+                "comic",
+                "text_focus",
+                "1990s",
+                "1980s",
+                "retro_artstyle",
+                "abstract",
+            ]
+            exclude_artist_entries = _load_filter_list("exclude_artists.txt")
+            exclude_danbooru_entries = _load_filter_list("exclude_danbooru_artists.txt")
+            exclude_artist_set = _build_filter_name_set(exclude_artist_entries)
+            exclude_danbooru_set = _build_filter_name_set(exclude_danbooru_entries)
+
+            if resolution_sets_config:
+                per_resolution = []
+                for idx, cfg in enumerate(resolution_sets_config):
+                    ds = _load_and_filter_index_dataset(
+                        cfg["index_file"],
+                        cfg["train_data_dir"],
+                        args.cache_dir,
+                        exclude_word_list,
+                        exclude_artist_set,
+                        exclude_danbooru_set,
+                        (args.seed if args.seed is not None else 42) + idx,
+                    )
+                    ds["train"] = ds["train"].map(
+                        functools.partial(
+                            _annotate_target_size,
+                            height=cfg["resolution_height"],
+                            width=cfg["resolution_width"],
+                            label=cfg["label"],
+                        ),
+                        desc=f"Annotating resolution {cfg['resolution_height']}x{cfg['resolution_width']}",
+                    )
+                    per_resolution.append(ds["train"])
+                merged = concatenate_datasets(per_resolution) if len(per_resolution) > 1 else per_resolution[0]
+                dataset = datasets.DatasetDict({"train": merged})
+            elif args.train_data_dir is not None or args.index_file is not None:
                 index_path = args.index_file if args.index_file else os.path.join(args.train_data_dir, "index.jsonl")
                 if os.path.isfile(index_path):
-                    base_dir = args.train_data_dir if args.train_data_dir else os.path.dirname(index_path)
-                    dataset = load_dataset(
-                        "json",
-                        data_files={"train": index_path},
-                        cache_dir=args.cache_dir,
+                    dataset = _load_and_filter_index_dataset(
+                        index_path,
+                        args.train_data_dir,
+                        args.cache_dir,
+                        exclude_word_list,
+                        exclude_artist_set,
+                        exclude_danbooru_set,
+                        args.seed,
                     )
-                    # Resolve image paths and filter unusable entries
-                    def _resolve_src(example):
-                        src = example.get("src", "") or example.get("path", "") or ""
-                        if src and not os.path.isabs(src):
-                            src_path = os.path.join(base_dir, src) if base_dir else src
-                        else:
-                            src_path = src
-                        example["_image_path"] = src_path
-                        return example
-
-                    dataset["train"] = dataset["train"].map(_resolve_src)
-
-                    exclude_word_list = [
-                        "no_humans",
-                        "chibi",
-                        "character_profile",
-                        "lineart",
-                        "sketch",
-                        "monochrome",
-                        "comic",
-                        "text_focus",
-                        "1990s",
-                        "1980s",
-                        "retro_artstyle",
-                        "abstract",
-                    ]
-
-                    exclude_artist_list = _load_filter_list("exclude_artists.txt")
-                    exclude_artist_set = set(exclude_artist_list)
-                    exclude_artist_set |= {name.replace("_", " ") for name in exclude_artist_list}
-
-                    exclude_danbooru_artists = _load_filter_list("exclude_danbooru_artists.txt")
-                    exclude_danbooru_set = set(exclude_danbooru_artists)
-                    exclude_danbooru_set |= {name.replace("_", " ") for name in exclude_danbooru_artists}
-                    total_exclude_set = exclude_artist_set.union(exclude_danbooru_set)
-
-                    rng = random.Random(args.seed if args.seed is not None else 42)
-
-                    def _filter_index_entry(example):
-                        src_path = example.get("_image_path", "") or ""
-                        if not src_path or not os.path.isfile(src_path):
-                            return False
-                        # 文件后缀名检查（小写）
-                        valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tif", ".tiff", ".avif", ".heic"}
-                        _, ext = os.path.splitext(src_path)
-                        ext = ext.split("?")[0].lower()
-                        if ext not in valid_exts:
-                            return False
-
-                        general = example.get("general", "") or ""
-                        if any(word in general for word in exclude_word_list):
-                            return False
-                        year_tags = example.get("year", "") or ""
-                        years = []
-                        for y in _split_clean_comma_list(year_tags):
-                            if y.startswith("year_") and y[5:].isdigit():
-                                years.append(int(y[5:]))
-                        if years:
-                            if min(years) <= 2005:
-                                return False
-                            if min(years) <= 2007 and rng.random() < 0.8:
-                                return False
-                            if min(years) <= 2009 and rng.random() < 0.5:
-                                return False
-                        meta = example.get("meta", "") or ""
-                        if "lowres" in meta:
-                            return False
-                        artist = example.get("artist", "") or ""
-                        artists = _split_clean_comma_list(artist)
-                        if any(a in exclude_artist_set for a in artists):
-                            return False
-                        if len(artists) >= 1 and all(a in total_exclude_set for a in artists):
-                            return False
-                        # if "danbooru" in src_path and any(a in exclude_danbooru_set for a in artists):
-                        #     return False
-                        if "mizunezumi" in artists:
-                            if rng.random() < 0.9:
-                                return False
-                        return True
-
-                    dataset["train"] = dataset["train"].filter(_filter_index_entry)
-                    if len(dataset["train"]) == 0:
-                        raise RuntimeError(f"No valid samples found in {index_path}")
-
-                    dataset["train"] = dataset["train"].cast_column("_image_path", datasets.Image())
-                    dataset["train"] = dataset["train"].rename_column("_image_path", "image")
+                    dataset["train"] = dataset["train"].map(
+                        functools.partial(
+                            _annotate_target_size,
+                            height=args.resolution_height,
+                            width=args.resolution_width,
+                            label="default",
+                        ),
+                        desc="Annotating default resolution",
+                    )
 
             if dataset is None:
                 data_files = {}
@@ -1948,8 +2115,35 @@ def main(args):
                     data_files=data_files,
                     cache_dir=args.cache_dir,
                 )
-                # See more about loading custom images at
-                # https://huggingface.co/docs/datasets/v2.4.0/en/image_load#imagefolder
+                dataset["train"] = dataset["train"].map(
+                    functools.partial(
+                        _annotate_target_size,
+                        height=args.resolution_height,
+                        width=args.resolution_width,
+                        label="default",
+                    ),
+                    desc="Annotating default resolution",
+                )
+
+        if "target_height" not in dataset["train"].column_names or "target_width" not in dataset["train"].column_names:
+            dataset["train"] = dataset["train"].map(
+                functools.partial(
+                    _annotate_target_size,
+                    height=args.resolution_height,
+                    width=args.resolution_width,
+                    label="default",
+                ),
+                desc="Annotating default resolution",
+            )
+
+        bucket_map = None
+        if resolution_sets_config:
+            heights = dataset["train"]["target_height"]
+            widths = dataset["train"]["target_width"]
+            bucket_map = defaultdict(list)
+            for idx, (h, w) in enumerate(zip(heights, widths)):
+                bucket_map[(int(h), int(w))].append(idx)
+            bucket_map = {k: v for k, v in bucket_map.items() if len(v) >= args.train_batch_size}
 
     # Preprocessing the datasets.
     # We need to tokenize inputs and targets.
@@ -2015,8 +2209,6 @@ def main(args):
     interpolation = getattr(transforms.InterpolationMode, args.image_interpolation_mode.upper(), None)
     if interpolation is None:
         raise ValueError(f"Unsupported interpolation mode {interpolation=}.")
-    resize_size = (args.resolution_height, args.resolution_width)
-    train_crop = transforms.CenterCrop(resize_size) if args.center_crop else transforms.RandomCrop(resize_size)
     train_flip = transforms.RandomHorizontalFlip(p=1.0)
     train_transforms = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5], [0.5])])
 
@@ -2031,17 +2223,29 @@ def main(args):
             processed_images.append(canvas.convert("RGB"))
         images = processed_images
         # image aug
+        target_heights = examples.get("target_height")
+        target_widths = examples.get("target_width")
+        if target_heights is None:
+            target_heights = [args.resolution_height] * len(images)
+        if target_widths is None:
+            target_widths = [args.resolution_width] * len(images)
+
         original_sizes = []
         all_images = []
         crop_top_lefts = []
-        for image in images:
+        target_sizes = []
+
+        for idx, image in enumerate(images):
             original_sizes.append((image.height, image.width))
+            target_h = int(target_heights[idx])
+            target_w = int(target_widths[idx])
+            resize_size = (target_h, target_w)
             scale = max(
-                resize_size[0] / image.height,
-                resize_size[1] / image.width,
+                target_h / image.height,
+                target_w / image.width,
             )
-            resized_height = max(resize_size[0], int(math.ceil(image.height * scale)))
-            resized_width = max(resize_size[1], int(math.ceil(image.width * scale)))
+            resized_height = max(target_h, int(math.ceil(image.height * scale)))
+            resized_width = max(target_w, int(math.ceil(image.width * scale)))
             if resized_height != image.height or resized_width != image.width:
                 image = resize(
                     image,
@@ -2050,22 +2254,23 @@ def main(args):
                     antialias=True,
                 )
             if args.random_flip and random.random() < 0.5:
-                # flip
                 image = train_flip(image)
             if args.center_crop:
-                y1 = max(0, int(round((image.height - args.resolution_height) / 2.0)))
-                x1 = max(0, int(round((image.width - args.resolution_width) / 2.0)))
-                image = train_crop(image)
+                y1 = max(0, int(round((image.height - target_h) / 2.0)))
+                x1 = max(0, int(round((image.width - target_w) / 2.0)))
+                image = crop(image, y1, x1, target_h, target_w)
             else:
-                y1, x1, h, w = train_crop.get_params(image, resize_size)
+                y1, x1, h, w = transforms.RandomCrop.get_params(image, resize_size)
                 image = crop(image, y1, x1, h, w)
             crop_top_left = (y1, x1)
             crop_top_lefts.append(crop_top_left)
+            target_sizes.append((target_h, target_w))
             image = train_transforms(image)
             all_images.append(image)
 
         examples["original_sizes"] = original_sizes
         examples["crop_top_lefts"] = crop_top_lefts
+        examples["target_sizes"] = target_sizes
         examples["pixel_values"] = all_images
         return examples
 
@@ -2153,6 +2358,7 @@ def main(args):
             model_input = torch.stack([example["model_input"] if isinstance(example["model_input"], torch.Tensor) else torch.tensor(example["model_input"]) for example in examples])
             original_sizes = [example["original_sizes"] for example in examples]
             crop_top_lefts = [example["crop_top_lefts"] for example in examples]
+            target_sizes = [example["target_sizes"] for example in examples]
             prompt_embeds = torch.stack([example["prompt_embeds"] if isinstance(example["prompt_embeds"], torch.Tensor) else torch.tensor(example["prompt_embeds"]) for example in examples])
             pooled_prompt_embeds = torch.stack([example["pooled_prompt_embeds"] if isinstance(example["pooled_prompt_embeds"], torch.Tensor) else torch.tensor(example["pooled_prompt_embeds"]) for example in examples])
 
@@ -2162,6 +2368,7 @@ def main(args):
                 "pooled_prompt_embeds": pooled_prompt_embeds,
                 "original_sizes": original_sizes,
                 "crop_top_lefts": crop_top_lefts,
+                "target_sizes": target_sizes,
             }
 
             # Preserve metadata/caption fields for preview prompt reconstruction if present.
@@ -2180,11 +2387,13 @@ def main(args):
             pixel_values = torch.stack([example["pixel_values"] if isinstance(example["pixel_values"], torch.Tensor) else torch.tensor(example["pixel_values"]) for example in examples])
             original_sizes = [example["original_sizes"] for example in examples]
             crop_top_lefts = [example["crop_top_lefts"] for example in examples]
+            target_sizes = [example["target_sizes"] for example in examples]
 
             batch = {
                 "pixel_values": pixel_values,
                 "original_sizes": original_sizes,
                 "crop_top_lefts": crop_top_lefts,
+                "target_sizes": target_sizes,
             }
 
             for alias in metadata_aliases:
@@ -2199,13 +2408,27 @@ def main(args):
         dataset_for_loader = train_dataset
 
     # DataLoaders creation:
-    train_dataloader = torch.utils.data.DataLoader(
-        dataset_for_loader,
-        shuffle=True,
-        collate_fn=collate_fn,
-        batch_size=args.train_batch_size,
-        num_workers=args.dataloader_num_workers,
-    )
+    batch_sampler = None
+    if bucket_map:
+        batch_sampler = ResolutionBucketBatchSampler(
+            bucket_map, args.train_batch_size, shuffle=True, seed=args.seed or 0
+        )
+
+    if batch_sampler is not None:
+        train_dataloader = torch.utils.data.DataLoader(
+            dataset_for_loader,
+            batch_sampler=batch_sampler,
+            collate_fn=collate_fn,
+            num_workers=args.dataloader_num_workers,
+        )
+    else:
+        train_dataloader = torch.utils.data.DataLoader(
+            dataset_for_loader,
+            shuffle=True,
+            collate_fn=collate_fn,
+            batch_size=args.train_batch_size,
+            num_workers=args.dataloader_num_workers,
+        )
 
     # Scheduler and math around the number of training steps.
     overrode_max_train_steps = False
@@ -2348,10 +2571,12 @@ def main(args):
         plt.close()
 
     @torch.no_grad()
-    def save_preview(step: int, prompt: str):
+    def save_preview(step: int, prompt: str, height: Optional[int] = None, width: Optional[int] = None):
         nonlocal preview_pipe, preview_compel, preview_empty_conditioning
         if not prompt:
             return
+        preview_height = int(height) if height else args.resolution_height
+        preview_width = int(width) if width else args.resolution_width
         if args.use_ema:
             ema_unet.store(unet.parameters())
             ema_unet.copy_to(unet.parameters())
@@ -2409,12 +2634,12 @@ def main(args):
             add_time_ids = torch.tensor(
                 [
                     [
-                        args.resolution_height,
-                        args.resolution_width,
+                        preview_height,
+                        preview_width,
                         0,
                         0,
-                        args.resolution_height,
-                        args.resolution_width,
+                        preview_height,
+                        preview_width,
                     ]
                 ],
                 device=accelerator.device,
@@ -2428,8 +2653,8 @@ def main(args):
                 negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
                 num_inference_steps=int(args.preview_steps),
                 guidance_scale=float(args.preview_scale),
-                width=args.resolution_width,
-                height=args.resolution_height,
+                width=preview_width,
+                height=preview_height,
                 generator=generator,
                 added_cond_kwargs={"time_ids": add_time_ids},
             )
@@ -2506,15 +2731,17 @@ def main(args):
                 noisy_model_input = noise_scheduler.add_noise(model_input, noise, timesteps).to(dtype=weight_dtype)
 
                 # time ids
-                def compute_time_ids(original_size, crops_coords_top_left):
+                def compute_time_ids(original_size, crops_coords_top_left, target_size):
                     # Adapted from pipeline.StableDiffusionXLPipeline._get_add_time_ids
-                    target_size = (args.resolution_height, args.resolution_width)
                     add_time_ids = list(original_size + crops_coords_top_left + target_size)
                     add_time_ids = torch.tensor([add_time_ids], device=accelerator.device, dtype=weight_dtype)
                     return add_time_ids
 
                 add_time_ids = torch.cat(
-                    [compute_time_ids(s, c) for s, c in zip(batch["original_sizes"], batch["crop_top_lefts"])]
+                    [
+                        compute_time_ids(s, c, t)
+                        for s, c, t in zip(batch["original_sizes"], batch["crop_top_lefts"], batch["target_sizes"])
+                    ]
                 )
 
                 # Predict the noise residual
@@ -2675,8 +2902,19 @@ def main(args):
                             if captions and isinstance(captions[0], str) and captions[0].strip():
                                 preview_prompts = [captions[0].strip()]
 
+                        base_height = args.resolution_height
+                        base_width = args.resolution_width
+                        target_sizes = batch.get("target_sizes") or []
+                        if target_sizes:
+                            try:
+                                base_height = int(target_sizes[0][0])
+                                base_width = int(target_sizes[0][1])
+                            except Exception:
+                                base_height = args.resolution_height
+                                base_width = args.resolution_width
+
                         for idx, preview_prompt in enumerate(preview_prompts):
-                            save_preview(global_step + idx, preview_prompt)
+                            save_preview(global_step + idx, preview_prompt, height=base_height, width=base_width)
                             out_dir = os.path.join(args.output_dir, "preview")
                             try:
                                 with open(
