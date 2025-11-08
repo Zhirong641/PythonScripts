@@ -304,7 +304,7 @@ def _normalize_artist(artist: str) -> str:
 def _artist_phrase(artists: List[str], p: float = 2.0) -> str:
     """
     n == 1: 返回 1 个
-    n > 1 : 从 1..min(5,n) 中按权重 k**p 随机选取返回个数 k，再随机抽取 k 个
+    n > 1 : 从 1..min(1,n) 中按权重 k**p 随机选取返回个数 k，再随机抽取 k 个
     p > 0 越大越偏向返回更多个
     """
     if not artists:
@@ -314,7 +314,7 @@ def _artist_phrase(artists: List[str], p: float = 2.0) -> str:
     if n == 1:
         names = [_normalize_artist(artists[0])]
     else:
-        k_max = min(5, n)
+        k_max = min(1, n)
         ks = list(range(1, k_max + 1))
         if p <= 0:
             p = 1.0  # 防御式：非正则退回线性权重
@@ -350,10 +350,10 @@ def _rating_phrase(ratings: List[str], max_ratings: int = 1) -> str:
             break
     return ", ".join(picked)
 
-def _character_phrase(characters: List[str], max_chars: int = 4, joiner: str = ", ") -> str:
+def _character_phrase(characters: List[str], max_chars: int = 5, joiner: str = ", ") -> str:
     """
     将 Camie/booru 风格的角色标签转成自然短语。
-    - 默认只取前 4 个（`max_chars=4`）
+    - 默认只取前 5 个（`max_chars=5`）
     - 规则：下划线->空格，去空格；不强制加前缀（如 'character '），更贴近常见提示。
     """
     if not characters:
@@ -506,7 +506,7 @@ def generate_phrase_variants(
     characters: Optional[List[str]] = None,
     ratings: Optional[List[str]] = None,
     years: Optional[List[str]] = None,
-    max_chars: int = 4,
+    max_chars: int = 5,
 ) -> List[str]:
     # 预清洗 general
     g0 = []
@@ -637,7 +637,7 @@ def generate_variants_with_nl_list(
                 continue
             # 与 artist 锚定（50/50 放头或尾）
             anchors = []
-            char_anchor = _character_phrase(characters or [], max_chars=4)
+            char_anchor = _character_phrase(characters or [], max_chars=5)
             if char_anchor:
                 anchors.append(char_anchor)
             art = _artist_phrase(artists)

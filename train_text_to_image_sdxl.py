@@ -81,6 +81,8 @@ DATASET_NAME_MAPPING = {
     "lambdalabs/naruto-blip-captions": ("image", "text"),
 }
 
+FILTER_LIST_DIR = Path(__file__).resolve().parent / "filter_lists"
+
 
 # ===== Helpers for dynamic text variants =====
 def _split_clean_comma_list(s: str):
@@ -122,6 +124,21 @@ def _build_variants_from_cap_author(caption_tags: str, caption_nl: str, author: 
     mask = np.array(mask, dtype=np.bool_)
     preview_text = random.choice([texts[i] for i in range(len(texts)) if mask[i]]) if any(mask) else ""
     return texts, mask, preview_text
+
+
+def _load_filter_list(filename: str):
+    file_path = FILTER_LIST_DIR / filename
+    if not file_path.is_file():
+        logger.warning(f"Filter list file '{file_path}' not found. Continuing without exclusions.")
+        return []
+    entries = []
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            item = line.strip()
+            if not item or item.startswith("#"):
+                continue
+            entries.append(item)
+    return entries
 
 
 # ===== Resolution helpers =====
@@ -1862,126 +1879,14 @@ def main(args):
                         "abstract",
                     ]
 
-                    exclude_artist_list = [
-                        "marushin",
-                        "m and m",
-                        "mikan",
-                        "cle_masahiro",
-                        "cle masahiro",
-                        "kaisen_chuui",
-                        "takatsuki_ichi",
-                        "takatsuki ichi",
-                        "fu-ta",
-                        "kimura_takahiro",
-                        "kimura takahiro",
-                        "cuvie",
-                        "may",
-                        "takeda_hiromitsu",
-                        "takeda hiromitsu",
-                        "oono_tsutomu",
-                        "oono tsutomu",
-                        "aoi_manabu",
-                        "aoi manabu",
-                        "shikei",
-                        "bubuzuke",
-                        "kloah",
-                        "akagi_rio",
-                        "akagi rio",
-                        "kakogawa_tarou",
-                        "kakogawa tarou",
-                        "himuro_shunsuke",
-                        "himuro shunsuke",
-                        "gustav",
-                        "yaegashi_nan",
-                        "yaegashi nan",
-                        "nakayama_miyuki",
-                        "nakayama miyuki",
-                        "uni8",
-                        "goban",
-                        "shindol",
-                        "miyamoto_issa",
-                        "miyamoto issa",
-                        "tamahiro",
-                        "aonaga_heri",
-                        "aonaga heri",
-                        "ryuuta",
-                        "hanazawa_suou",
-                        "hanazawa suou",
-                        "yamaura_tamaki",
-                        "yamaura tamaki",
-                        "ishigaki_takashi",
-                        "ishigaki takashi",
-                        "sansyoku_amido.",
-                        "sansyoku amido.",
-                        "mibu_natsuki",
-                        "mibu natsuki",
-                        "umekichi",
-                        "yuuki_shin",
-                        "yuuki shin",
-                        "narumi_suzune",
-                        "narumi suzune",
-                        "yuzuki_kotona",
-                        "yuzuki kotona",
-                        "ayakaze_ryuushou",
-                        "ayakaze ryuushou",
-                        "kusano_houki",
-                        "kusano houki",
-                    ]
+                    exclude_artist_list = _load_filter_list("exclude_artists.txt")
+                    exclude_artist_set = set(exclude_artist_list)
+                    exclude_artist_set |= {name.replace("_", " ") for name in exclude_artist_list}
 
-                    exclude_danbooru_artists = [
-                        "cut",
-                        "obui",
-                        "sky",
-                        "alp",
-                        "edo",
-                        "mos",
-                        "jam",
-                        "rim",
-                        "isao",
-                        "momi",
-                        "nini",
-                        "niki",
-                        "acorn",
-                        "asanagi",
-                        "aldehyde",
-                        "murakami_suigun",
-                        "kichihachi",
-                        "kusaka_souji",
-                        "harada_takehito",
-                        "watanabe_akio",
-                        "maru",
-                        "kirishima_satoshi",
-                        "tsunashima_shirou",
-                        "ishii_hisao",
-                        "kana",
-                        "untue",
-                        "tedain",
-                        "kuuchuu_yousai",
-                        "barasui",
-                        "naruko",
-                        "pinta",
-                        "tajima_ryuushi",
-                        "ebifly",
-                        "sody",
-                        "smash_daisaku",
-                        "ajishio",
-                        "nectar",
-                        "isse",
-                        "chikuwa",
-                        "shirosuzu",
-                        "sawada_yuusuke",
-                        "asahina_hikage",
-                        "b-ginga",
-                        "sakurazawa_izumi",
-                        "uonuma_yuu",
-                        "cccpo",
-                        "ukyo_rst",
-                        "gijang",
-                        "niro",
-                        "popqn",
-                        "horosuke",
-                        "kinta"
-                    ]
+                    exclude_danbooru_artists = _load_filter_list("exclude_danbooru_artists.txt")
+                    exclude_danbooru_set = set(exclude_danbooru_artists)
+                    exclude_danbooru_set |= {name.replace("_", " ") for name in exclude_danbooru_artists}
+                    total_exclude_set = exclude_artist_set.union(exclude_danbooru_set)
 
                     rng = random.Random(args.seed if args.seed is not None else 42)
 
@@ -1998,8 +1903,6 @@ def main(args):
 
                         general = example.get("general", "") or ""
                         if any(word in general for word in exclude_word_list):
-                            return False
-                        if "dakimakura_(medium)" not in general:
                             return False
                         year_tags = example.get("year", "") or ""
                         years = []
@@ -2018,10 +1921,12 @@ def main(args):
                             return False
                         artist = example.get("artist", "") or ""
                         artists = _split_clean_comma_list(artist)
-                        if any(a in artists for a in exclude_artist_list):
+                        if any(a in exclude_artist_set for a in artists):
                             return False
-                        if "danbooru" in src_path and any(a in artists for a in exclude_danbooru_artists):
+                        if len(artists) >= 1 and all(a in total_exclude_set for a in artists):
                             return False
+                        # if "danbooru" in src_path and any(a in exclude_danbooru_set for a in artists):
+                        #     return False
                         if "mizunezumi" in artists:
                             if rng.random() < 0.9:
                                 return False

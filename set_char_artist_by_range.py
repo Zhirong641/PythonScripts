@@ -45,6 +45,51 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (899895, 3, 26, "yanase hitomi", "primil"),
     (522375, 46, 191, "hondou ayano", "primil"),
     (522375, 298, 440, "amamoto louis", "primil"),
+    (847794, 1, 418, "natsuki rino", None),
+    (979189, 1, 53, "mito kohaku", None),
+    (979189, 54, 111, "saijou hifumi", None),
+    (979189, 228, 250, "mito kohaku", None),
+    (979189, 251, 271, "saijou hifumi", None),
+
+    (1056434, 22, 32, "mito kohaku", None),
+    (1056434, 33, 43, "saijou hifumi", None),
+    (1056434, 54, 65, "yunohana nano", None),
+    (1056434, 91, 132, "mito kohaku", None),
+    (1056434, 133, 172, "saijou hifumi", None),
+    (1056434, 211, 247, "yunohana nano", None),
+
+    (1993857, 49, 71, "mito kohaku", None),
+    (1993857, 72, 92, "saijou hifumi", None),
+    (1993857, 119, 137, "yunohana nano", None),
+    (1993857, 138, 141, "yunohana nano, mito kohaku", None),
+    (1993857, 143, 193, "mito kohaku", None),
+    (1993857, 194, 251, "saijou hifumi", None),
+    (1993857, 312, 367, "yunohana nano", None),
+
+    (633524, 2, 141, "luce yami asutarite", "yamakaze ran"),
+    (633524, 142, 277, "julia lin road", "sakurazaka tsuchiyu"),
+    (633524, 278, 405, "mitsu no tama yori hime", "yamakaze ran"),
+    (633524, 406, 553, "amagi karin", "yamakaze ran"),
+    (633524, 672, 815, "shirahase yuuna", "yamakaze ran"),
+
+    (1217027, 3, 142, "luce yami asutarite", "yamakaze ran"),
+    (1217027, 143, 278, "julia lin road", "sakurazaka tsuchiyu"),
+    (1217027, 279, 406, "mitsu no tama yori hime", "yamakaze ran"),
+    (1217027, 407, 554, "amagi karin", "yamakaze ran"),
+    (1217027, 673, 816, "shirahase yuuna", "yamakaze ran"),
+
+    (634833, 3, 142, "luce yami asutarite", "yamakaze ran"),
+    (634833, 143, 278, "julia lin road", "sakurazaka tsuchiyu"),
+    (634833, 279, 406, "mitsu no tama yori hime", "yamakaze ran"),
+    (634833, 407, 554, "amagi karin", "yamakaze ran"),
+    (634833, 673, 816, "shirahase yuuna", "yamakaze ran"),
+
+    (1805418, 1, 2000, None, "kaniya shiku, konomi, yuzuna hiyo"),
+    (1805420, 1, 2000, None, "kaniya shiku, konomi, yuzuna hiyo"),
+    (2313627, 1, 2000, None, "mizuno sao, satasama, yuzuna hiyo"),
+    (1537715, 1, 2000, None, "yuzuna hiyo"),
+    (1537491, 1, 2000, None, "yuzuna hiyo"),
+    (1537567, 1, 2000, None, "yuzuna hiyo"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
