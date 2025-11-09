@@ -2,99 +2,99 @@
   {
     "label": "hitomi_2_3",
     "resolution": "768x1152",
-    "index_file": "/mnt/shared/data/buckets/ratio_ratio_4_3.jsonl"
+    "index_file": "/mnt/shared/data/buckets/ratio_4_3.jsonl"
   },
   {
     "label": "hitomi_3_4",
     "resolution": "768x1024",
-    "index_file": "/mnt/shared/data/buckets/ratio_ratio_3_4.jsonl"
+    "index_file": "/mnt/shared/data/buckets/ratio_3_4.jsonl"
   },
   {
     "label": "hitomi_1_1",
     "resolution": "960x960",
-    "index_file": "/mnt/shared/data/buckets/ratio_ratio_1_1.jsonl"
+    "index_file": "/mnt/shared/data/buckets/ratio_1_1.jsonl"
   },
   {
     "label": "hitomi_4_3",
     "resolution": "1024x768",
-    "index_file": "/mnt/shared/data/buckets/ratio_ratio_4_3.jsonl"
+    "index_file": "/mnt/shared/data/buckets/ratio_4_3.jsonl"
   },
   {
     "label": "hitomi_16_9",
     "resolution": "1280x720",
-    "index_file": "/mnt/shared/data/buckets/ratio_ratio_16_9.jsonl"
+    "index_file": "/mnt/shared/data/buckets/ratio_16_9.jsonl"
   },
 
 
   {
     "label": "danbooru_3_10",
     "resolution": "480x1600",
-    "index_file": "/mnt/shared/data/danbooru_images/buckets/ratio_ratio_3_10.jsonl"
+    "index_file": "/mnt/shared/data/danbooru_images/buckets/ratio_3_10.jsonl"
   },
   {
     "label": "danbooru_9_16",
     "resolution": "720x1280",
-    "index_file": "/mnt/shared/data/danbooru_images/buckets/ratio_ratio_9_16.jsonl"
+    "index_file": "/mnt/shared/data/danbooru_images/buckets/ratio_9_16.jsonl"
   },
   {
     "label": "danbooru_2_3",
     "resolution": "768x1152",
-    "index_file": "/mnt/shared/data/danbooru_images/buckets/ratio_ratio_4_3.jsonl"
+    "index_file": "/mnt/shared/data/danbooru_images/buckets/ratio_2_3.jsonl"
   },
   {
     "label": "danbooru_3_4",
     "resolution": "768x1024",
-    "index_file": "/mnt/shared/data/danbooru_images/buckets/ratio_ratio_3_4.jsonl"
+    "index_file": "/mnt/shared/data/danbooru_images/buckets/ratio_3_4.jsonl"
   },
   {
     "label": "danbooru_1_1",
     "resolution": "960x960",
-    "index_file": "/mnt/shared/data/danbooru_images/buckets/ratio_ratio_1_1.jsonl"
+    "index_file": "/mnt/shared/data/danbooru_images/buckets/ratio_1_1.jsonl"
   },
   {
     "label": "danbooru_4_3",
     "resolution": "1024x768",
-    "index_file": "/mnt/shared/data/danbooru_images/buckets/ratio_ratio_4_3.jsonl"
+    "index_file": "/mnt/shared/data/danbooru_images/buckets/ratio_4_3.jsonl"
   },
   {
     "label": "danbooru_16_9",
     "resolution": "1280x720",
-    "index_file": "/mnt/shared/data/danbooru_images/buckets/ratio_ratio_16_9.jsonl"
+    "index_file": "/mnt/shared/data/danbooru_images/buckets/ratio_16_9.jsonl"
   },
 
   {
     "label": "danbooru_general_3_10",
     "resolution": "480x1600",
-    "index_file": "/mnt/shared/data/danbooru_general/buckets/ratio_ratio_3_10.jsonl"
+    "index_file": "/mnt/shared/data/danbooru_general/buckets/ratio_3_10.jsonl"
   },
   {
     "label": "danbooru_general_9_16",
     "resolution": "720x1280",
-    "index_file": "/mnt/shared/data/danbooru_general/buckets/ratio_ratio_9_16.jsonl"
+    "index_file": "/mnt/shared/data/danbooru_general/buckets/ratio_9_16.jsonl"
   },
   {
     "label": "danbooru_general_2_3",
     "resolution": "768x1152",
-    "index_file": "/mnt/shared/data/danbooru_general/buckets/ratio_ratio_4_3.jsonl"
+    "index_file": "/mnt/shared/data/danbooru_general/buckets/ratio_2_3.jsonl"
   },
   {
     "label": "danbooru_general_3_4",
     "resolution": "768x1024",
-    "index_file": "/mnt/shared/data/danbooru_general/buckets/ratio_ratio_3_4.jsonl"
+    "index_file": "/mnt/shared/data/danbooru_general/buckets/ratio_3_4.jsonl"
   },
   {
     "label": "danbooru_general_1_1",
     "resolution": "960x960",
-    "index_file": "/mnt/shared/data/danbooru_general/buckets/ratio_ratio_1_1.jsonl"
+    "index_file": "/mnt/shared/data/danbooru_general/buckets/ratio_1_1.jsonl"
   },
   {
     "label": "danbooru_general_4_3",
     "resolution": "1024x768",
-    "index_file": "/mnt/shared/data/danbooru_general/buckets/ratio_ratio_4_3.jsonl"
+    "index_file": "/mnt/shared/data/danbooru_general/buckets/ratio_4_3.jsonl"
   },
   {
     "label": "danbooru_general_16_9",
     "resolution": "1280x720",
-    "index_file": "/mnt/shared/data/danbooru_general/buckets/ratio_ratio_16_9.jsonl"
+    "index_file": "/mnt/shared/data/danbooru_general/buckets/ratio_16_9.jsonl"
   }
 ]
