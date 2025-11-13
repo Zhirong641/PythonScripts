@@ -275,19 +275,23 @@ def _load_and_filter_index_dataset(
             return False
 
         general = example.get("general", "") or ""
+        general_tags = _split_clean_comma_list(general)
         if any(word in general for word in exclude_word_list):
             return False
-        year_tags = example.get("year", "") or ""
+        if ("danbooru" not in src_path and any(bg in general_tags for bg in ["transparent_background", "simple_background", "black_background", "white_background", "tachi-e"])
+            and rng.random() < 0.9):
+            return False
+        year = example.get("year", "") or ""
         years = []
-        for y in _split_clean_comma_list(year_tags):
+        for y in _split_clean_comma_list(year):
             if y.startswith("year_") and y[5:].isdigit():
                 years.append(int(y[5:]))
         if years:
             if min(years) <= 2005:
                 return False
-            if min(years) <= 2007 and rng.random() < 0.8:
+            if min(years) <= 2007 and rng.random() < 0.9:
                 return False
-            if min(years) <= 2009 and rng.random() < 0.5:
+            if min(years) <= 2009 and rng.random() < 0.7:
                 return False
         meta = example.get("meta", "") or ""
         if "lowres" in meta:
@@ -299,6 +303,8 @@ def _load_and_filter_index_dataset(
         if total_exclude_set and artists and all(a in total_exclude_set for a in artists):
             return False
         if "mizunezumi" in artists and rng.random() < 0.9:
+            return False
+        if ("danbooru" not in src_path and "ko-cha" in artists and rng.random() < 0.9):
             return False
         return True
 

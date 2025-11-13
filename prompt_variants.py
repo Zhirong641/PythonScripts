@@ -307,6 +307,8 @@ def _artist_phrase(artists: List[str], p: float = 2.0) -> str:
     n > 1 : 从 1..min(1,n) 中按权重 k**p 随机选取返回个数 k，再随机抽取 k 个
     p > 0 越大越偏向返回更多个
     """
+    if random.random() < 0.05:
+        return ""  # 5% 概率不加画师标签
     if not artists:
         return ""
 
@@ -360,6 +362,8 @@ def _character_phrase(characters: List[str], max_chars: int = 5, joiner: str = "
     """
     if not characters:
         return ""
+    if random.random() < 0.1:
+        return ""  # 10% 概率不加角色标签
     # 去重并标准化
     norm = []
     seen = set()
@@ -379,6 +383,8 @@ def _character_phrase(characters: List[str], max_chars: int = 5, joiner: str = "
 def _era_tag(year_tags: List[str]) -> str:
     if not year_tags:
         return ""
+    if random.random() < 0.2:
+        return ""  # 20% 概率不加年代标签
     years = []
     for tag in year_tags:
         match = re.search(r"(\d{4})", tag)
