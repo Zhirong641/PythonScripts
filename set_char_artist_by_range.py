@@ -7,6 +7,12 @@ from typing import List, Tuple, Optional
 # 需要修改的区间（目录ID, 起始序号, 结束序号，角色，画师，均闭区间）
 RANGES: List[Tuple[int, int, int, str, str]] = [
     (3328374, 3, 2000, None, "utsunomiya tsumire"),
+    (2204943, 1, 2000, None, "taniyama-san"),
+    (3417336, 1, 2000, None, "suzumori"),
+    (3417337, 1, 2000, None, "suzumori"),
+    (3417347, 1, 2000, None, "suzumori"),
+    (3417364, 1, 2000, None, "suzumori"),
+    (3417365, 1, 2000, None, "suzumori"),
     (727768, 345, 461, "rindo tsubame", "chikotam"),
     (727768, 630, 647, "rindo tsubame", "chikotam"),
     (727768, 3, 25, "takakura anzu", "primil"),
@@ -165,9 +171,9 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (917393, 255, 347, "sawamura yui", "shiwasu horio"),
     # Koisuru Ojou-sama wa Ecchi na Hanayome
     (970538, 1, 103, "tsukimiya asuka", None),
-    (970538, 125, 128, "miake hiyoko ", None),
+    (970538, 125, 128, "miake hiyoko", None),
     (970538, 132, 145, "tsukimiya asuka", None),
-    (970538, 146, 216, "miake hiyoko ", None),
+    (970538, 146, 216, "miake hiyoko", None),
     # Pure Song Garden!
     (1081513, 2, 236, "shimokuni asuka", "bekotarou"),
     (1081513, 237, 578, "hoshino iroha", "motoi ayumu"),
@@ -239,7 +245,152 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1977160, 1, 892, "nanase ririna", "itou life"),
     (1977178, 1317, 2000, "nanase chiharu", "itou life"),
     (1977201, 1, 600, "nanase shizuku", "itou life"),
-
+    # Amanatsu Adolescence
+    (1043759, 2, 22, "hyuuga_natsu", "hisama kumako"),
+    (1043759, 23, 32, "sasha_mayakovskaya", "hitsuji takako"),
+    (1043759, 88, 161, "hyuuga_natsu", "hisama kumako"),
+    (1043759, 162, 230, "sasha_mayakovskaya", "hitsuji takako"),
+    # Shougun-sama wa Otoshigoro
+    (1175803, 10, 121, "tokugawa_muneharu", "shona mitsuishi"),
+    (1175803, 329, 478, "tokuda_yoshimune", "shona mitsuishi"),
+    # sousaku kanojo no renai koushiki
+    (3425319, 1, 432, "ayase_aisa", None),
+    (3425319, 433, 1197, "tsukimizaka_kiriha", None),
+    (2351500, 2, 10, "ayase_aisa", None),
+    (2351500, 42, 81, "ayase_aisa", None),
+    (2351500, 11, 20, "tsukimizaka_kiriha", None),
+    (2351500, 82, 107, "tsukimizaka_kiriha", None),
+    (2070784, 19, 36, "ayase_aisa", None),
+    (2070784, 51, 53, "ayase_aisa", None),
+    (2070784, 185, 210, "ayase_aisa", None),
+    (2070784, 762, 800, "ayase_aisa", None),
+    (2070784, 815, 956, "ayase_aisa", None),
+    (2070784, 54, 102, "tsukimizaka_kiriha", None),
+    (2070784, 429, 603, "tsukimizaka_kiriha", None),
+    # Shukufuku no Kanenone wa, Sakurairo no Kaze Totomoni
+    (1321028, 2, 112, "ootori_maria", "anapom, anapon"),
+    (1321028, 230, 362, "kitazono_saya", "anapom, anapon"),
+    # Kokoro ga Tsunagu Koi Shirube
+    (1322592, 5, 349, "kujou_himeno", None),
+    # Koi wa Yumemiru Mouretsu Girl!
+    (1009125, 7, 384, "mioka_aoi", "naenae"),
+    (1009125, 385, 669, "mioka_aoi", "naenae"),
+    (1009125, 673, 1060, "yuunagi_shizuku", "naenae"),
+    (1009125, 1305, 1368, "chie", "niki"),
+    (1257428, 30, 163, "mioka_aoi", "naenae"),
+    (1257428, 164, 256, "mioka_aoi", "naenae"),
+    (1257428, 257, 353, "yuunagi_shizuku", "naenae"),
+    # Garudoma
+    (2653109, 3, 115, "fuyusaki_aiko", None),
+    (2653109, 873, 987, "fuyusaki_aiko", None),
+    (2653109, 1310, 1378, "fuyusaki_aiko", None),
+    (2836574, 3, 236, "fuyusaki_aiko", None),
+    # Hatsukoi 1/1
+    (504063, 1070, 2000, "makabe_midori", "koizumi amane"),
+    (504064, 2, 97, "makabe_midori", "koizumi amane"),
+    # Natsuzora no Perseus
+    (550675, 1, 44, "tohno_ren", "shona mitsuishi"),
+    (550675, 45, 168, "sawatari_tohka", "shona mitsuishi"),
+    # Hanikami CLOVER
+    (899587, 4, 14, "saeki_rio", "kakao"),
+    (899587, 68, 419, "saeki_rio", "kakao"),
+    (899587, 39, 54, "suoh_emiru", "kakao"),
+    (899587, 773, 1214, "suoh_emiru", "kakao"),
+    (1442740, 1, 32, "saeki_rio", "kakao"),
+    (1442740, 33, 70, "suoh_emiru", "kakao"),
+    (1442740, 144, 179, "saeki_rio", "kakao"),
+    (1442740, 180, 224, "suoh_emiru", "kakao"),
+    # Ama Koi Syrups
+    (790794, 2, 181, "watanuki_tsuyuri", "pan"),
+    (790794, 526, 699, "kusaka_hozumi", "pan"),
+    (1166516, 2, 181, "watanuki_tsuyuri", "pan"),
+    (1166516, 527, 700, "kusaka_hozumi", "pan"),
+    (1166649, 2, 153, "watanuki_tsuyuri", "pan"),
+    (1166649, 447, 598, "kusaka_hozumi", "pan"),
+    # Tenshi☆Souzou RE-BOOT!
+    (2536708, 3, 466, "shirayuki_noa", "kobuichi"),
+    (2536708, 467, 708, "ozato_fumika", "kobuichi"),
+    (2537215, 410, 736, "kohibari_kurumi", "muririn"),
+    (2537215, 737, 1214, "hoshikawa_kaguya", "muririn"),
+    (3423289, 1, 2000, "shirayuki_noa", "kobuichi"),
+    (3423288, 1, 2000, "shirayuki_noa", "kobuichi"),
+    (3423291, 1, 2000, "shirayuki_noa", "kobuichi"),
+    (3423290, 1, 2000, "shirayuki_noa", "kobuichi"),
+    (3422989, 1, 2000, "ozato_fumika", "kobuichi"),
+    (3422985, 1, 2000, "kohibari_kurumi", "muririn"),
+    (3422986, 1, 2000, "kohibari_kurumi", "muririn"),
+    (3423069, 1, 2000, "hoshikawa_kaguya", "muririn"),
+    (3423070, 1, 2000, "hoshikawa_kaguya", "muririn"),
+    (3423071, 1, 2000, "hoshikawa_kaguya", "muririn"),
+    (3423072, 1, 2000, "hoshikawa_kaguya", "muririn"),
+    # Limelight Lemonade Jam
+    (3556090, 1, 2000, "shimakoshi_tsukimi", None),
+    (3556158, 1, 2000, "koishikawa_miku", None),
+    (3556159, 1, 2000, "koishikawa_miku", None),
+    (3556077, 1, 2000, "harumi_ena", None),
+    (3556078, 1, 2000, "harumi_ena", None),
+    (3556079, 1, 2000, "harumi_ena", None),
+    (3556080, 1, 2000, "harumi_ena", None),
+    (3556081, 1, 2000, "harumi_ena", None),
+    (3556082, 1, 2000, "harumi_ena", None),
+    (3556083, 1, 2000, "harumi_ena", None),
+    (3556084, 1, 2000, "harumi_ena", None),
+    (3553799, 22, 62, "harumi_ena", "muririn"),
+    (3553799, 88, 129, "shimakoshi_tsukimi", None),
+    (3553799, 175, 189, "koishikawa_miku", "muririn"),
+    # Sengokuhime 5
+    (809507, 171, 210, "oda_nobuyuki_(sengoku_hime)", None),
+    # amayui castle meister
+    (1067242, 72, 341, "fia_(amayui_castle_meister)", "yano mitsuki"),
+    (1117997, 7, 112, "fia_(amayui_castle_meister)", "yano mitsuki"),
+    (1179437, 16, 35, "fia_(amayui_castle_meister)", "yano mitsuki"),
+    # secret love
+    (2999687, 424, 776, "akatsuka_haru", "k-ko"),
+    (2999687, 1178, 1587, "natori_misa", "mango pudding"),
+    (3328435, 170, 333, "akatsuka_haru", "k-ko"),
+    (3328435, 477, 652, "natori_misa", "mango pudding"),
+    # IxSHE Tell
+    (1189877, 9, 161, "yuuki_ayaka", None),
+    (1189877, 179, 394, "kosimizu_kasumi", None),
+    (1263294, 3, 166, "yuuki_ayaka", None),
+    (1990347, 417, 568, "yuuki_ayaka", None),
+    (1990347, 200, 415, "kosimizu_kasumi", None),
+    (2566350, 7, 159, "yuuki_ayaka", None),
+    (2566350, 177, 392, "kosimizu_kasumi", None),
+    # Houkago Cinderella
+    # FLIP＊FLOP
+    (2362035, 1, 2000, "io_(flip_flop)", None),
+    # Pure x Connect
+    (820343, 185, 342, "shinozaki_ayumi_(pure_x_connect)", None),
+    (820343, 548, 726, "makihara_shiho_(pure_x_connect)", None),
+    # DRACU-RIOT!
+    (875699, 1, 736, "yarai_miu", "muririn"),
+    (875699, 1747, 2000, "inamura_rio", "kobuichi"),
+    (875672, 1, 295, "inamura_rio", "kobuichi"),
+    (875672, 296, 1031, "elena_olegovna_owen", "kobuichi"),
+    (875672, 1032, 1335, "nicola_cepheus", "muririn"),
+    # Senren*banka
+    (3442432, 1, 2000, "tomotake_yoshino", "kobuichi"),
+    (1890822, 1, 994, "tomotake_yoshino", "kobuichi"),
+    (960624, 3, 646, "tomotake_yoshino", "kobuichi"),
+    # Sanoba Witch
+    (3424478, 1, 2000, "ayachi_nene", "kobuichi"),
+    (3424479, 1, 2000, "ayachi_nene", "kobuichi"),
+    (3424480, 1, 2000, "ayachi_nene", "kobuichi"),
+    (3424414, 1, 2000, "togakushi_touko", "muririn"),
+    (3424415, 1, 2000, "togakushi_touko", "muririn"),
+    (798685, 408, 958, "togakushi_touko", "muririn"),
+    (798679, 3, 934, "ayachi_nene", "kobuichi"),
+    # Southern Cross Love Song / Minamijuujisei Renka
+    (743876, 4, 295, "fujina_kanori", None),
+    (743876, 515, 719, "naraoka_mitsuki", None),
+    # Sorceress*Alive!
+    (1354083, 3, 14, "akina_randal", "shona mitsuishi"),
+    (1354083, 44, 51, "azuria_newfield", "shona mitsuishi"),
+    (1354083, 15, 32, "yuzuriha_serval", "hayakawa halui"),
+    (1354083, 200, 282, "akina_randal", "shona mitsuishi"),
+    (1354083, 283, 361, "azuria_newfield", "shona mitsuishi"),
+    (1354083, 420, 479, "yuzuriha_serval", "hayakawa halui"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp

@@ -234,6 +234,7 @@ def _load_and_filter_index_dataset(
     exclude_word_list,
     exclude_artist_set,
     exclude_danbooru_set,
+    exclude_source_id_set,
     seed,
 ):
     if not os.path.isfile(index_path):
@@ -273,13 +274,18 @@ def _load_and_filter_index_dataset(
         ext = ext.split("?")[0].lower()
         if ext not in valid_exts:
             return False
+        if exclude_source_id_set:
+            norm_path = os.path.normpath(src_path)
+            path_parts = Path(norm_path).parts
+            if any(part in exclude_source_id_set for part in path_parts):
+                return False
 
         general = example.get("general", "") or ""
         general_tags = _split_clean_comma_list(general)
         if any(word in general for word in exclude_word_list):
             return False
         if ("danbooru" not in src_path and any(bg in general_tags for bg in ["transparent_background", "simple_background", "black_background", "white_background", "tachi-e"])
-            and rng.random() < 0.9):
+            and "dakimakura_(medium)" not in general_tags and rng.random() < 0.9):
             return False
         year = example.get("year", "") or ""
         years = []
@@ -2063,8 +2069,10 @@ def main(args):
             ]
             exclude_artist_entries = _load_filter_list("exclude_artists.txt")
             exclude_danbooru_entries = _load_filter_list("exclude_danbooru_artists.txt")
+            exclude_source_id_entries = _load_filter_list("exclude_source_ids.txt")
             exclude_artist_set = _build_filter_name_set(exclude_artist_entries)
             exclude_danbooru_set = _build_filter_name_set(exclude_danbooru_entries)
+            exclude_source_id_set = {entry for entry in exclude_source_id_entries if entry}
 
             if resolution_sets_config:
                 per_resolution = []
@@ -2076,6 +2084,7 @@ def main(args):
                         exclude_word_list,
                         exclude_artist_set,
                         exclude_danbooru_set,
+                        exclude_source_id_set,
                         (args.seed if args.seed is not None else 42) + idx,
                     )
                     ds["train"] = ds["train"].map(
@@ -2100,6 +2109,7 @@ def main(args):
                         exclude_word_list,
                         exclude_artist_set,
                         exclude_danbooru_set,
+                        exclude_source_id_set,
                         args.seed,
                     )
                     dataset["train"] = dataset["train"].map(

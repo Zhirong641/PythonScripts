@@ -335,8 +335,8 @@ def _artist_phrase(artists: List[str], p: float = 2.0) -> str:
 def _rating_phrase(ratings: List[str], max_ratings: int = 1) -> str:
     if not ratings:
         return ""
-    if random.random() < 0.1:
-        return ""  # 10% 概率不加 rating 标签
+    if random.random() < 0.2:
+        return ""  # 20% 概率不加 rating 标签
     picked = []
     seen = set()
     for tag in ratings:
@@ -362,8 +362,8 @@ def _character_phrase(characters: List[str], max_chars: int = 5, joiner: str = "
     """
     if not characters:
         return ""
-    if random.random() < 0.1:
-        return ""  # 10% 概率不加角色标签
+    if random.random() < 0.15:
+        return ""  # 15% 概率不加角色标签
     # 去重并标准化
     norm = []
     seen = set()

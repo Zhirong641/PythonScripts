@@ -38,7 +38,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 # ====== 每类默认阈值（可被 --thresh 覆盖）======
 CATEGORY_DEFAULT_THRESH = {
     "rating": 0.65,
-    "character": 0.77,
+    "character": 0.8,
 }
 
 # ========== 通用解析 ==========
@@ -233,8 +233,8 @@ def find_artist_for_record(artist_pairs: List[Tuple[str, float]],
             # 仅有一项时，若同名失败，则不再尝试第二条规则，直接回退到 CSV
             return list(artists_csv_list)
 
-    # 2) 顶项 > 0.85
-    if artist_pairs and artist_pairs[0][1] > 0.85:
+    # 2) 顶项 > 0.90
+    if artist_pairs and artist_pairs[0][1] > 0.90:
         return [artist_pairs[0][0]]
 
     # 3) 回退到 CSV
@@ -289,6 +289,9 @@ def process_record(rec: Dict[str, Any],
     # 处理 artist（特殊逻辑）
     path = out["path"]
     rec_id = extract_webp_id(path) or ""
+    # 判断artists_map是否包含该 id
+    if rec_id not in artists_map:
+        print(f"!! Warning: id '{rec_id}' from path '{path}' not found in artists CSV.")
     artists_csv_list = artists_map.get(rec_id, [])
 
     artist_pairs = parse_artist_pairs(rec.get("artist", []))
