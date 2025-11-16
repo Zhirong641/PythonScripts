@@ -503,6 +503,22 @@ def _clean_nl(text: str) -> str:
     s = s.replace(" and ", ", ")
     return s
 
+def _normalize_group(group: str) -> str:
+    """Keep group display names readable (strip whitespace and underscores)."""
+    return group.strip().replace("_", " ")
+
+
+def _group_phrase(groups: List[str]) -> str:
+    if random.random() < 0.3:
+        return ""  # 30% 概率不加 group 标签
+    cleaned = [_normalize_group(g) for g in groups if _normalize_group(g)]
+    if not cleaned:
+        return ""
+    cleaned = random.sample(cleaned, k=len(cleaned))
+    cleaned = cleaned[:min(2, len(cleaned))]  # 最多 2 个
+    return "group:" + ", ".join(cleaned)
+
+
 def generate_phrase_variants(
     general_tags: List[str],
     artists: List[str],
@@ -515,6 +531,7 @@ def generate_phrase_variants(
     ratings: Optional[List[str]] = None,
     years: Optional[List[str]] = None,
     max_chars: int = 5,
+    groups: Optional[List[str]] = None,
 ) -> List[str]:
     # 预清洗 general
     g0 = []
@@ -538,6 +555,9 @@ def generate_phrase_variants(
         artist = _artist_phrase(artists)
         if artist:
             parts.append(artist)
+        group_phrase = _group_phrase(groups or [])
+        if group_phrase:
+            parts.append(group_phrase)
         if rating_phrase:
             parts.append(rating_phrase)
 
@@ -608,6 +628,7 @@ def generate_variants_with_nl_list(
     nl_texts:  Optional[List[str]] = None,
     seed: Optional[int] = None,
     cfg_dropout: float = 0.0,
+    groups: Optional[List[str]] = None,
 ) -> List[str]:
     """
     general_tags: 已按权重降序
@@ -618,6 +639,7 @@ def generate_variants_with_nl_list(
     max_general_per_variant: 每条最多放多少个 general 短语
     head_keep:    头部保序的候选数量（尾部会洗牌）
     cfg_dropout:  返回空 prompt 的概率（用于 CFG drop）
+    groups:       可选 group/circle 列表，若存在将插入在 artist 后、general 之前
     """
     if seed is not None:
         random.seed(seed)
@@ -627,7 +649,7 @@ def generate_variants_with_nl_list(
     phrase_caps = generate_phrase_variants(
         general_tags, artists, k=n_phrase, token_budget=token_budget,
         dropout=dropout, max_general_per_variant=max_general_per_variant, head_keep=head_keep,
-        characters=characters, ratings=ratings, years=years
+        characters=characters, ratings=ratings, years=years, groups=groups
     )
 
     # 2) 从 nl_texts 取若干，自然语言变体
@@ -651,6 +673,9 @@ def generate_variants_with_nl_list(
             art = _artist_phrase(artists)
             if art:
                 anchors.append(art)
+            group_anchor = _group_phrase(groups or [])
+            if group_anchor:
+                anchors.append(group_anchor)
             rating_anchor = _rating_phrase(ratings or [], max_ratings=1)
             if rating_anchor:
                 anchors.append(rating_anchor)
@@ -678,7 +703,7 @@ def generate_variants_with_nl_list(
         extra = generate_phrase_variants(
             general_tags, artists, k=1, token_budget=token_budget,
             dropout=dropout, max_general_per_variant=max_general_per_variant, head_keep=head_keep,
-            characters=characters, ratings=ratings, years=years
+            characters=characters, ratings=ratings, years=years, groups=groups
         )
         if not extra: break
         if extra[0] not in seen:

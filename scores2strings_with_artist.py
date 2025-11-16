@@ -18,8 +18,9 @@ scores2strings_with_artist.py
 - JSONL（每行一条 JSON），或一个 JSON 数组文件。
 
 artists.csv 格式
-810328,"marui, mikoto akemi"
-810327,"kobuichi"
+810328,"marui, mikoto akemi",GroupA
+810327,"kobuichi",GroupB
+（第三列可选，表示 group；若文件含有该列，则输出 JSON 会额外包含 group 字段。）
 
 注意：id 为 path 中 /webp/<id>/... 的这个目录名。
 
@@ -99,13 +100,14 @@ def extract_webp_id(path: str) -> Optional[str]:
 
 # ========== 读 artists.csv ==========
 
-def load_artists_csv(csv_path: str) -> Dict[str, List[str]]:
+def load_artists_csv(csv_path: str) -> Tuple[Dict[str, Dict[str, Any]], bool]:
     """
-    返回 {id: [artist1, artist2, ...]}
+    返回 ({id: {"artists": [...], "group": "xxx"}}, 是否存在第三列 group)
     """
-    mapping: Dict[str, List[str]] = {}
+    mapping: Dict[str, Dict[str, Any]] = {}
+    has_group_col = False
     if not csv_path:
-        return mapping
+        return mapping, has_group_col
     with io.open(csv_path, 'r', encoding='utf-8', newline='') as f:
         reader = csv.reader(f)
         for row in reader:
@@ -114,17 +116,24 @@ def load_artists_csv(csv_path: str) -> Dict[str, List[str]]:
             id_ = row[0].strip()
             if not id_:
                 continue
-            # 第二列可能包含逗号，所以用 csv.reader 解析后，把它们拼回去再 split(',')
+            artists_field = ""
+            group_field: Optional[str] = None
             if len(row) >= 2:
-                artists_field = ",".join(row[1:])  # 把被 CSV 拆开的再合并
-            else:
-                artists_field = ""
+                artists_field = row[1]
+            if len(row) >= 3:
+                group_field = row[2]
+                has_group_col = True
+            # 若 artist 字段在 CSV 中未被引号包裹导致被拆成多列，则把多余部分重新拼回去
+            if len(row) > 3 and not group_field:
+                artists_extra = row[2:]
+                artists_field = ",".join([artists_field] + artists_extra)
             # 去掉外层可能的引号
             artists_field = artists_field.strip().strip('"').strip("'")
+            group_field = group_field.strip().strip('"').strip("'") if group_field else None
             # 以逗号切分，并 strip
             artists = [a.strip() for a in artists_field.split(",") if a.strip()]
-            mapping[id_] = artists
-    return mapping
+            mapping[id_] = {"artists": artists, "group": group_field or ""}
+    return mapping, has_group_col
 
 # ========== 同名判断（忠实复刻你的 C++ 逻辑） ==========
 
@@ -276,7 +285,8 @@ def process_record(rec: Dict[str, Any],
                    thresholds: Dict[str, float],
                    default_thr: float,
                    topk: Optional[int],
-                   artists_map: Dict[str, List[str]]) -> Dict[str, Any]:
+                   artists_map: Dict[str, Dict[str, Any]],
+                   artists_has_group: bool) -> Dict[str, Any]:
     out: Dict[str, Any] = {"path": rec.get("path", "")}
 
     # 先处理非 artist
@@ -292,11 +302,14 @@ def process_record(rec: Dict[str, Any],
     # 判断artists_map是否包含该 id
     if rec_id not in artists_map:
         print(f"!! Warning: id '{rec_id}' from path '{path}' not found in artists CSV.")
-    artists_csv_list = artists_map.get(rec_id, [])
+    entry = artists_map.get(rec_id)
+    artists_csv_list = entry["artists"] if entry else []
 
     artist_pairs = parse_artist_pairs(rec.get("artist", []))
     chosen = find_artist_for_record(artist_pairs, artists_csv_list)
     out["artist"] = ", ".join(chosen) if chosen else ""
+    if artists_has_group:
+        out["group"] = entry.get("group", "") if entry else ""
 
     return out
 
@@ -315,7 +328,10 @@ def main():
     thresholds = parse_thresholds(args.thresh)
     topk = args.topk if args.topk > 0 else None
 
-    artists_map = load_artists_csv(args.artists_csv) if args.artists_csv else {}
+    if args.artists_csv:
+        artists_map, has_group_column = load_artists_csv(args.artists_csv)
+    else:
+        artists_map, has_group_column = {}, False
 
     os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
 
@@ -324,7 +340,14 @@ def main():
     with io.open(args.output, 'w', encoding='utf-8') as fw:
         for rec in iter_records(args.input):
             cnt_in += 1
-            out = process_record(rec, thresholds, args.default_thresh, topk, artists_map)
+            out = process_record(
+                rec,
+                thresholds,
+                args.default_thresh,
+                topk,
+                artists_map,
+                has_group_column,
+            )
             fw.write(json.dumps(out, ensure_ascii=False))
             fw.write("\n")
             cnt_out += 1

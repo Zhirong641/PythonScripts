@@ -382,7 +382,7 @@ class LatentDataset(torch.utils.data.Dataset):
                     continue
 
                 def filter_fn(sample):
-                    _, general, rating, _, year, character, artist, _ = sample
+                    _, general, _rating, _, year, character, artist, _, _group = sample
                     if any(w in general for w in exclude_word_list):
                         return False
                     if year:
@@ -392,8 +392,17 @@ class LatentDataset(torch.utils.data.Dataset):
                     return True
                 fp = os.path.join(data_dir, fname)
                 if os.path.isfile(fp):
-                    sample = (fname, j.get("general", ""), j.get("rating", ""), j.get("meta", ""),
-                              j.get("year", ""), j.get("character", ""), j.get("artist", ""), j.get("copyright", ""))
+                    sample = (
+                        fname,
+                        j.get("general", "") or "",
+                        j.get("rating", "") or "",
+                        j.get("meta", "") or "",
+                        j.get("year", "") or "",
+                        j.get("character", "") or "",
+                        j.get("artist", "") or "",
+                        j.get("copyright", "") or "",
+                        j.get("group", "") or "",
+                    )
                     if filter_fn(sample):
                         self.items.append(sample)
                 print(f"Loaded {len(self.items)} items from {data_dir}", end="\r")
@@ -404,10 +413,10 @@ class LatentDataset(torch.utils.data.Dataset):
         return len(self.items)
 
     def __getitem__(self, i):
-        fname, general, rating, meta, year, character, artist, copyright = self.items[i]
+        fname, general, rating, meta, year, character, artist, copyright, group = self.items[i]
         z = np.load(os.path.join(self.root, fname), allow_pickle=False)
         lat = z["latent"].astype(np.float16)  # already scaled
-        return torch.from_numpy(lat), general, rating, meta, year, character, artist, copyright
+        return torch.from_numpy(lat), general, rating, meta, year, character, artist, copyright, group
 
 
 def save_model_card(
@@ -1060,6 +1069,7 @@ def encode_prompt(
         year_values = _values_for("year")
         character_values = _values_for("character")
         artist_values = _values_for("artist")
+        group_values = _values_for("group")
 
         for idx in range(num_samples):
             general_tags = _split_clean_comma_list(general_values[idx] or "")
@@ -1069,6 +1079,7 @@ def encode_prompt(
             character_tags = _split_clean_comma_list(character_values[idx] or "")
             meta_tags = _split_clean_comma_list(meta_values[idx] or "")
             nl_texts = meta_tags if meta_tags else None
+            group_tags = _split_clean_comma_list(group_values[idx] or "")
             variants = generate_variants_with_nl_list(
                 general_tags,
                 artist_tags,
@@ -1080,6 +1091,7 @@ def encode_prompt(
                 ratings=rating_tags,
                 years=year_tags,
                 nl_texts=nl_texts,
+                groups=group_tags,
             )
             base_captions.append(variants[0] if variants else "")
 
@@ -1570,6 +1582,7 @@ def main(args):
             character = [ex[5] for ex in examples]
             artist = [ex[6] for ex in examples]
             copyright = [ex[7] for ex in examples]
+            group = [ex[8] for ex in examples]
 
             return {
                 "model_input": latents,
@@ -1580,6 +1593,7 @@ def main(args):
                 "character": character,
                 "artist": artist,
                 "copyright": copyright,
+                "group": group,
             }
 
         train_dataloader = torch.utils.data.DataLoader(
@@ -1888,6 +1902,7 @@ def main(args):
                     character_tags = batch["character"]
                     artist_tags = batch["artist"]
                     copyright_tags = batch["copyright"]
+                    group_tags = batch.get("group") or []
                     chosen = []
                     for i in range(bsz):
                         text = generate_variants_with_nl_list(
@@ -1900,6 +1915,7 @@ def main(args):
                             characters=_split_clean_comma_list(character_tags[i]),
                             ratings=_split_clean_comma_list(rating_tags[i]),
                             years=_split_clean_comma_list(year_tags[i]),
+                            groups=_split_clean_comma_list(group_tags[i] if i < len(group_tags) else ""),
                             cfg_dropout=args.proportion_empty_prompts,
                         )
                         chosen.append(text[0])
@@ -1975,7 +1991,8 @@ def main(args):
                                 max_general_per_variant=50,
                                 characters=_split_clean_comma_list(character_tags[0]),
                                 ratings=_split_clean_comma_list(rating_tags[0]),
-                                years=_split_clean_comma_list(year_tags[0])
+                                years=_split_clean_comma_list(year_tags[0]),
+                                groups=_split_clean_comma_list(group_tags[0] if group_tags else ""),
                             )
                             for i, prev_prompt in enumerate(prev_prompts):
                                 save_preview(global_step + i, prev_prompt)
@@ -2188,6 +2205,7 @@ def main(args):
         "year": "year",
         "character": "character",
         "artist": "artist",
+        "group": "group",
     }
     metadata_column_map = {
         key: value for key, value in metadata_column_map.items() if value in column_names
@@ -2775,6 +2793,7 @@ def main(args):
                         year_tags = batch.get("year") or []
                         character_tags = batch.get("character") or []
                         artist_tags = batch.get("artist") or []
+                        group_tags = batch.get("group") or []
                         for i in range(bsz):
                             variants = generate_variants_with_nl_list(
                                 _split_clean_comma_list(general_tags[i] if i < len(general_tags) else ""),
@@ -2787,6 +2806,7 @@ def main(args):
                                 ratings=_split_clean_comma_list(rating_tags[i] if i < len(rating_tags) else ""),
                                 years=_split_clean_comma_list(year_tags[i] if i < len(year_tags) else ""),
                                 nl_texts=_split_clean_comma_list(meta_tags[i] if i < len(meta_tags) else ""),
+                                groups=_split_clean_comma_list(group_tags[i] if i < len(group_tags) else ""),
                                 cfg_dropout=args.proportion_empty_prompts,
                             )
                             chosen_prompts.append(variants[0] if variants else "")
@@ -2900,6 +2920,7 @@ def main(args):
                             year_tags = batch.get("year") or []
                             character_tags = batch.get("character") or []
                             meta_tags = batch.get("meta") or []
+                            group_tags = batch.get("group") or []
                             if general_tags:
                                 preview_prompts = generate_variants_with_nl_list(
                                     _split_clean_comma_list(_first_str(general_tags)),
@@ -2912,6 +2933,7 @@ def main(args):
                                     ratings=_split_clean_comma_list(_first_str(rating_tags)),
                                     years=_split_clean_comma_list(_first_str(year_tags)),
                                     nl_texts=_split_clean_comma_list(_first_str(meta_tags)),
+                                    groups=_split_clean_comma_list(_first_str(group_tags)),
                                 )
                         if not preview_prompts:
                             captions = batch.get("_caption_texts") or []
