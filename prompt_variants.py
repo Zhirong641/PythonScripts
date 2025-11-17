@@ -543,6 +543,13 @@ def generate_phrase_variants(
 
     head = g0[:head_keep]
     tail = g0[head_keep:]
+    # 保留尾部 5 个顺序不变，其余尾部元素可洗牌
+    if len(tail) > 5:
+        tail_fixed = tail[-5:]
+        tail_core = tail[:-5]
+    else:
+        tail_fixed = []
+        tail_core = tail
 
     variants = []
     for _ in range(max(k, 1)):
@@ -568,7 +575,8 @@ def generate_phrase_variants(
             current = ", ".join(anchor_parts)
 
         # 2) 候选：头部保序 + 尾部洗牌
-        cand = head + (random.sample(tail, k=len(tail)) if tail else [])
+        shuffled_tail = random.sample(tail_core, k=len(tail_core)) if tail_core else []
+        cand = head + shuffled_tail + tail_fixed
 
         used_groups = set()
         general_added = 0
