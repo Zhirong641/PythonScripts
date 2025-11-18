@@ -514,9 +514,12 @@ def _group_phrase(groups: List[str]) -> str:
     cleaned = [_normalize_group(g) for g in groups if _normalize_group(g)]
     if not cleaned:
         return ""
-    cleaned = random.sample(cleaned, k=len(cleaned))
-    cleaned = cleaned[:min(2, len(cleaned))]  # 最多 2 个
-    return "group:" + ", ".join(cleaned)
+    # 随机选 1 个返回
+    return "group:" + random.choice(cleaned)
+    # # # 随机打乱顺序后返回最多 2 个
+    # cleaned = random.sample(cleaned, k=len(cleaned))
+    # cleaned = cleaned[:min(2, len(cleaned))]  # 最多 2 个
+    # return "group:" + ", ".join(cleaned)
 
 
 def generate_phrase_variants(
