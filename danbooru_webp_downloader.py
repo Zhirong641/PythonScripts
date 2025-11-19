@@ -396,6 +396,8 @@ def collect_download_tasks_for_tags(
     interval: float,
     state_path: Optional[str],
     debug: bool = False,
+    artist_input: Optional[str] = None,
+    artist_canonical: Optional[str] = None,
 ) -> Tuple[List[Tuple[Dict, str, str]], Optional[int]]:
     ensure_dir(out_dir)
     last_id = load_state(state_path)
@@ -436,13 +438,21 @@ def collect_download_tasks_for_tags(
             if os.path.exists(dst):
                 # 已存在：可选写 sidecar/manifest（幂等）
                 if save_json:
-                    write_json_sidecar(p, dst, (final_ext or ext_from_url(url)))
+                    write_json_sidecar(
+                        p,
+                        dst,
+                        (final_ext or ext_from_url(url)),
+                        artist_input=artist_input,
+                        artist_canonical=artist_canonical,
+                    )
                 if manifest_path:
                     append_manifest_row(
                         manifest_path,
                         p,
                         dst,
                         (final_ext or ext_from_url(url)),
+                        artist_input=artist_input,
+                        artist_canonical=artist_canonical,
                         existing_ids=manifest_ids,
                     )
                 continue
@@ -632,6 +642,8 @@ def main():
                 interval=interval,
                 state_path=state_path,
                 debug=args.debug,
+                artist_input=input_name,
+                artist_canonical=canonical,
             )
 
             if not items:
@@ -692,6 +704,8 @@ def main():
         interval=interval,
         state_path=state_path,
         debug=args.debug,
+        artist_input=None,
+        artist_canonical=None,
     )
 
     if not items:
