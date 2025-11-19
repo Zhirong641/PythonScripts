@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import argparse, json, re, sys, tempfile, os
+import argparse, json, re, sys, tempfile, os, glob
 from typing import List, Tuple, Optional
 
 # 需要修改的区间（目录ID, 起始序号, 结束序号，角色，画师，均闭区间）
@@ -395,13 +395,24 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1890822, 1, 994, "tomotake_yoshino", "kobuichi"),
     (960624, 3, 646, "tomotake_yoshino", "kobuichi"),
     # Sanoba Witch
-    (3424478, 1, 2000, "ayachi_nene", "kobuichi"),
-    (3424479, 1, 2000, "ayachi_nene", "kobuichi"),
-    (3424480, 1, 2000, "ayachi_nene", "kobuichi"),
-    (3424414, 1, 2000, "togakushi_touko", "muririn"),
-    (3424415, 1, 2000, "togakushi_touko", "muririn"),
-    (798685, 408, 958, "togakushi_touko", "muririn"),
-    (798679, 3, 934, "ayachi_nene", "kobuichi"),
+    (3424478, 1, 2000, "ayachi_nene", "muririn"),
+    (3424479, 1, 2000, "ayachi_nene", "muririn"),
+    (3424480, 1, 2000, "ayachi_nene", "muririn"),
+    (3424414, 1, 2000, "togakushi_touko", "kobuichi"),
+    (3424415, 1, 2000, "togakushi_touko", "kobuichi"),
+    (798685, 408, 958, "togakushi_touko", "kobuichi"),
+    (798679, 3, 934, "ayachi_nene", "muririn"),
+    (798679, 935, 1580, "inaba_meguru", "muririn"),
+    # RIDDLE JOKER
+    (1541162, 1, 2000, "mitsukasa_ayase", "muririn"),
+    (1543784, 1, 2000, "arihara_nanami", "kobuichi"),
+    (1543991, 1, 2000, "shikibe_mayu", "muririn"),
+    (1544108, 1, 2000, "nijouin_hazuki", "kobuichi"),
+    (1468670, 1, 972, "mitsukasa_ayase", "muririn"),
+    (1468670, 973, 1815, "arihara_nanami", "kobuichi"),
+    (1468670, 1816, 2000, "shikibe_mayu", "muririn"),
+    (1468698, 1, 474, "shikibe_mayu", "muririn"),
+    (1468698, 475, 976, "nijouin_hazuki", "kobuichi"),
     # Southern Cross Love Song / Minamijuujisei Renka
     (743876, 4, 295, "fujina_kanori", None),
     (743876, 515, 719, "naraoka_mitsuki", None),
@@ -498,33 +509,65 @@ def process_file(in_path: str, out_path: str) -> int:
 
 def main():
     ap = argparse.ArgumentParser(description="Set character/artist for specific image ranges in JSONL.")
-    ap.add_argument("input", help="input JSONL path")
-    ap.add_argument("output", nargs="?", help="output JSONL path (omit when using --inplace)")
+    ap.add_argument("inputs", nargs="+", help="input JSONL path pattern(s), supports * wildcard; add final path as OUTPUT when not using --inplace")
     ap.add_argument("--inplace", action="store_true", help="overwrite the input file in place")
     args = ap.parse_args()
 
+    patterns: List[str]
+    output_path: Optional[str] = None
     if args.inplace:
-        if args.output:
-            ap.error("Do not provide OUTPUT when using --inplace.")
-        # 写到临时文件再替换，避免半写入损坏
-        dir_ = os.path.dirname(os.path.abspath(args.input)) or "."
+        patterns = args.inputs
+    else:
+        if len(args.inputs) < 2:
+            ap.error("非 --inplace 模式下请提供输入和输出文件，如: script in.jsonl out.jsonl")
+        *patterns, output_path = args.inputs
+
+    expanded_inputs: List[str] = []
+    for pattern in patterns:
+        if glob.has_magic(pattern):
+            matches = sorted(glob.glob(pattern))
+            if not matches:
+                ap.error(f"模式 {pattern} 未匹配到任何文件。")
+            expanded_inputs.extend(matches)
+        else:
+            if not os.path.exists(pattern):
+                ap.error(f"输入文件 {pattern} 不存在。")
+            expanded_inputs.append(pattern)
+
+    if not expanded_inputs:
+        ap.error("未提供有效的输入文件。")
+
+    if not args.inplace and len(expanded_inputs) != 1:
+        ap.error("OUTPUT 仅能和一个输入文件一起使用。")
+
+    def process_inplace(path: str) -> int:
+        dir_ = os.path.dirname(os.path.abspath(path)) or "."
         fd, tmp_path = tempfile.mkstemp(prefix=".jsonl_tmp_", dir=dir_, text=True)
         os.close(fd)
         try:
-            changed = process_file(args.input, tmp_path)
-            os.replace(tmp_path, args.input)
+            changed = process_file(path, tmp_path)
+            os.replace(tmp_path, path)
         finally:
             if os.path.exists(tmp_path):
                 try:
                     os.remove(tmp_path)
                 except Exception:
                     pass
-        print(f"Done. Modified lines: {changed}")
+        return changed
+
+    total_modified = 0
+    if args.inplace:
+        for in_path in expanded_inputs:
+            changed = process_inplace(in_path)
+            total_modified += changed
+            print(f"{in_path}: Modified lines {changed}")
     else:
-        if not args.output:
-            ap.error("OUTPUT is required unless using --inplace.")
-        changed = process_file(args.input, args.output)
-        print(f"Done. Modified lines: {changed}")
+        changed = process_file(expanded_inputs[0], output_path)
+        total_modified = changed
+        print(f"{expanded_inputs[0]} -> {output_path}: Modified lines {changed}")
+
+    if len(expanded_inputs) > 1:
+        print(f"Total modified lines: {total_modified}")
 
 if __name__ == "__main__":
     main()
