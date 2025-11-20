@@ -32,6 +32,7 @@ import json
 import csv
 import argparse
 import hashlib
+import math
 import threading
 from typing import List, Optional, Dict, Tuple, Iterable, Set
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -48,10 +49,59 @@ try:
     from PIL import Image
     PIL_AVAILABLE = True
 except Exception:
+    Image = None  # type: ignore
     PIL_AVAILABLE = False
 
 DANBOORU_API = "https://danbooru.donmai.us/posts.json"
 LOCK = threading.Lock()
+MAX_IMAGE_PIXELS = 10_000_000  # 10MP 上限
+SUPPORTED_IMAGE_EXTENSIONS = {
+    "jpg", "jpeg", "png", "webp", "bmp", "gif", "tif", "tiff", "jfif"
+}
+
+def is_supported_image_ext(ext: Optional[str]) -> bool:
+    if not ext:
+        return False
+    return ext.lower() in SUPPORTED_IMAGE_EXTENSIONS
+
+def _calc_resize_dimensions(width: int, height: int, max_pixels: int) -> Optional[Tuple[int, int]]:
+    if max_pixels <= 0 or width <= 0 or height <= 0:
+        return None
+    total = width * height
+    if total <= max_pixels:
+        return None
+    scale = math.sqrt(max_pixels / float(total))
+    new_w = max(1, int(width * scale))
+    new_h = max(1, int(height * scale))
+    # 防止取整后仍超过限制
+    while new_w * new_h > max_pixels and new_w > 1 and new_h > 1:
+        if new_w >= new_h:
+            new_w -= 1
+        else:
+            new_h -= 1
+    return new_w, new_h
+
+def _resize_image_object(im, max_pixels: Optional[int]):
+    if not max_pixels or max_pixels <= 0:
+        return im
+    dims = _calc_resize_dimensions(*im.size, max_pixels=max_pixels)
+    if not dims:
+        return im
+    return im.resize(dims, Image.LANCZOS)
+
+def limit_image_pixels_inplace(path: str, max_pixels: Optional[int] = MAX_IMAGE_PIXELS) -> bool:
+    if not PIL_AVAILABLE or not max_pixels or max_pixels <= 0:
+        return False
+    try:
+        with Image.open(path) as im:
+            new_im = _resize_image_object(im, max_pixels)
+            if new_im is im:
+                return False
+            new_im.save(path)
+            new_im.close()
+        return True
+    except Exception:
+        return False
 
 # ============== 工具与会话 ==============
 def _build_retry() -> Retry:
@@ -126,11 +176,13 @@ def download_one(s: requests.Session, url: str, out_path: str, timeout: int = 30
     except Exception:
         return False
 
-def convert_to_webp(src_path: str, dst_path: str, quality: int = 85) -> bool:
+def convert_to_webp(src_path: str, dst_path: str, quality: int = 85,
+                    max_pixels: Optional[int] = MAX_IMAGE_PIXELS) -> bool:
     if not PIL_AVAILABLE:
         return False
     try:
         with Image.open(src_path) as im:
+            im = _resize_image_object(im, max_pixels)
             if im.mode not in ("RGB",):
                 im = im.convert("RGB")
             im.save(dst_path, "WEBP", quality=quality, method=6)
@@ -431,6 +483,13 @@ def collect_download_tasks_for_tags(
             url = pick_best_url(p)
             if not url:
                 continue
+            file_ext = (p.get("file_ext") or "").lower()
+            if not file_ext:
+                file_ext = ext_from_url(url)
+            if not is_supported_image_ext(file_ext):
+                if debug:
+                    print(f"[DEBUG] 跳过非图片 post {post_id} (ext={file_ext})")
+                continue
 
             final_ext = "webp" if convert_to_webp else None
             fname = build_filename(p, url, force_ext=final_ext)
@@ -500,7 +559,7 @@ def execute_downloads(
             tmp_src = dst + ".orig"
             if (not os.path.exists(tmp_src)) and (not download_one(s, url, tmp_src)):
                 return False
-            if convert_to_webp(tmp_src, dst, quality=quality):
+            if convert_to_webp(tmp_src, dst, quality=quality, max_pixels=MAX_IMAGE_PIXELS):
                 try:
                     os.remove(tmp_src)
                 except Exception:
@@ -508,6 +567,7 @@ def execute_downloads(
                 after_success(p, dst, "webp")
                 return True
             else:
+                limit_image_pixels_inplace(tmp_src, MAX_IMAGE_PIXELS)
                 ext = ext_from_url(url)
                 fallback = dst.rsplit(".", 1)[0] + "." + ext
                 try:
@@ -518,6 +578,7 @@ def execute_downloads(
                 return False
         else:
             if download_one(s, url, dst):
+                limit_image_pixels_inplace(dst, MAX_IMAGE_PIXELS)
                 after_success(p, dst, ext_from_url(url))
                 return True
             return False
