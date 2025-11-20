@@ -34,7 +34,7 @@ import argparse
 import hashlib
 import math
 import threading
-from typing import List, Optional, Dict, Tuple, Iterable, Set
+from typing import List, Optional, Dict, Tuple, Iterable, Set, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
@@ -54,6 +54,14 @@ except Exception:
 
 DANBOORU_API = "https://danbooru.donmai.us/posts.json"
 LOCK = threading.Lock()
+
+def build_manifest_key(post_id: Optional[Union[int, str]], artist_canonical: Optional[str]) -> Optional[str]:
+    if post_id is None:
+        return None
+    pid_str = str(post_id).strip()
+    if not pid_str:
+        return None
+    return f"{pid_str}::{artist_canonical or ''}"
 MAX_IMAGE_PIXELS = 10_000_000  # 10MP 上限
 SUPPORTED_IMAGE_EXTENSIONS = {
     "jpg", "jpeg", "png", "webp", "bmp", "gif", "tif", "tiff", "jfif"
@@ -176,6 +184,21 @@ def download_one(s: requests.Session, url: str, out_path: str, timeout: int = 30
     except Exception:
         return False
 
+def _image_has_alpha(im) -> bool:
+    bands = getattr(im, "getbands", lambda: tuple())()
+    if bands and "A" in bands:
+        return True
+    if getattr(im, "mode", "") == "P" and "transparency" in getattr(im, "info", {}):
+        return True
+    return False
+
+def _prepare_webp_image(im):
+    if _image_has_alpha(im):
+        return im.convert("RGBA")
+    if im.mode not in ("RGB",):
+        return im.convert("RGB")
+    return im
+
 def convert_to_webp(src_path: str, dst_path: str, quality: int = 85,
                     max_pixels: Optional[int] = MAX_IMAGE_PIXELS) -> bool:
     if not PIL_AVAILABLE:
@@ -183,8 +206,7 @@ def convert_to_webp(src_path: str, dst_path: str, quality: int = 85,
     try:
         with Image.open(src_path) as im:
             im = _resize_image_object(im, max_pixels)
-            if im.mode not in ("RGB",):
-                im = im.convert("RGB")
+            im = _prepare_webp_image(im)
             im.save(dst_path, "WEBP", quality=quality, method=6)
         return True
     except Exception:
@@ -252,9 +274,9 @@ def append_manifest_row(manifest_path: str, post: Dict, saved_path: str, final_e
                         artist_canonical: Optional[str] = None,
                         existing_ids: Optional[Set[str]] = None):
     post_id = post.get("id")
-    post_id_str = str(post_id) if post_id is not None else ""
+    manifest_key = build_manifest_key(post_id, artist_canonical)
     with LOCK:
-        if existing_ids is not None and post_id_str and post_id_str in existing_ids:
+        if existing_ids is not None and manifest_key and manifest_key in existing_ids:
             return
         exists = os.path.exists(manifest_path)
         fieldnames = [
@@ -293,13 +315,13 @@ def append_manifest_row(manifest_path: str, post: Dict, saved_path: str, final_e
             if not exists:
                 w.writeheader()
             w.writerow(row)
-        if existing_ids is not None and post_id_str:
-            existing_ids.add(post_id_str)
+        if existing_ids is not None and manifest_key:
+            existing_ids.add(manifest_key)
 
-def load_manifest_ids(manifest_path: Optional[str]) -> Set[str]:
-    ids: Set[str] = set()
+def load_manifest_keys(manifest_path: Optional[str]) -> Set[str]:
+    keys: Set[str] = set()
     if not manifest_path or not os.path.exists(manifest_path):
-        return ids
+        return keys
     try:
         with open(manifest_path, "r", encoding="utf-8", newline="") as f:
             reader = csv.DictReader(f)
@@ -307,11 +329,13 @@ def load_manifest_ids(manifest_path: Optional[str]) -> Set[str]:
                 if not row:
                     continue
                 pid = row.get("id")
-                if pid:
-                    ids.add(str(pid).strip())
+                canonical = row.get("artist_canonical")
+                key = build_manifest_key(pid, canonical)
+                if key:
+                    keys.add(key)
     except Exception as e:
         print(f"[WARN] 读取 manifest 失败：{e}", file=sys.stderr)
-    return ids
+    return keys
 
 # ============== API 抓取 ==============
 def api_fetch_posts(
@@ -442,7 +466,7 @@ def collect_download_tasks_for_tags(
     convert_to_webp: bool,
     save_json: bool,
     manifest_path: Optional[str],
-    manifest_ids: Optional[Set[str]],
+    manifest_keys: Optional[Set[str]],
     login: Optional[str],
     api_key: Optional[str],
     interval: float,
@@ -477,8 +501,8 @@ def collect_download_tasks_for_tags(
             if not should_keep_post_as_webp(p, only_webp):
                 continue
             post_id = p.get("id")
-            post_id_str = str(post_id) if post_id is not None else ""
-            if manifest_ids and post_id_str and post_id_str in manifest_ids:
+            manifest_key = build_manifest_key(post_id, artist_canonical)
+            if manifest_keys and manifest_key and manifest_key in manifest_keys:
                 continue
             url = pick_best_url(p)
             if not url:
@@ -512,7 +536,7 @@ def collect_download_tasks_for_tags(
                         (final_ext or ext_from_url(url)),
                         artist_input=artist_input,
                         artist_canonical=artist_canonical,
-                        existing_ids=manifest_ids,
+                        existing_ids=manifest_keys,
                     )
                 continue
 
@@ -538,7 +562,7 @@ def execute_downloads(
     quality: int,
     save_json: bool,
     manifest_path: Optional[str],
-    manifest_ids: Optional[Set[str]] = None,
+    manifest_keys: Optional[Set[str]] = None,
     artist_input: Optional[str] = None,
     artist_canonical: Optional[str] = None,
 ) -> int:
@@ -551,7 +575,7 @@ def execute_downloads(
         if manifest_path:
             append_manifest_row(manifest_path, p, saved_path, final_ext,
                                 artist_input=artist_input, artist_canonical=artist_canonical,
-                                existing_ids=manifest_ids)
+                                existing_ids=manifest_keys)
 
     def worker(item: Tuple[Dict, str, str]) -> bool:
         p, url, dst = item
@@ -649,12 +673,12 @@ def main():
 
     # manifest 统一路径
     manifest_path: Optional[str] = None
-    manifest_ids: Optional[Set[str]] = None
+    manifest_keys: Optional[Set[str]] = None
     if args.manifest:
         manifest_path = args.manifest_path or os.path.join(args.out, "manifest.csv")
         # 提前创建文件夹
         ensure_dir(os.path.dirname(manifest_path))
-        manifest_ids = load_manifest_ids(manifest_path)
+        manifest_keys = load_manifest_keys(manifest_path)
 
     # ========= 分支1：多作者模式 =========
     if args.artists_file:
@@ -697,7 +721,7 @@ def main():
                 convert_to_webp=args.convert_to_webp,
                 save_json=args.save_json,
                 manifest_path=manifest_path,
-                manifest_ids=manifest_ids,
+                manifest_keys=manifest_keys,
                 login=args.login,
                 api_key=args.api_key,
                 interval=interval,
@@ -719,7 +743,7 @@ def main():
                 quality=args.quality,
                 save_json=args.save_json,
                 manifest_path=manifest_path,
-                manifest_ids=manifest_ids,
+                manifest_keys=manifest_keys,
                 artist_input=input_name,
                 artist_canonical=canonical,
             )
@@ -759,7 +783,7 @@ def main():
         convert_to_webp=args.convert_to_webp,
         save_json=args.save_json,
         manifest_path=manifest_path,
-        manifest_ids=manifest_ids,
+        manifest_keys=manifest_keys,
         login=args.login,
         api_key=args.api_key,
         interval=interval,
@@ -781,7 +805,7 @@ def main():
         quality=args.quality,
         save_json=args.save_json,
         manifest_path=manifest_path,
-        manifest_ids=manifest_ids,
+        manifest_keys=manifest_keys,
         artist_input=None,
         artist_canonical=None,
     )
