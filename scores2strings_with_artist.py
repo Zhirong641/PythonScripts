@@ -286,7 +286,8 @@ def process_record(rec: Dict[str, Any],
                    default_thr: float,
                    topk: Optional[int],
                    artists_map: Dict[str, Dict[str, Any]],
-                   artists_has_group: bool) -> Dict[str, Any]:
+                   artists_has_group: bool,
+                   type_map: Dict[str, str]) -> Dict[str, Any]:
     out: Dict[str, Any] = {"path": rec.get("path", "")}
 
     # 先处理非 artist
@@ -311,6 +312,9 @@ def process_record(rec: Dict[str, Any],
     if artists_has_group:
         out["group"] = entry.get("group", "") if entry else ""
 
+    # 附加 type（基于额外 CSV，id 为 path 中的 webp 目录名）
+    out["type"] = type_map.get(rec_id, "")
+
     return out
 
 # ========== 主程序 ==========
@@ -320,6 +324,7 @@ def main():
     ap.add_argument("--input", required=True, help="输入 JSON/JSONL 文件")
     ap.add_argument("--output", required=True, help="输出 JSONL 文件")
     ap.add_argument("--artists-csv", default="", help="artists.csv 路径（id, \"artist1, artist2\"）")
+    ap.add_argument("--type-csv", default="", help="包含 id 与类型映射的 CSV，倒数第二列视为 id，倒数第三列视为 type（例：... ,Game CG,2871902,1）")
     ap.add_argument("--default-thresh", type=float, default=0.0, help="除已单独指定外的默认阈值")
     ap.add_argument("--thresh", nargs="*", default=[], help="逐类别阈值，例如：general=0.3 meta=0.4 year=0 rating=0.6")
     ap.add_argument("--topk", type=int, default=0, help="非 rating 类别的 Top-K，0 表示不限")
@@ -332,6 +337,21 @@ def main():
         artists_map, has_group_column = load_artists_csv(args.artists_csv)
     else:
         artists_map, has_group_column = {}, False
+
+    type_map: Dict[str, str] = {}
+    if args.type_csv:
+        try:
+            with io.open(args.type_csv, "r", encoding="utf-8", newline="") as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    if len(row) < 3:
+                        continue
+                    id_col = row[-2].strip()
+                    type_col = row[-3].strip()
+                    if id_col and type_col:
+                        type_map[id_col] = type_col
+        except FileNotFoundError:
+            print(f"!! Warning: type CSV '{args.type_csv}' not found, type 字段将为空。")
 
     os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
 
@@ -347,6 +367,7 @@ def main():
                 topk,
                 artists_map,
                 has_group_column,
+                type_map,
             )
             fw.write(json.dumps(out, ensure_ascii=False))
             fw.write("\n")

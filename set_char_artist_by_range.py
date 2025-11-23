@@ -530,6 +530,45 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (688579, 843, 859, "kuroba_kasumi", "wori"),
     # shona mitsuishi
     (2216911, 2, 10, None, "shona mitsuishi"),
+    # Gensou no Idea
+    (839435, 2, 90, "nanami_naru", "makita masaki"),
+    (839435, 100, 169, "nanami_naru", "makita masaki"),
+    (839435, 176, 415, "shinomori_rinon", "makita masaki"),
+    (839435, 402, 421, "kenzaki_noel", "makita masaki"),
+    (839435, 531, 591, "kenzaki_noel", "makita masaki"),
+    (839435, 592, 755, "kujou_mitsuki", "makita masaki"),
+    # SORCERY JOKERS
+    (1333954, 2, 56, "kousaki_fiona_annabel", "makita masaki"),
+    (1333954, 147, 209, "noah_(sorcery_jokers)", "makita masaki"),
+    (840561, 193, 277, "kousaki_fiona_annabel", "makita masaki"),
+    (840561, 619, 648, "kousaki_fiona_annabel", "makita masaki"),
+    (840561, 182, 192, "noah_(sorcery_jokers)", "makita masaki"),
+    (840561, 406, 424, "noah_(sorcery_jokers)", "makita masaki"),
+    (840561, 435, 443, "noah_(sorcery_jokers)", "makita masaki"),
+    (840561, 577, 586, "noah_(sorcery_jokers)", "makita masaki"),
+    (840561, 649, 673, "noah_(sorcery_jokers)", "makita masaki"),
+    # Onii-chan, Asa made Zutto Gyu tte Shite!
+    (1230398, 2, 459, "onami_sora", "k-ko"),
+    (1230398, 460, 932, "onami_akane", "k-ko"),
+    (1230398, 933, 1346, "onami_kohaku", "k-ko"),
+    (1230398, 1347, 1733, "onami_sumi", "k-ko"),
+    (1438799, 3, 195, "onami_sora", "k-ko"),
+    (1438799, 196, 377, "onami_akane", "k-ko"),
+    (1438799, 378, 562, "onami_kohaku", "k-ko"),
+    (1438799, 563, 734, "onami_sumi", "k-ko"),
+    # Yakusoku no Natsu, Mahoroba no Yume
+    (1230539, 727, 1421, "azuma_nagisa", "chikotam"),
+    # Hare Nochi Kitto Nanohana Biyori
+    (1919557, 3, 97, "ayasaki_nanoka", "chikotam"),
+    (1919557, 396, 420, "ayasaki_nanoka", "chikotam"),
+    # pieces
+    (1445329, 1, 556, "kimihara_yua", "mikagami mamizu"),
+    (1390124, 1, 146, "kimihara_yua", "mikagami mamizu"),
+    (1647868, 6, 143, "kimihara_yua", "mikagami mamizu"),
+    # Unless Terminalia
+    (2175956, 2, 169, "mikuriya_ren", "mikagami mamizu"),
+    # shiratama
+    (2616641, 40, 55, None, "shiratama")
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp

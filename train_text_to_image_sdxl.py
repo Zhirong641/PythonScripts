@@ -267,6 +267,7 @@ def _load_and_filter_index_dataset(
 
     def _filter_index_entry(example):
         src_path = example.get("_image_path", "") or ""
+        type_ = example.get("type", "") 
         if not src_path or not os.path.isfile(src_path):
             return False
         valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tif", ".tiff", ".avif", ".heic"}
@@ -282,11 +283,14 @@ def _load_and_filter_index_dataset(
 
         general = example.get("general", "") or ""
         general_tags = _split_clean_comma_list(general)
+        artist = example.get("artist", "") or ""
+        artists = _split_clean_comma_list(artist)
         if any(word in general for word in exclude_word_list):
             return False
         if ("danbooru" not in src_path and any(bg in general_tags for bg in ["transparent_background", "simple_background", "black_background", "white_background", "tachi-e"])
-            and "dakimakura_(medium)" not in general_tags and rng.random() < 0.87):
-            return False
+            and "dakimakura_(medium)" not in general_tags):
+            if type_ == "Game CG" and rng.random() < 0.87:
+                return False
         year = example.get("year", "") or ""
         years = []
         for y in _split_clean_comma_list(year):
@@ -302,8 +306,7 @@ def _load_and_filter_index_dataset(
         meta = example.get("meta", "") or ""
         if "lowres" in meta:
             return False
-        artist = example.get("artist", "") or ""
-        artists = _split_clean_comma_list(artist)
+
         if exclude_artist_set and any(a in exclude_artist_set for a in artists):
             return False
         if total_exclude_set and artists and all(a in total_exclude_set for a in artists):
@@ -2206,6 +2209,7 @@ def main(args):
         "character": "character",
         "artist": "artist",
         "group": "group",
+        "type": "type",
     }
     metadata_column_map = {
         key: value for key, value in metadata_column_map.items() if value in column_names
