@@ -40,6 +40,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 CATEGORY_DEFAULT_THRESH = {
     "rating": 0.65,
     "character": 0.8,
+    "meta": 0.6,
 }
 
 # ========== 通用解析 ==========

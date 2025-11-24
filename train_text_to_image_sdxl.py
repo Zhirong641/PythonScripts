@@ -22,6 +22,7 @@ import logging
 import math
 import os
 import random
+import re
 import shutil
 from contextlib import nullcontext
 from pathlib import Path
@@ -227,6 +228,16 @@ def _load_resolution_sets_config(config_path: str, default_train_dir: Optional[s
     return configs
 
 
+def _escape_prompt_weight_syntax(text: str) -> str:
+    """
+    Escape weight delimiters so Compel won't treat parentheses/brackets as weights.
+    """
+    if not text:
+        return text
+    pattern = re.compile(r"(?<!\\)([()\[\]{}])")
+    return pattern.sub(lambda m: "\\" + m.group(1), text)
+
+
 def _load_and_filter_index_dataset(
     index_path,
     train_data_dir,
@@ -287,7 +298,8 @@ def _load_and_filter_index_dataset(
         artists = _split_clean_comma_list(artist)
         if any(word in general for word in exclude_word_list):
             return False
-        if ("danbooru" not in src_path and any(bg in general_tags for bg in ["transparent_background", "simple_background", "black_background", "white_background", "tachi-e"])
+        if ("danbooru" not in src_path
+            and any(bg in general_tags for bg in ["transparent_background", "simple_background", "black_background", "white_background", "tachi-e"])
             and "dakimakura_(medium)" not in general_tags):
             if type_ == "Game CG" and rng.random() < 0.87:
                 return False
@@ -304,7 +316,7 @@ def _load_and_filter_index_dataset(
             if min(years) <= 2009 and rng.random() < 0.7:
                 return False
         meta = example.get("meta", "") or ""
-        if "lowres" in meta:
+        if "lowres" in meta and "highres" not in meta:
             return False
 
         if exclude_artist_set and any(a in exclude_artist_set for a in artists):
@@ -1710,6 +1722,8 @@ def main(args):
             nonlocal preview_pipe, preview_compel, preview_empty_conditioning
             if not prompt:
                 return
+            prompt = _escape_prompt_weight_syntax(prompt)
+            negative_text = _escape_prompt_weight_syntax(getattr(args, "preview_negative", ""))
             preview_height = int(height) if height else args.resolution_height
             preview_width = int(width) if width else args.resolution_width
             if args.use_ema:
@@ -1747,7 +1761,6 @@ def main(args):
 
                 with torch.no_grad():
                     prompt_embeds, pooled_prompt_embeds = preview_compel([prompt])
-                    negative_text = getattr(args, "preview_negative", "")
                     negative_prompt_embeds, negative_pooled_prompt_embeds = preview_compel([negative_text])
                     (
                         prompt_embeds,
@@ -2613,6 +2626,8 @@ def main(args):
         nonlocal preview_pipe, preview_compel, preview_empty_conditioning
         if not prompt:
             return
+        prompt = _escape_prompt_weight_syntax(prompt)
+        negative_text = _escape_prompt_weight_syntax(getattr(args, "preview_negative", ""))
         preview_height = int(height) if height else args.resolution_height
         preview_width = int(width) if width else args.resolution_width
         if args.use_ema:
@@ -2650,7 +2665,6 @@ def main(args):
 
             with torch.no_grad():
                 prompt_embeds, pooled_prompt_embeds = preview_compel([prompt])
-                negative_text = getattr(args, "preview_negative", "")
                 negative_prompt_embeds, negative_pooled_prompt_embeds = preview_compel([negative_text])
                 (
                     prompt_embeds,

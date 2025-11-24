@@ -511,13 +511,13 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3034052, 1, 2000, "seira", "rubi-sama"),
     (2272848, 1, 2000, "seira", "rubi-sama"),
     # Wan Nyan ☆ A La Mode!
-    (887743, 3, 60, " nekohana_korone", "naenae"),
+    (887743, 3, 60, "nekohana_korone", "naenae"),
     (887743, 246, 300, "inuta_hana", "naenae"),
-    (1131217, 3, 81, " nekohana_korone", "naenae"),
+    (1131217, 3, 81, "nekohana_korone", "naenae"),
     (1131217, 467, 555, "inuta_hana", "naenae"),
-    (1886653, 2, 89, " nekohana_korone", "naenae"),
+    (1886653, 2, 89, "nekohana_korone", "naenae"),
     (1886653, 407, 525, "inuta_hana", "naenae"),
-    (1735897, 29, 248, " nekohana_korone", "naenae"),
+    (1735897, 29, 248, "nekohana_korone", "naenae"),
     (1735897, 865, 1044, "inuta_hana", "naenae"),
     # Love Love ♥ Princess
     (839209, 3, 213, "marigold_bruette_erland", "wori"),
