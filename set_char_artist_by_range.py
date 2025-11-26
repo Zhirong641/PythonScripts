@@ -201,6 +201,17 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (800080, 628, 772, "koutsuki kanna", "arisue tsukasa"),
     (800080, 773, 920, "hanasaki nonoka", "hontani kanae"),
     (800080, 921, 1131, "soramori wakaba", "toranosuke"),
+    # AMBITIOUS MISSION
+    (2230428, 2, 119, "arise_kaguya", "hontani kanae"),
+    (2230428, 120, 150, "arise_kaguya, arise_atena", "hontani kanae"),
+    (2230428, 151, 171, "arise_kaguya", "hontani kanae"),
+    (2230428, 536, 632, "arise_atena", "hontani kanae"),
+    (2562932, 4, 65, "arise_atena", "hontani kanae"),
+    (2560932, 73, 139, "arise_kaguya", "hontani kanae"),
+    # Kakenuke Seishun Sparking!
+    (1719088, 6, 198, "kohinata_hibiki", "hontani kanae"),
+    (1719088, 340, 531, "kaidou_nagiko", "arisue tsukasa"),
+    (1719088, 646, 791, "kashima_riri", "toranosuke"),
     # Primal x Hearts 2
     (1939336, 1, 2000, "alicetia wallenberg kezouji", "sasorigatame"),
     (868985, 1, 127, "tsukiyono usagi", "sasorigatame"),
@@ -361,6 +372,22 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3590156, 1322, 1581, "koishikawa_miku", "kobuichi"),
     (3638988, 1467, 1890, "saen_nayuka", "hadumi rio"),
 
+    # cafe stella to shinigami no chou
+    (1538399, 1, 2000, "akizuki_kanna", "kobuichi"),
+    (1538355, 1, 2000, "shiki_natsume", "muririn"),
+    (1538430, 1, 2000, "sumizome_nozomi", "muririn"),
+    (1538498, 1, 1044, "shioyama_suzune", "muririn"),
+
+    (1522825, 3, 145, "akizuki_kanna", "kobuichi"),
+    (1522825, 146, 223, "shiki_natsume", "muririn"),
+    (1522825, 224, 265, "sumizome_nozomi", "muririn"),
+    (1522825, 313, 382, "shioyama_suzune", "muririn"),
+
+    (1536430, 12, 512, "akizuki_kanna", "kobuichi"),
+    (1536430, 513, 1134, "shiki_natsume", "muririn"),
+    (1536430, 1135, 1778, "sumizome_nozomi", "muririn"),
+    (1536431, 514, 1043, "shioyama_suzune", "muririn"),
+
     # Sengokuhime 5
     (809507, 171, 210, "oda_nobuyuki_(sengoku_hime)", None),
     # amayui castle meister
@@ -415,6 +442,19 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1468670, 1816, 2000, "shikibe_mayu", "muririn"),
     (1468698, 1, 474, "shikibe_mayu", "muririn"),
     (1468698, 475, 976, "nijouin_hazuki", "kobuichi"),
+    # Amairo IsleNauts
+    (607261, 2, 31, "shirley_warwick", "kobuichi"),
+    (607261, 32, 63, "amagiri_yune", "muririn"),
+    (607261, 64, 99, "shiraga_airi", "kobuichi"),
+    (607261, 100, 125, "masaki_gaillard", "muririn"),
+    (607261, 156, 187, "tia_hohenwerfen", "muririn"),
+
+    (614344, 2, 233, "shirley_warwick", "kobuichi"),
+    (614344, 234, 505, "amagiri_yune", "muririn"),
+    (614344, 506, 697, "shiraga_airi", "kobuichi"),
+    (614344, 698, 840, "masaki_gaillard", "muririn"),
+    (614344, 841, 957, "hinomiya_konoka", "kobuichi"),
+    (614344, 958, 1111, "tia_hohenwerfen", "muririn"),
     # Southern Cross Love Song / Minamijuujisei Renka
     (743876, 4, 295, "fujina_kanori", None),
     (743876, 515, 719, "naraoka_mitsuki", None),
@@ -508,8 +548,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1445272, 1, 864, None, "lucie"),
     (1445272, 865, 1080, "hino yuki", "yuzuna"),
     # Goshujin-sama, Seira ni Yume Mitai na Icha Love Gohoushi Sasete Itadakemasu ka
-    (3034052, 1, 2000, "seira", "rubi-sama"),
-    (2272848, 1, 2000, "seira", "rubi-sama"),
+    (3034052, 1, 2000, "seira_(rubi-sama)", "rubi-sama"),
+    (2272848, 1, 2000, "seira_(rubi-sama)", "rubi-sama"),
     # Wan Nyan ☆ A La Mode!
     (887743, 3, 60, "nekohana_korone", "naenae"),
     (887743, 246, 300, "inuta_hana", "naenae"),
@@ -568,7 +608,63 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Unless Terminalia
     (2175956, 2, 169, "mikuriya_ren", "mikagami mamizu"),
     # shiratama
-    (2616641, 40, 55, None, "shiratama")
+    (2616641, 40, 55, None, "shiratama"),
+    # Suite Life
+    (1159390, 3, 350, "akabane_akari", "ayuma sayu"),
+    (1159390, 351, 773, "imai_honoka", "naenae"),
+    (1159390, 779, 918, "kisaragi_miho", "niki"),
+    (1159390, 920, 1308, "mizuno_seina", "ayuma sayu"),
+    # Hanagane Kanade * Gram
+    (2306447, 1, 2000, "kozakura_yui", "ayuma sayu"),
+    (2384842, 3, 240, "kozakura_yui", "ayuma sayu"),
+    (2384842, 243, 501, "hananoka_sumire", "ayuma sayu"),
+    (3012239, 2, 240, "hoshiizumi_kotona", "ayuma sayu"),
+
+    (3533373, 1, 2000, "kozakura_yui", "ayuma sayu"),
+    (3533374, 1, 2000, "hananoka_sumire", "ayuma sayu"),
+    (3533375, 1, 374, "hoshiizumi_kotona", "ayuma sayu"),
+    # amaane
+    (1475817, 1, 318, "kujou_alice", "ayuma sayu"),
+    (1475817, 481, 1211, "kujou_alice", "ayuma sayu"),
+    # Deep Love Diary
+    (990151, 1, 2000, "kitasono_chika", "ayuma sayu"),
+    # Abnormal Lovers
+    (1149861, 2, 227, "asahina_seri", "ayuma sayu"),
+    (1149861, 768, 873, "asahina_seri", "ayuma sayu"),
+    (1150058, 1, 552, "asahina_seri", "ayuma sayu"),
+    # Love of Renai Koutei of LOVE!
+    (598819, 199, 558, "ootori_erika", "ozora ituki"),
+    (2188762, 200, 559, "ootori_erika", "ozora ituki"),
+    # Aikotoba
+    (1507163, 1, 2000, "kinoshita_uzuki", None),
+    (1536531, 1, 2000, "kinoshita_uzuki", None),
+    (1537306, 1, 920, "kinoshita_uzuki", None),
+    # Pretty x Cation
+    (1190937, 8, 356, "asagiri_nozomi", None),
+    (1190937, 357, 715, " asagiri_sakura", None),
+    (1190937, 716, 1074, "electrichka_sapsan", None),
+    (1190937, 1075, 1422, "yakuouji_komachi", None),
+
+    (1414110, 1, 39, "asagiri_nozomi", None),
+    (1414110, 40, 80, "asagiri_sakura", None),
+    (1414110, 81, 126, "electrichka_sapsan", None),
+    (1414110, 127, 173, "yakuouji_komachi", None),
+
+    (1414456, 1, 754, "asagiri_nozomi", None),
+    (1414456, 755, 1650, "asagiri_sakura", None),
+    (1414456, 1651, 2000, "electrichka_sapsan", None),
+    (1414495, 1, 490, "electrichka_sapsan", None),
+    (1414495, 491, 1244, "yakuouji_komachi", None),
+
+    (696253, 2, 206, "asagiri_nozomi", None),
+    (696253, 207, 414, "asagiri_sakura", None),
+    (696253, 415, 625, "electrichka_sapsan", None),
+    (696253, 626, 833, "yakuouji_komachi", None),
+    
+    (846368, 2, 384, "asagiri_nozomi", None),
+    (846368, 385, 777, "asagiri_sakura", None),
+    (846368, 778, 1171, "electrichka_sapsan", None),
+    (846368, 1172, 1560, "yakuouji_komachi", None),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp

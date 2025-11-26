@@ -311,9 +311,9 @@ def _load_and_filter_index_dataset(
         if years:
             if min(years) <= 2005:
                 return False
-            if min(years) <= 2007 and rng.random() < 0.9:
+            if max(years) <= 2007 and rng.random() < 0.9:
                 return False
-            if min(years) <= 2009 and rng.random() < 0.7:
+            if max(years) <= 2009 and rng.random() < 0.7:
                 return False
         meta = example.get("meta", "") or ""
         if "lowres" in meta and "highres" not in meta:
@@ -1743,6 +1743,10 @@ def main(args):
                         args.pretrained_model_name_or_path,
                         vae=vae_local,
                         unet=unwrap_model(unet),
+                        text_encoder=unwrap_model(text_encoder_one),
+                        text_encoder_2=unwrap_model(text_encoder_two),
+                        tokenizer=tokenizer_one,
+                        tokenizer_2=tokenizer_two,
                         revision=args.revision,
                         variant=args.variant,
                         torch_dtype=weight_dtype,
@@ -1751,6 +1755,9 @@ def main(args):
                     preview_pipe.set_progress_bar_config(disable=True)
                 else:
                     preview_pipe.unet = unwrap_model(unet)
+                    if args.train_text_encoder:
+                        preview_pipe.text_encoder = unwrap_model(text_encoder_one)
+                        preview_pipe.text_encoder_2 = unwrap_model(text_encoder_two)
 
                 if preview_compel is None:
                     preview_compel, preview_empty_conditioning = get_compel_for_sdxl(
@@ -2647,6 +2654,10 @@ def main(args):
                     args.pretrained_model_name_or_path,
                     vae=vae_local,
                     unet=unwrap_model(unet),
+                    text_encoder=unwrap_model(text_encoder_one),
+                    text_encoder_2=unwrap_model(text_encoder_two),
+                    tokenizer=tokenizer_one,
+                    tokenizer_2=tokenizer_two,
                     revision=args.revision,
                     variant=args.variant,
                     torch_dtype=weight_dtype,
@@ -2655,6 +2666,9 @@ def main(args):
                 preview_pipe.set_progress_bar_config(disable=True)
             else:
                 preview_pipe.unet = unwrap_model(unet)
+                if args.train_text_encoder:
+                    preview_pipe.text_encoder = unwrap_model(text_encoder_one)
+                    preview_pipe.text_encoder_2 = unwrap_model(text_encoder_two)
 
             if preview_compel is None:
                 preview_compel, preview_empty_conditioning = get_compel_for_sdxl(

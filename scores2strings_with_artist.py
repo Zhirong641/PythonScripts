@@ -41,6 +41,7 @@ CATEGORY_DEFAULT_THRESH = {
     "rating": 0.65,
     "character": 0.8,
     "meta": 0.6,
+    "year": 0.6,
 }
 
 # ========== 通用解析 ==========
