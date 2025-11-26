@@ -79,12 +79,12 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1562101, 155, 196, "yukimura chieri", "shiratama"),
     (868607, 39, 141, "himeno sena", "kimishima ao"),
     (868607, 224, 328, "komari yui", "shiratama"),
-    (1245707, 13, 23, "amanogawa saya", "yashima takahiro"),
-    (1245707, 48, 72, "amanogawa saya", "yashima takahiro"),
-    (1245707, 107, 130, "amanogawa saya", "yashima takahiro"),
-    (1245707, 305, 318, "amanogawa saya", "yashima takahiro"),
-    (943537, 618, 837, "amanogawa saya", "yashima takahiro"),
-    (900491, 1283, 1540, "amanogawa saya", "yashima takahiro"),
+    (1245707, 13, 23, "amanogawa saya", "motoi ayumu"),
+    (1245707, 48, 72, "amanogawa saya", "motoi ayumu"),
+    (1245707, 107, 130, "amanogawa saya", "motoi ayumu"),
+    (1245707, 305, 318, "amanogawa saya", "motoi ayumu"),
+    (943537, 618, 837, "amanogawa saya", "motoi ayumu"),
+    (900491, 1283, 1540, "amanogawa saya", "motoi ayumu"),
     (634594, 11, 13, "futaba hisui", "nanase meruchi"),
     (634594, 17, 19, "futaba hisui", "nanase meruchi"),
     (634594, 221, 292, "futaba hisui", "nanase meruchi"),
@@ -665,6 +665,50 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (846368, 385, 777, "asagiri_sakura", None),
     (846368, 778, 1171, "electrichka_sapsan", None),
     (846368, 1172, 1560, "yakuouji_komachi", None),
+    # Cocoro＠Function
+    (641202, 39, 325, "hasugase_mina", "motoi ayumu"),
+    (641202, 893, 1169, "hayami_asagao", "motoi ayumu"),
+
+    (762285, 971, 1107, "hasugase_mina", "motoi ayumu"),
+    (762285, 2, 21, "hayami_asagao", "motoi ayumu"),
+    (762285, 35, 128, "hayami_asagao", "motoi ayumu"),
+
+    (1076280, 1432, 1673, "hasugase_mina", "motoi ayumu"),
+    (1076280, 38, 188, "hayami_asagao", "motoi ayumu"),
+    (1076280, 647, 693, "hayami_asagao", "motoi ayumu"),
+
+    # motoi ayumu
+    (491097, 273, 876, None, "motoi ayumu"),
+    (634769, 132, 276, None, "motoi ayumu"),
+    (634769, 634, 881, None, "motoi ayumu"),
+    (1907517, 3, 164, None, "motoi ayumu"),
+    (1907517, 328, 545, None, "motoi ayumu"),
+    # Koikishi Purely ☆ Kiss
+    (875317, 320, 708, "shidou_mana", "yuuki hagure"),
+    (875317, 881, 1273, "elcia_harvence", "yuuki hagure"),
+    (875317, 1312, 1667, "fujimori_yuu", "yuuki hagure"),
+    (875317, 725, 805, "bernadette_villeburg", "yuuki hagure"),
+
+    (1302133, 1, 558, "elcia_harvence", "yuuki hagure"),
+    (1302133, 559, 936, "bernadette_villeburg", "yuuki hagure"),
+    (1302133, 1417, 1936, "shidou_mana", "yuuki hagure"),
+    (1302134, 430, 913, "fujimori_yuu", "yuuki hagure"),
+    # Juukishi Cutie ☆ Bullet
+    (840881, 163, 266, "reina_de_medishi", "yuuki hagure"),
+    (1868156, 756, 1100, "reina_de_medishi", "yuuki hagure"),
+
+    # D.S. -Dal Segno
+    (1083084, 2, 135, "asamiya_himari", "tanihara natsuki"),
+    (1056040, 178, 281, "asamiya_himari", "tanihara natsuki"),
+    (1056040, 500, 507, "asamiya_himari", "tanihara natsuki"),
+    # D.C.4 ~Da Capo 4~
+    (1994876, 1, 124, "sagisawa_arisu", "tanihara natsuki"),
+    (1994876, 467, 585, "sagisawa_arisu", "tanihara natsuki"),
+    (1994876, 652, 696, "mishima_miu", "kisaragi yuu"),
+    (1994876, 201, 247, "mishima_miu", "kisaragi yuu"),
+    (2205861, 1, 73, "sagisawa_arisu", "tanihara natsuki"),
+    (2205861, 126, 153, "mishima_miu", "kisaragi yuu"),
+    (2205861, 419, 465, "mishima_miu", "kisaragi yuu"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
