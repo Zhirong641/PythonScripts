@@ -129,8 +129,12 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (634833, 407, 554, "amagi karin", "yamakaze ran"),
     (634833, 673, 816, "shirahase yuuna", "yamakaze ran"),
 
+    (1805418, 519, 793, "mihama_inori", "yuzuna hiyo"),
+    (1805418, 1292, 1609, "mihama_inori", "yuzuna hiyo"),
+    (1805418, 1139, 1290, "ikegai_mayu", "konomi"),
+    (1805418, 1942, 2000, "ikegai_mayu", "konomi"),
     (1805418, 1, 2000, None, "kaniya shiku, konomi, yuzuna hiyo"),
-    (1805420, 1, 2000, None, "kaniya shiku, konomi, yuzuna hiyo"),
+    (1805420, 107, 388, "ikegai_mayu", "konomi"),
     (2313627, 1, 2000, None, "mizuno sao, satasama, yuzuna hiyo"),
     (1537715, 1, 2000, None, "yuzuna hiyo"),
     (1537491, 1, 2000, None, "yuzuna hiyo"),
@@ -164,6 +168,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (913368, 1844, 2000, "tsubaki fuuka", "satasama"),
     (2657576, 774, 1170, "tsubaki fuuka", "satasama"),
     (2657600, 409, 813, "tsubaki fuuka", "satasama"),
+    (2657600, 1, 408, "masumi_ai", "yuzuna hiyo"),
+    (2657600, 814, 1142, "misono_tsubura", "mizuno sao"),
     # Amatsutsumi
     (2285016, 334, 390, "asahina kyouko (amatsutsumi)", "tsukimori hiro"),
     (2285016, 972, 1130, "asahina kyouko (amatsutsumi)", "tsukimori hiro"),
@@ -310,6 +316,12 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Natsuzora no Perseus
     (550675, 1, 44, "tohno_ren", "shona mitsuishi"),
     (550675, 45, 168, "sawatari_tohka", "shona mitsuishi"),
+    (634944, 2, 10, "sawatari_tohka", "shona mitsuishi"),
+    (634944, 11, 285, "tohno_ren", "shona mitsuishi"),
+    (634944, 286, 617, "minakawa_sui", "takasaki maco"),
+    (634944, 618, 1045, "hishida_ayame", "yuzuna hiyo"),
+    (634944, 1046, 1121, "tohno_ren", "shona mitsuishi"),
+    (634944, 1122, 1239, "sawatari_tohka", "shona mitsuishi"),
     # Hanikami CLOVER
     (899587, 4, 14, "saeki_rio", "kakao"),
     (899587, 68, 419, "saeki_rio", "kakao"),
@@ -395,9 +407,13 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1117997, 7, 112, "fia_(amayui_castle_meister)", "yano mitsuki"),
     (1179437, 16, 35, "fia_(amayui_castle_meister)", "yano mitsuki"),
     # secret love
+    (2990687, 4, 423, "sawa_chiaki", "k-ko"),
     (2999687, 424, 776, "akatsuka_haru", "k-ko"),
+    (2999687, 777, 1177, "momouchi_kaede", "mango pudding"),
     (2999687, 1178, 1587, "natori_misa", "mango pudding"),
+    (3328435, 2, 161, "sawa_chiaki", "k-ko"),
     (3328435, 170, 333, "akatsuka_haru", "k-ko"),
+    (3328435, 334, 475, "momouchi_kaede", "mango pudding"),
     (3328435, 477, 652, "natori_misa", "mango pudding"),
     # IxSHE Tell
     (1189877, 9, 161, "yuuki_ayaka", None),
@@ -709,6 +725,59 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2205861, 1, 73, "sagisawa_arisu", "tanihara natsuki"),
     (2205861, 126, 153, "mishima_miu", "kisaragi yuu"),
     (2205861, 419, 465, "mishima_miu", "kisaragi yuu"),
+    # Trinoline
+    (3418172, 1, 61, "tsumugi_sara", "yuzuna hiyo"),
+    (3418172, 68, 127, "tsumugi_sara", "yuzuna hiyo"),
+    (3418172, 619, 744, "tsumugi_sara", "yuzuna hiyo"),
+    (3418172, 752, 1916, "tsumugi_sara", "yuzuna hiyo"),
+    (3418172, 1917, 1970, "nanami_shirone", "konomi"),
+    (3418173, 1, 376, "nanami_shirone", "konomi"),
+    (3418173, 443, 1211, "nanami_shirone", "konomi"),
+    (3418173, 1212, 2000, "miyakaze_yuuri", "konomi"),
+    (3418174, 1, 1682, "miyakaze_yuuri", "konomi"),
+    (1119329, 296, 668, "tsumugi_sara", "yuzuna hiyo"),
+    (1119329, 669, 902, "nanami_shirone", "konomi"),
+    (1119329, 903, 2000, "miyakaze_yuuri", "konomi"),
+
+    (3418170, 75, 102, "tsumugi_sara", "yuzuna hiyo"),
+    (3418170, 1780, 1200, "tsumugi_sara", "yuzuna hiyo"),
+    (3418170, 124, 481, "nanami_shirone", "konomi"),
+    (3418170, 550, 686, "nanami_shirone", "konomi"),
+    (3418170, 854, 1324, "nanami_shirone", "konomi"),
+    (3418170, 14, 51, "miyakaze_yuuri", "konomi"),
+    # Trinoline: Genesis
+    (1178402, 95, 833, "tsumugi_sara", "yuzuna hiyo"),
+    (1178402, 834, 1356, "nanami_shirone", "konomi"),
+    (1178402, 1357, 1966, "miyakaze_yuuri", "konomi"),
+    (1178441, 1, 66, "miyakaze_yuuri", "konomi"),
+    (1178442, 1, 558, "himeno_towa", "yuzuna hiyo"),
+    # Sono Hi no Kemono ni wa
+    (1354206, 518, 794, "mihama_inori", "yuzuna hiyo"),
+    (1354206, 1291, 1608, "mihama_inori", "yuzuna hiyo"),
+    (1354206, 1138, 1290, "ikegai_mayu", "konomi"),
+    (1354206, 1941, 2000, "ikegai_mayu", "konomi"),
+    (1354273, 106, 387, "ikegai_mayu", "konomi"),
+    # 12 no Tsuki no Eve
+    (671506, 593, 1039, "unahara_yuki", "yuzuna hiyo"),
+    (671506, 1040, 1140, "shiina_mizuka", "takasaki maco"),
+    (671507, 1, 305, "shiina_mizuka", "takasaki maco"),
+    (671507, 306, 530, "shiina_anzu", "shona mitsuishi"),
+    (671507, 531, 677, "shiina_mizuka", "takasaki maco"),
+    (671507, 678, 853, "shiina_anzu", "shona mitsuishi"),
+    # Yome Sagashi ga Hakadorisugite Yabai.
+    (2971469, 2, 134, "yagami_kanna", "ikegami akane"),
+    (2971469, 418, 553, "takamiya_nanaka", "ikegami akane"),
+    (1196589, 1, 105, "yagami_kanna", "ikegami akane"),
+    (1196589, 380, 474, "takamiya_nanaka", "ikegami akane"),
+    (878236, 3, 135, "yagami_kanna", "ikegami akane"),
+    (878236, 432, 555, "takamiya_nanaka", "ikegami akane"),
+    # Deatte 5-fun wa Ore no Mono! Jikan Teishi to Atropos
+    (1305605, 171, 312, "kurose_sakura", "ikegami akane"),
+    (1305605, 611, 772, "hiiragi_hakua", "ikegami akane"),
+    (1375991, 145, 250, "kurose_sakura", "ikegami akane"),
+    (1375991, 505, 666, "hiiragi_hakua", "ikegami akane"),
+    # Natsuiro Recipe
+    (819570, 157, 279, "yaehara_yuzu", "non"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
