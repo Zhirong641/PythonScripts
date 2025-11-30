@@ -146,20 +146,28 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Kujiragami no Tearstilla
     (885411, 6, 98, "tenkawa mitsuki", None),
     # Floral Flowlove
+    (960177, 3, 207, "adelheid_von_bergstrasse", "matsumiya kiseri"),
     (960177, 208, 408, "mihato kano", "hontani kanae"),
     (960177, 409, 647, "tsubaki kohane", "arisue tsukasa"),
     (960177, 648, 890, "tokisaka nanao", "toranosuke"),
+    # Kiniro Loveriche -Golden Time-
+    (1953903, 2, 323, "sylvia_le_cruzcrown_sortilege_sisua", "hontani kanae"),
+    (1953903, 324, 543, "kisaki_reina", "toranosuke"),
+    (1936004, 771, 1089, "sylvia_le_cruzcrown_sortilege_sisua", "hontani kanae"),
+    (1936004, 391, 605, "kisaki_reina", "toranosuke"),
+    (1369330, 37, 249, "jougasaki_ayaka", "arisue tsukasa"),
+    (2274092, 34, 246, "jougasaki_ayaka", "arisue tsukasa"),
     # Hanayome to Maou
     (746122, 9, 67, "celica tepes lunatica", None),
     # Anata ni Koisuru Renai Recette
     (1243251, 1, 1280, "tachibana nonoka", "komeshiro kasu"),
-    (1243251, 1281, 2000, "oozono yuzuki", "fumi"),
-    (1243267, 1, 560, "oozono yuzuki", "fumi"),
+    (1243251, 1281, 2000, "oozono yuzuki", "fummy"),
+    (1243267, 1, 560, "oozono yuzuki", "fummy"),
     (1243267, 561, 1840, "kagiyoshi fuuka", "komeshiro kasu"),
     (1243267, 1841, 2000, "shirosaki mieru", "pero"),
     (1243602, 1, 1120, "shirosaki mieru", "pero"),
     (1067390, 23, 182, "tachibana nonoka", "komeshiro kasu"),
-    (1067390, 183, 338, "oozono yuzuki", "fumi"),
+    (1067390, 183, 338, "oozono yuzuki", "fummy"),
     (1067390, 339, 498, "kagiyoshi fuuka", "komeshiro kasu"),
     (1067390, 499, 706, "shirosaki mieru", "pero"),
     # Tsumi no Hikari Rendezvous Goukaban
@@ -212,12 +220,19 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2230428, 120, 150, "arise_kaguya, arise_atena", "hontani kanae"),
     (2230428, 151, 171, "arise_kaguya", "hontani kanae"),
     (2230428, 536, 632, "arise_atena", "hontani kanae"),
+    (2230428, 362, 532, "hongou_nijimu", "arisue tsukasa"),
+    (2230428, 172, 361, "ishikawa_yae", "toranosuke"),
     (2562932, 4, 65, "arise_atena", "hontani kanae"),
     (2560932, 73, 139, "arise_kaguya", "hontani kanae"),
+    (2595303, 160, 215, "ishikawa_yae", "toranosuke"),
     # Kakenuke Seishun Sparking!
     (1719088, 6, 198, "kohinata_hibiki", "hontani kanae"),
     (1719088, 340, 531, "kaidou_nagiko", "arisue tsukasa"),
-    (1719088, 646, 791, "kashima_riri", "toranosuke"),
+    (1719088, 198, 343, "kashima_riri", "toranosuke"),
+
+    (3097843, 5, 197, "kohinata_hibiki", "hontani kanae"),
+    (3097843, 508, 699, "kaidou_nagiko", "arisue tsukasa"),
+    (3097843, 646, 791, "kashima_riri", "toranosuke"),
     # Primal x Hearts 2
     (1939336, 1, 2000, "alicetia wallenberg kezouji", "sasorigatame"),
     (868985, 1, 127, "tsukiyono usagi", "sasorigatame"),
@@ -576,10 +591,14 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1735897, 29, 248, "nekohana_korone", "naenae"),
     (1735897, 865, 1044, "inuta_hana", "naenae"),
     # Love Love ♥ Princess
-    (839209, 3, 213, "marigold_bruette_erland", "wori"),
-    (839209, 214, 233, "marigold_bruette_erland,  anastasia_imperator_erland", "wori"),
+    (839209, 3, 213, "marigold_bruette_erland", "rubi-sama"),
+    (839209, 214, 233, "marigold_bruette_erland,  anastasia_imperator_erland", "wori, rubi-sama"),
     (839209, 234, 432, "anastasia_imperator_erland", "wori"),
     (839209, 433, 592, "tsukimori_mio_erland", "wori"),
+
+    (839731, 3, 407, "marigold_bruette_erland", "rubi-sama"),
+    (839731, 408, 719, "anastasia_imperator_erland", "wori"),
+    (839731, 720, 989, "tsukimori_mio_erland", "wori"),
     # Love Love Life
     (688579, 2, 124, "akemiya_sakura", "rubi-sama"),
     (688579, 125, 240, "kuroba_kasumi", "wori"),
@@ -616,7 +635,16 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1230539, 727, 1421, "azuma_nagisa", "chikotam"),
     # Hare Nochi Kitto Nanohana Biyori
     (1919557, 3, 97, "ayasaki_nanoka", "chikotam"),
+    (1919557, 98, 202, None, "chikotam"),
+    (1919557, 203, 275, None, "sakana"),
+    (1919557, 276, 358, None, "sakura hanpen"),
     (1919557, 396, 420, "ayasaki_nanoka", "chikotam"),
+
+    (733798, 2, 96, "ayasaki_nanoka", "chikotam"),
+    (733798, 97, 201, None, "chikotam"),
+    (733798, 202, 274, None, "sakana"),
+    (733798, 275, 323, None, "sakura hanpen"),
+    (733798, 324, 348, "ayasaki_nanoka", "chikotam"),
     # pieces
     (1445329, 1, 556, "kimihara_yua", "mikagami mamizu"),
     (1390124, 1, 146, "kimihara_yua", "mikagami mamizu"),
@@ -741,7 +769,9 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
 
     (3418170, 75, 102, "tsumugi_sara", "yuzuna hiyo"),
     (3418170, 1780, 1200, "tsumugi_sara", "yuzuna hiyo"),
-    (3418170, 124, 481, "nanami_shirone", "konomi"),
+    (3418170, 114, 204, "nanami_shirone", "konomi"),
+    (3418170, 231, 420, "nanami_shirone, tsumugi_sara, miyakaze_yuuri", "konomi, yuzuna hiyo"),
+    (3418170, 425, 480, "nanami_shirone", "konomi"),
     (3418170, 550, 686, "nanami_shirone", "konomi"),
     (3418170, 854, 1324, "nanami_shirone", "konomi"),
     (3418170, 14, 51, "miyakaze_yuuri", "konomi"),
@@ -778,6 +808,41 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1375991, 505, 666, "hiiragi_hakua", "ikegami akane"),
     # Natsuiro Recipe
     (819570, 157, 279, "yaehara_yuzu", "non"),
+    # Hatsukoi Sankaime
+    (1009352, 2, 363, None, "chikotam"),
+    (1009352, 364, 813, "hikami_yurino", "narumi yuu"),
+    (1009352, 814, 1238, "emiliya_karimov", "narumi yuu"),
+    (1009352, 1239, 1920, None, "takashina at masato"),
+    # Hakoniwa Logic
+    (753681, 4, 103, "maezono_kirika", "yukie"),
+    (753681, 106, 217, "iriya_koko", "yukie"),
+    (753681, 218, 322, "kidou_shizuku", "miwa futaba"),
+    (753681, 323, 449, "amesara_mana", "miwa futaba"),
+    (753681, 450, 537, "sakuraba_moemi", "yukie"),
+
+    (3595341, 1, 810, "maezono_kirika", "yukie"),
+    (3595341, 811, 1440, "iriya_koko", "yukie"),
+    (3595341, 1441, 1690, "kidou_shizuku", "miwa futaba"),
+    (3595466, 511, 850, "amesara_mana", "miwa futaba"),
+    (3595466, 1, 510, "sakuraba_moemi", "yukie"),
+    # QUINTUPLE☆SPLASH
+    (886805, 2, 79, None, "sakana"),
+    (886805, 80, 216, None, "mikeou"),
+    (886805, 217, 343, None, "yukie"),
+    (886805, 344, 446, None, "ichiri"),
+    (886805, 447, 538, None, "sakura hanpen"),
+
+    (886805, 539, 563, None, "sakana"),
+    (886805, 564, 587, None, "mikeou"),
+    (886805, 588, 615, None, "yukie"),
+    (886805, 616, 640, None, "ichiri"),
+    (886805, 641, 737, None, "sakura hanpen"),
+
+    (1134306, 1, 224, None, "sakana"),
+    (1134306, 225, 672, None, "mikeou"),
+    (1134306, 673, 1120, None, "yukie"),
+    (1134306, 1121, 1582, None, "ichiri"),
+    (1134306, 1583, 1822, None, "sakura hanpen"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp

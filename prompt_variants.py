@@ -307,8 +307,8 @@ def _artist_phrase(artists: List[str], p: float = 2.0) -> str:
     n > 1 : 从 1..min(1,n) 中按权重 k**p 随机选取返回个数 k，再随机抽取 k 个
     p > 0 越大越偏向返回更多个
     """
-    if random.random() < 0.05:
-        return ""  # 5% 概率不加画师标签
+    if random.random() < 0.15:
+        return ""  # 15% 概率不加画师标签
     if not artists:
         return ""
 
