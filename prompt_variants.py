@@ -556,6 +556,7 @@ def generate_phrase_variants(
 
     variants = []
     for _ in range(max(k, 1)):
+        shuffled_head = random.sample(head, k=len(head)) if head else []
         # 1) 固定锚点：角色 + 艺术家（优先占预算）
         parts = []
         char_phrase = _character_phrase(characters or [], max_chars=max_chars)
@@ -577,9 +578,10 @@ def generate_phrase_variants(
             anchor_parts.pop()  # 按顺序移除尾部锚点（优先保留角色/评级）
             current = ", ".join(anchor_parts)
 
-        # 2) 候选：头部保序 + 尾部洗牌
+        # 2) 候选：洗牌 head + 洗牌 tail_core + 洗牌 tail_fixed
+        shuffled_tail_fixed = random.sample(tail_fixed, k=len(tail_fixed)) if tail_fixed else []
         shuffled_tail = random.sample(tail_core, k=len(tail_core)) if tail_core else []
-        cand = head + shuffled_tail + tail_fixed
+        cand = shuffled_head + shuffled_tail + shuffled_tail_fixed
 
         used_groups = set()
         general_added = 0

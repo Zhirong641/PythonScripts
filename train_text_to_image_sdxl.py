@@ -96,6 +96,22 @@ def _split_clean_comma_list(s: str):
     return [x.strip() for x in s.replace("，", ",").split(",") if x.strip()]
 
 
+def _normalize_artist_tags(artist_tags):
+    rename_map = {"any": "annie", "kino": "konomi", "anapon": "anapom", "fumi": "fummy"}
+    normalized = []
+    seen = set()
+    for tag in artist_tags or []:
+        if not tag:
+            continue
+        tag_norm = rename_map.get(tag.lower(), tag)
+        key = tag_norm.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        normalized.append(tag_norm)
+    return normalized
+
+
 def _join_with_comma(items):
     return ", ".join(items)
 
@@ -1088,7 +1104,7 @@ def encode_prompt(
 
         for idx in range(num_samples):
             general_tags = _split_clean_comma_list(general_values[idx] or "")
-            artist_tags = _split_clean_comma_list(artist_values[idx] or "")
+            artist_tags = _normalize_artist_tags(_split_clean_comma_list(artist_values[idx] or ""))
             rating_tags = _split_clean_comma_list(rating_values[idx] or "")
             year_tags = _split_clean_comma_list(year_values[idx] or "")
             character_tags = _split_clean_comma_list(character_values[idx] or "")
@@ -1101,7 +1117,7 @@ def encode_prompt(
                 k=1,
                 token_budget=300,
                 head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
-                dropout=0.18,
+                dropout=0.2,
                 max_general_per_variant=50,
                 characters=character_tags,
                 ratings=rating_tags,
@@ -1931,11 +1947,11 @@ def main(args):
                     for i in range(bsz):
                         text = generate_variants_with_nl_list(
                             _split_clean_comma_list(general_tags[i]),
-                            _split_clean_comma_list(artist_tags[i]),
+                            _normalize_artist_tags(_split_clean_comma_list(artist_tags[i])),
                             k=1,
                             token_budget=300,
                             head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
-                            dropout=0.18,
+                            dropout=0.2,
                             max_general_per_variant=50,
                             characters=_split_clean_comma_list(character_tags[i]),
                             ratings=_split_clean_comma_list(rating_tags[i]),
@@ -2009,11 +2025,11 @@ def main(args):
                             prev_prompt = random.choice(chosen) if chosen else ""
                             prev_prompts = generate_variants_with_nl_list(
                                 _split_clean_comma_list(general_tags[0]),
-                                _split_clean_comma_list(artist_tags[0]),
+                                _normalize_artist_tags(_split_clean_comma_list(artist_tags[0])),
                                 k=2,
                                 token_budget=300,
                                 head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
-                                dropout=0.18,
+                                dropout=0.2,
                                 max_general_per_variant=50,
                                 characters=_split_clean_comma_list(character_tags[0]),
                                 ratings=_split_clean_comma_list(rating_tags[0]),
@@ -2832,10 +2848,11 @@ def main(args):
                         for i in range(bsz):
                             variants = generate_variants_with_nl_list(
                                 _split_clean_comma_list(general_tags[i] if i < len(general_tags) else ""),
-                                _split_clean_comma_list(artist_tags[i] if i < len(artist_tags) else ""),
+                                _normalize_artist_tags(_split_clean_comma_list(artist_tags[i] if i < len(artist_tags) else "")),
                                 k=1,
                                 token_budget=300,
                                 head_keep=random.choices([10, 12, 14], [0.5, 0.35, 0.15])[0],
+                                dropout=0.2,
                                 max_general_per_variant=50,
                                 characters=_split_clean_comma_list(character_tags[i] if i < len(character_tags) else ""),
                                 ratings=_split_clean_comma_list(rating_tags[i] if i < len(rating_tags) else ""),
@@ -2959,11 +2976,11 @@ def main(args):
                             if general_tags:
                                 preview_prompts = generate_variants_with_nl_list(
                                     _split_clean_comma_list(_first_str(general_tags)),
-                                    _split_clean_comma_list(_first_str(artist_tags)),
+                                    _normalize_artist_tags(_split_clean_comma_list(_first_str(artist_tags))),
                                     k=2,
                                     token_budget=300,
                                     head_keep=random.choices([12,14,16],[0.5,0.35,0.15])[0],
-                                    dropout=0.18,
+                                    dropout=0.2,
                                     max_general_per_variant=50,
                                     characters=_split_clean_comma_list(_first_str(character_tags)),
                                     ratings=_split_clean_comma_list(_first_str(rating_tags)),

@@ -875,6 +875,97 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1537567, 1, 2000, None, "yuzuna hiyo, mizuno sao, satasama"),
     (1537457, 1, 2000, None, "yuzuna hiyo, mizuno sao, satasama"),
     (793088, 1, 2000, None, "yuzuna hiyo, mizuno sao, satasama"),
+    # Sakura Hitohira Koi Moyou
+    (1122203, 4, 172, "kamikawa_saya", "sakura hanpen"),
+    (1122203, 173, 407, "mizutani_yoshino", "ichiri"),
+    (1122203, 408, 605, "takazawa_miaya", "sakura hanpen"),
+    (1122203, 606, 801, "hatsushiba_chitose", "ichiri"),
+    (1122203, 802, 867, "kamikawa_saya", "sakura hanpen"),
+    (1122203, 868, 944, "mizutani_yoshino", "ichiri"),
+    (1122203, 945, 1011, "takazawa_miaya", "sakura hanpen"),
+    (1122203, 1012, 1083, "hatsushiba_chitose", "ichiri"),
+
+    (1134207, 1, 222, "kamikawa_saya", "sakura hanpen"),
+    (1134207, 223, 414, "mizutani_yoshino", "ichiri"),
+    (1134207, 415, 606, "takazawa_miaya", "sakura hanpen"),
+    (1134207, 607, 798, "hatsushiba_chitose", "ichiri"),
+
+    (1469290, 12, 77, "kamikawa_saya", "sakura hanpen"),
+    (1469290, 78, 154, "mizutani_yoshino", "ichiri"),
+    (1469290, 155, 221, "takazawa_miaya", "sakura hanpen"),
+    (1469290, 222, 293, "hatsushiba_chitose", "ichiri"),
+    (1469290, 303, 471, "kamikawa_saya", "sakura hanpen"),
+    (1469290, 472, 706, "mizutani_yoshino", "ichiri"),
+    (1469290, 707, 904, "takazawa_miaya", "sakura hanpen"),
+    (1469290, 905, 1100, "hatsushiba_chitose", "ichiri"),
+
+    (1469322, 69, 253, "kamikawa_saya", "sakura hanpen"),
+    (1469322, 254, 413, "mizutani_yoshino", "ichiri"),
+    (1469322, 414, 573, "takazawa_miaya", "sakura hanpen"),
+    (1469322, 574, 733, "hatsushiba_chitose", "ichiri"),
+    (1469322, 856, 1040, "kamikawa_saya", "sakura hanpen"),
+    (1469322, 1643, 2000, "kamikawa_saya", "sakura hanpen"),
+    (1469322, 1041, 1200, "mizutani_yoshino", "ichiri"),
+    (1469322, 1201, 1360, "takazawa_miaya", "sakura hanpen"),
+    (1469322, 1361, 1520, "hatsushiba_chitose", "ichiri"),
+
+    (1469320, 430, 466, "kamikawa_saya", "sakura hanpen"),
+    (1469320, 467, 498, "mizutani_yoshino", "ichiri"),
+    (1469320, 499, 530, "takazawa_miaya", "sakura hanpen"),
+    (1469320, 531, 562, "hatsushiba_chitose", "ichiri"),
+    (1469320, 591, 627, "kamikawa_saya", "sakura hanpen"),
+    (1469320, 628, 659, "mizutani_yoshino", "ichiri"),
+    (1469320, 660, 691, "takazawa_miaya", "sakura hanpen"),
+    (1469320, 692, 723, "hatsushiba_chitose", "ichiri"),
+    (1469320, 752, 820, "kamikawa_saya", "sakura hanpen"),
+    (1469320, 821, 898, "takazawa_miaya", "sakura hanpen"),
+    
+    # Princess Evangile
+    (393536, 2, 100, "rousen'in_rise", "yamakaze ran"),
+    (393536, 101, 205, "sagisawa_chiho", "saeki nao"),
+    (393536, 206, 312, "kitamikado_ritsuko", "saeki nao"),
+    (393536, 313, 422, "kitamikado_ayaka", "yamakaze ran"),
+    (393536, 445, 454, "myougi_marika", "yamakaze ran"),
+
+    (800236, 4, 99, "rousen'in_rise", "yamakaze ran"),
+    (800236, 100, 204, "sagisawa_chiho", "saeki nao"),
+    (800236, 205, 311, "kitamikado_ritsuko", "saeki nao"),
+    (800236, 312, 421, "kitamikado_ayaka", "yamakaze ran"),
+    (800236, 444, 453, "myougi_marika", "yamakaze ran"),
+    (800236, 454, 461, "rousen'in_rise", "yamakaze ran"),
+    (800236, 462, 466, "kitamikado_ritsuko", "saeki nao"),
+    (800236, 467, 468, "kitamikado_ayaka", "yamakaze ran"),
+    (800236, 469, 472, "sagisawa_chiho", "saeki nao"),
+
+    (1093800, 3, 60, "rousen'in_rise", "yamakaze ran"),
+    (1093800, 61, 118, "sagisawa_chiho", "saeki nao"),
+    (1093800, 119, 174, "kitamikado_ritsuko", "saeki nao"),
+    (1093800, 175, 226, "kitamikado_ayaka", "yamakaze ran"),
+    (1093800, 511, 603, "myougi_marika", "yamakaze ran"),
+
+    (1329062, 2, 59, "rousen'in_rise", "yamakaze ran"),
+    (1329062, 60, 117, "sagisawa_chiho", "saeki nao"),
+    (1329062, 118, 173, "kitamikado_ritsuko", "saeki nao"),
+    (1329062, 174, 225, "kitamikado_ayaka", "yamakaze ran"),
+    (1329062, 506, 598, "myougi_marika", "yamakaze ran"),
+    # Toriko no Shimai
+    (1944572, 3, 3, "uryuu_futaba", "teeta.j"),
+    (1944572, 362, 494, "uryuu_futaba", "teeta.j"),
+    (1944572, 495, 630, "yurimoto_yuna", "teeta.j"),
+
+    (1945558, 358, 490, "uryuu_futaba", "teeta.j"),
+    (1945558, 491, 510, "yurimoto_yuna", "teeta.j"),
+
+    (1947184, 26, 33, "uryuu_futaba", "teeta.j"),
+    (1947184, 42, 48, "uryuu_futaba", "teeta.j"),
+    (1947184, 72, 76, "uryuu_futaba", "teeta.j"),
+
+    (2555429, 25, 32, "uryuu_futaba", "teeta.j"),
+    (2555429, 41, 47, "uryuu_futaba", "teeta.j"),
+    (2555429, 87, 91, "uryuu_futaba", "teeta.j"),
+    # Ore no Ue de Agaku Rokunin no Togime
+    (1328609, 1, 135, "amaya_tomoko", "teeta.j"),
+    (1329539, 1, 136, "amaya_tomoko", "teeta.j"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
