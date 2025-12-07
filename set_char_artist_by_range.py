@@ -341,8 +341,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2070784, 54, 102, "tsukimizaka_kiriha", None),
     (2070784, 429, 603, "tsukimizaka_kiriha", None),
     # Shukufuku no Kanenone wa, Sakurairo no Kaze Totomoni
-    (1321028, 2, 112, "ootori_maria", "anapom, anapon"),
-    (1321028, 230, 362, "kitazono_saya", "anapom, anapon"),
+    (1321028, 2, 112, "ootori_maria", "anapom"),
+    (1321028, 230, 362, "kitazono_saya", "anapom"),
     # Kokoro ga Tsunagu Koi Shirube
     (1322592, 5, 349, "kujou_himeno", None),
     # Koi wa Yumemiru Mouretsu Girl!
@@ -601,16 +601,16 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (899895, 67, 90, "yoshinaga chiho", "narumi yuu"),
     # Sakura Iro, Mau Koro ni
     (1389160, 7, 118, None, "lucie"),
-    (1389160, 119, 296, None, "yuzuna"),
-    (1389160, 297, 434, "tomari mariko", "komeshiro kasu"),
-    (1389160, 435, 586, "mizushiro_mina", "yuzuna"),
-    (1389160, 591, 744, None, "anapom, anapon"),
-    (1445230, 1, 400, "mizushiro_mina", "yuzuna"),
-    (1445230, 401, 720, None, "yuzuna"),
-    (1445230, 721, 1264, "tomari mariko", "komeshiro kasu"),
-    (1445230, 1265, 1500, None, "anapom, anapon"),
+    (1389160, 119, 296, None, "yuzuka"),
+    (1389160, 297, 434, "tomari_mariko", "komeshiro kasu"),
+    (1389160, 435, 586, "mizushiro_mina", "yuzuka"),
+    (1389160, 591, 744, None, "anapom"),
+    (1445230, 1, 400, "mizushiro_mina", "yuzuka"),
+    (1445230, 401, 720, None, "yuzuka"),
+    (1445230, 721, 1264, "tomari_mariko", "komeshiro kasu"),
+    (1445230, 1265, 1500, None, "anapom"),
     (1445272, 1, 864, None, "lucie"),
-    (1445272, 865, 1080, "hino yuki", "yuzuna"),
+    (1445272, 865, 1080, "hino_yuki", "yuzuka"),
     # Goshujin-sama, Seira ni Yume Mitai na Icha Love Gohoushi Sasete Itadakemasu ka
     (3034052, 1, 2000, "seira_(rubi-sama)", "rubi-sama"),
     (2272848, 1, 2000, "seira_(rubi-sama)", "rubi-sama"),
@@ -973,8 +973,18 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2555429, 41, 47, "uryuu_futaba", "teeta.j"),
     (2555429, 87, 91, "uryuu_futaba", "teeta.j"),
     # Ore no Ue de Agaku Rokunin no Togime
-    (1328609, 1, 135, "amaya_tomoko", "teeta.j"),
-    (1329539, 1, 136, "amaya_tomoko", "teeta.j"),
+    (1328609, 1, 135, "amaya_tomoko", "noba"),
+    (1328609, 136, 249, "kaji_nana", "noba"),
+    (1328609, 250, 376, "orikura_satsuki", "mizuyuki"),
+    (1328609, 377, 491, "suou_risa", "mizuyuki"),
+    (1328609, 492, 600, "tsukino_yuri", "teeta.j"),
+    (1328609, 601, 712, "ruka_(ore_no_ue_de_agaku_rokunin_no_togime)", "teeta.j"),
+    (1329539, 1, 136, "amaya_tomoko", "noba"),
+    (1329539, 137, 250, "kaji_nana", "noba"),
+    (1329539, 251, 369, "orikura_satsuki", "mizuyuki"),
+    (1329539, 370, 484, "suou_risa", "mizuyuki"),
+    (1329539, 485, 593, "tsukino_yuri", "teeta.j"),
+    (1329539, 594, 705, "ruka_(ore_no_ue_de_agaku_rokunin_no_togime)", "teeta.j"),
     # muutsuki
     # Hoshizora e Kakaru Hashi
     (485439, 11, 47, None, "naturalton"),
