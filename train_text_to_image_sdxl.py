@@ -97,7 +97,7 @@ def _split_clean_comma_list(s: str):
 
 
 def _normalize_artist_tags(artist_tags):
-    rename_map = {"any": "annie", "kino": "konomi", "anapon": "anapom", "fumi": "fummy"}
+    rename_map = {"any": "annie", "kino": "konomi", "anapon": "anapom", "fumi": "fummy", "narumi yu": "narumi yuu"}
     normalized = []
     seen = set()
     for tag in artist_tags or []:

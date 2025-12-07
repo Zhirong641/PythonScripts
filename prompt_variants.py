@@ -301,6 +301,15 @@ def _normalize_artist(artist: str) -> str:
     cleaned = _ARTIST_ALIAS_PATTERN.sub("", norm).strip()
     return cleaned if cleaned else norm
 
+_HEADCOUNT_PATTERN = re.compile(
+    r"^\d+\s*(girl|boy|girls|boys|male|female|man|men|woman|women|person|people|character|characters)\b"
+)
+
+
+def _is_headcount_tag(tag: str) -> bool:
+    """Detect tags like 1girl/2boys/etc. so we can preserve them more often."""
+    return bool(_HEADCOUNT_PATTERN.match(tag))
+
 def _artist_phrase(artists: List[str], p: float = 2.0) -> str:
     """
     n == 1: 返回 1 个
@@ -590,7 +599,9 @@ def generate_phrase_variants(
         for t in cand:
             if general_added >= max_general_per_variant:
                 break
-            if random.random() < dropout:
+            # Headcount tags (e.g., 1girl/2boys) get a lower drop rate to keep subject count stable.
+            tag_dropout = 0.07 if _is_headcount_tag(t) else dropout
+            if random.random() < tag_dropout:
                 continue
             # 互斥：同槽位只取一次
             if any(name in used_groups and fn(t) for name, fn in _PATTERNS):
