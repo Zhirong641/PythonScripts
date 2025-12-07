@@ -801,7 +801,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1119329, 903, 2000, "miyakaze_yuuri", "konomi"),
 
     (3418170, 75, 102, "tsumugi_sara", "yuzuna hiyo"),
-    (3418170, 1780, 1200, "tsumugi_sara", "yuzuna hiyo"),
+    (3418170, 1620, 1778, "tsumugi_sara", "yuzuna hiyo"),
+    (3418170, 1780, 2000, "tsumugi_sara", "yuzuna hiyo"),
     (3418170, 114, 204, "nanami_shirone", "konomi"),
     (3418170, 231, 420, "nanami_shirone, tsumugi_sara, miyakaze_yuuri", "konomi, yuzuna hiyo"),
     (3418170, 425, 480, "nanami_shirone", "konomi"),
@@ -1083,6 +1084,26 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (868706, 1, 192, "mirina_liliano", "miyasu risa"),
     (868706, 193, 641, "aria_celestia", "nanase meruchi"),
     (868706, 642, 976, "lisley_mcdowell", "miyasu risa"),
+
+    # Inochi no Spare
+    (3189442, 103, 104, "shukugawa_meguri", "akizora momiji"),
+    (3189442, 166, 341, "shukugawa_meguri", "akizora momiji"),
+    (969417, 1, 3, "shukugawa_meguri", "akizora momiji"),
+    (969417, 24, 65, "shukugawa_meguri", "akizora momiji"),
+    (969417, 68, 86, "shukugawa_meguri", "akizora momiji"),
+    (969417, 109, 244, "shukugawa_meguri", "akizora momiji"),
+    (1420982, 1, 2000, "shukugawa_meguri", "akizora momiji"),
+    (1420992, 1, 1195, "shukugawa_meguri", "akizora momiji"),
+
+    # Teaka Mamire no Tenshi
+    (951022, 1, 275, "kisaragi_reina", "akizora momiji"),
+    (951022, 276, 288, "anri_(teaka_mamire_no_tenshi)", "akizora momiji"),
+    (1375832, 1, 600, "kisaragi_reina", "akizora momiji"),
+    (1375832, 601, 696, "anri_(teaka_mamire_no_tenshi)", "akizora momiji"),
+    # Dekinai Watashi ga, Kurikaesu
+    (733733, 305, 314, "kurihara_yume", "aotsuki shinobu"),
+    (733733, 321, 324, "kurihara_yume", "aotsuki shinobu"),
+    (733733, 332, 384, "kurihara_yume", "aotsuki shinobu"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
