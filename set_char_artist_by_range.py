@@ -296,8 +296,29 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (536888, 348, 448, "kotone (zettai saikyou)", "any, annie"),
     (1481653, 352, 452, "kotone (zettai saikyou)", "any, annie"),
     # Amatarasu Riddle Star -
+    (1033787, 2, 234, "ai_(amatarasu_riddle_star)", "syroh"),
+    (1033787, 541, 731, "hatta_madori", "syroh"),
     (1033787, 776, 1118, "yukishiro miu", "any, annie"),
+    (1033787, 1119, 1202, "arisu_rina", "annie"),
+    (1033787, 1203, 1422, "arisu_yua", "2-g"),
+
+    (1499212, 3, 235, "ai_(amatarasu_riddle_star)", "syroh"),
+    (1499212, 542, 732, "hatta_madori", "syroh"),
     (1499212, 777, 1119, "yukishiro miu", "any, annie"),
+    (1499212, 1120, 1202, "arisu_rina", "annie"),
+    (1499212, 1203, 1421, "arisu_yua", "2-g"),
+
+    (1115664, 1327, 1527, "ai_(amatarasu_riddle_star)", "syroh"),
+    (1115664, 1528, 1666, "hatta_madori", "syroh"),
+    (1115664, 805, 1326, "yukishiro miu", "any, annie"),
+    (1115664, 1744, 1775, "arisu_rina", "annie"),
+    (1115664, 1, 543, "arisu_yua", "2-g"),
+    # Zettai Junshu New Kozukuri World
+    (1008830, 361, 440, "tadokoro_minami", "2-g"),
+    (1008830, 441, 530, "kasugai_noa", "2-g"),
+    # Zettai Seifuku 
+    (799866, 24, 149, "urushino_himeko", "sukoyaka gyuunyuu"),
+    (799866, 758, 933, "uwaba_shiera", "araiguma"),
     # Yuuwaku Scramble
     (970288, 303, 593, "hoshimi yuki", "hinata nao"),
     # Imouto Paradise!
@@ -1114,6 +1135,93 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (733733, 305, 314, "kurihara_yume", "aotsuki shinobu"),
     (733733, 321, 324, "kurihara_yume", "aotsuki shinobu"),
     (733733, 332, 384, "kurihara_yume", "aotsuki shinobu"),
+    # Aikagi
+    (1919732, 1, 2000, "saotome_ai", "gintarou"),
+    (3442621, 1, 2000, "saotome_ai", "gintarou"),
+    (1403914, 1, 2000, "sumeragi_ayano", "gintarou"),
+    (3442620, 1, 2000, "sumeragi_ayano", "gintarou"),
+    (1021562, 1, 2000, "takanashi_shiori", "gintarou"),
+    (2685512, 1, 2000, "takanashi_shiori", "gintarou"),
+    (1175436, 1, 2000, "takanashi_shiori", "gintarou"),
+    # Tensei Kunitori Sex Gassen!!
+    (753612, 58, 160, None, "minakami rinka"),
+    (753612, 161, 426, "ouma_mizuki", "2-g"),
+    (753612, 427, 712, "hozumi_moa", "2-g"),
+    (753612, 713, 1112, "tsukishiro_nami", None),
+    (753612, 1113, 1488, "komae_nana", "2-g"),
+    (753612, 1489, 1755, "hitotonoya_yuuri", "sukoyaka gyuunyuu"),
+
+    (1404939, 2, 171, "ouma_mizuki", "2-g"),
+    (1404939, 172, 442, "hozumi_moa", "2-g"),
+    (1404939, 443, 517, "hitotonoya_yuuri", "sukoyaka gyuunyuu"),
+    (1404939, 518, 778, "komae_nana", "2-g"),
+    # Momoiro Seiheki Kaihou Sengen!
+    (691358, 2, 98, "inamori_chiduru", "ichiyo moka"),
+    (691358, 99, 283, "oda_mao", "2-g"),
+    (691358, 284, 572, "kiryuuin_rindou", "annie"),
+    (691358, 573, 628, "ooe_kagura", "minakami rinka"),
+    (691358, 629, 760, "kitami_karen", "sukoyaka gyuunyuu"),
+
+    (691359, 15, 79, "inamori_chiduru", "ichiyo moka"),
+    (691359, 80, 261, "oda_mao", "2-g"),
+    (691359, 262, 380, "kiryuuin_rindou", "annie"),
+    (691359, 396, 449, "kiryuuin_rindou", "annie"),
+    (691359, 450, 477, "ooe_kagura", "minakami rinka"),
+    (691359, 478, 565, "kitami_karen", "sukoyaka gyuunyuu"),
+
+    (691357, 2, 291, "inamori_chiduru", "ichiyo moka"),
+    (691357, 816, 1171, "oda_mao", "2-g"),
+    (691357, 1259, 1589, "kiryuuin_rindou", "annie"),
+    (691357, 292, 587, "ooe_kagura", "minakami rinka"),
+    (691357, 588, 815, "kitami_karen", "sukoyaka gyuunyuu"),
+
+    # Maid in Witch Life
+    (1356727, 1, 609, "alisa_forerulozzo", "ichiyo moka"),
+    (1356727, 1314, 1714, "alisa_forerulozzo", "ichiyo moka"),
+    (1356751, 42, 449, "liliana_echsun", "umetori uriri"),
+    (1353705, 3, 259, "alisa_forerulozzo", "ichiyo moka"),
+    (1353705, 535, 788, "liliana_echsun", "umetori uriri"),
+
+    # Houkago⇒Education! ~Sensei to Hajimeru Miwaku no Lesson~
+    (1964980, 2, 250, "tenkawa_sayuki", "keso shirou"),
+    (1964980, 443, 632, "orime_tamaki", None),
+
+    # Sennagi
+    (2997104, 1, 1650, "mikosono_himeka", "chobipero"),
+    (2997104, 1651, 1758, "eru", "aiu"),
+    (2997102, 1, 1882, "mikosono_himeka", "chobipero"),
+    (2997102, 1896, 2000, "eru", "aiu"),
+    (2720188, 1, 885, "mikosono_himeka", "chobipero"),
+    (2720188, 886, 1018, "eru", "aiu"),
+    (2997103, 1, 57, "eru", "aiu"),
+
+    # Haison Shoujo
+    (2710683, 1, 90, "kagome", "aiu"),
+    (2710683, 91, 206, "yakumo_azusa", "yuurin"),
+    (2710683, 207, 272, "kagami_shuri", "chobipero"),
+    (2710683, 275, 344, "emma_aaron_yakushiin", "aose"),
+    (2710683, 346, 432, "karasuno_tsubame", ""),
+    (2710683, 435, 518, "furube_yurara", ""),
+    (2710683, 521, 589, "osakabe_rei", ""),
+    (2710683, 592, 660, "yuzuriha_manaka", ""),
+
+    (2410167, 10, 183, "kagome", "aiu"),
+    (2410167, 413, 660, "yakumo_azusa", "yuurin"),
+    (2410167, 184, 412, "kagami_shuri", "chobipero"),
+    (2410167, 661, 770, "emma_aaron_yakushiin", "aose"),
+    (2410167, 771, 881, "karasuno_tsubame", ""),
+    (2410167, 882, 988, "furube_yurara", ""),
+    (2410167, 989, 1105, "osakabe_rei", ""),
+    (2410167, 1106, 1208, "yuzuriha_manaka", ""),
+
+    (3103887, 1, 174, "kagome", None),
+    (3103887, 175, 388, "yakumo_azusa", None),
+    (3103887, 389, 614, "kagami_shuri", None),
+    (3103887, 615, 761, "emma_aaron_yakushiin", None),
+    (3103887, 762, 872, "karasuno_tsubame", None),
+    (3103887, 873, 979, "furube_yurara", None),
+    (3103887, 980, 1096, "osakabe_rei", None),
+    (3103887, 1097, 1199, "yuzuriha_manaka", None),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
