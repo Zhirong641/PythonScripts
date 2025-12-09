@@ -148,7 +148,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Docchi no i ga Suki Desu ka?
     (1525889, 605, 1190, "tanemura koyuzu", "netarou"),
     # Kujiragami no Tearstilla
-    (885411, 6, 98, "tenkawa mitsuki", None),
+    (885411, 6, 98, "tenkawa_mitsuki", None),
+    (3450027, 1, 552, "tenkawa_mitsuki", "mikagami mamizu"),
     # Floral Flowlove
     (960177, 3, 207, "adelheid_von_bergstrasse", "matsumiya kiseri"),
     (960177, 208, 408, "mihato kano", "hontani kanae"),
@@ -1183,7 +1184,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1353705, 535, 788, "liliana_echsun", "umetori uriri"),
 
     # Houkago⇒Education! ~Sensei to Hajimeru Miwaku no Lesson~
-    (1964980, 2, 250, "tenkawa_sayuki", "keso shirou"),
+    (1964980, 2, 250, "tenkawa_sayuki", ""),
     (1964980, 443, 632, "orime_tamaki", None),
 
     # Sennagi
@@ -1222,6 +1223,112 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3103887, 873, 979, "furube_yurara", None),
     (3103887, 980, 1096, "osakabe_rei", None),
     (3103887, 1097, 1199, "yuzuriha_manaka", None),
+    # Oniichan migite no shiyou wo kinshi shimasu!
+    (1179865, 13, 510, None, "k-ko"),
+    (1179865, 784, 804, None, "k-ko"),
+    (1179865, 511, 1025, None, "hisama kumako"),
+
+    # Haison Shoujo [Ni]
+    (3455889, 221, 268, "shinju, mishio_haruna", "takashina asahi"),
+    (3455889, 280, 298, "shinju, mishio_haruna", "takashina asahi"),
+    (3455889, 2, 295, "shinju", "takashina asahi"),
+    (3455889, 299, 408, "mishio_haruna", "takashina asahi"),
+    (3455889, 409, 433, "shinju, mishio_haruna", "takashina asahi"),
+    (3455889, 434, 504, "mishio_haruna", "takashina asahi"),
+    (3455889, 505, 556, "shinju, mishio_haruna", "takashina asahi"),
+    (3455889, 557, 782, "ryuugatou_yachiyo", None),
+    (3455889, 783, 1004, "niinuma_suzu", None),
+    (3455889, 1005, 1117, "tsuduki_nanase", None),
+
+
+    (3455917, 1, 243, "shinju", "takashina asahi"),
+    (3455917, 244, 663, "mishio_haruna", "takashina asahi"),
+    (3455917, 664, 845, "ryuugatou_yachiyo", None),
+    (3455917, 846, 1160, "niinuma_suzu", None),
+    (3455917, 1161, 1376, "tsuduki_nanase", None),
+
+    (3455916, 1, 243, "shinju", "takashina asahi"),
+    (3455916, 244, 663, "mishio_haruna", "takashina asahi"),
+    (3455916, 664, 845, "ryuugatou_yachiyo", None),
+    (3455916, 846, 1160, "niinuma_suzu", None),
+    (3455916, 1161, 1376, "tsuduki_nanase", None),
+
+    # Watashi ga Suki nara "Suki" tte Itte
+    (869167, 4, 397, "himekami_ayame", "chiri"),
+    (869167, 399, 756, "goshogawara_yuuki", "k-ko"),
+    (869167, 757, 1226, "komachi_mahiru", "mango pudding"),
+    (869167, 1227, 1386, "rinka_(watashi_ga_suki_nara_\"suki\"_tte_itte!)", "mango pudding"),
+    (869167, 1393, 1589, "yataka_chiho", "syroh"),
+
+    (1328827, 3, 398, "himekami_ayame", "chiri"),
+    (1328827, 399, 776, "goshogawara_yuuki", "k-ko"),
+    (1328827, 777, 1247, "komachi_mahiru", "mango pudding"),
+    (1328827, 1248, 1416, "rinka_(watashi_ga_suki_nara_\"suki\"_tte_itte!)", "mango pudding"),
+    (1328827, 1423, 1629, "yataka_chiho", "syroh"),
+
+    (1959114, 1, 2000, "himekami_ayame", None),
+    (1959111, 1, 2000, "himekami_ayame", None),
+    (1959096, 1, 2000, "himekami_ayame", None),
+    (1959088, 1, 2000, "himekami_ayame", None),
+    (1959086, 1, 2000, "goshogawara_yuuki", None),
+    (1959079, 1, 2000, "goshogawara_yuuki", None),
+    (1959072, 1, 2000, "goshogawara_yuuki", None),
+    (1959067, 1, 2000, "goshogawara_yuuki", None),
+    (1959050, 1, 2000, "komachi_mahiru", None),
+    (1959040, 1, 2000, "komachi_mahiru", None),
+    (1959035, 1, 2000, "komachi_mahiru", None),
+    (1959027, 1, 2000, "komachi_mahiru", None),
+    (1959145, 1, 2000, "rinka_(watashi_ga_suki_nara_\"suki\"_tte_itte!)", None),
+    (1959133, 1, 2000, "rinka_(watashi_ga_suki_nara_\"suki\"_tte_itte!)", None),
+    (1959124, 1, 2000, "rinka_(watashi_ga_suki_nara_\"suki\"_tte_itte!)", None),
+    (1959118, 1, 2000, "rinka_(watashi_ga_suki_nara_\"suki\"_tte_itte!)", None),
+    (1959062, 1, 2000, "yataka_chiho", None),
+    (1959053, 1, 2000, "yataka_chiho", None),
+    # soi_kano_~gyutto_dakishimete~
+    (1175726, 499, 648, "kumakura_yoake", "hisama kumako"),
+    (1175726, 3, 127, "hanatsuka_aika", "ameto yuki"),
+    (3428412, 1, 798, "kumakura_yoake", "hisama kumako"),
+    (3428411, 1, 330, "hanatsuka_aika", "ameto yuki"),
+    # onii-chan_kiss_no_junbi_wa_mada_desu_ka?
+    (929330, 3, 292, "seguchi_asahi", "k-ko"),
+    (929330, 293, 608, "seguchi_mahiru", "k-ko"),
+    (929330, 609, 897, "seguchi_yayoi", "sakura misaki"),
+    (929330, 898, 1175, "seguchi_saya", "sakura misaki"),
+
+    (1488369, 3, 294, "seguchi_asahi", "k-ko"),
+    (1488369, 295, 610, "seguchi_mahiru", "k-ko"),
+    (1488369, 611, 900, "seguchi_yayoi", "sakura misaki"),
+    (1488369, 901, 1178, "seguchi_saya", "sakura misaki"),
+
+    (1035261, 2, 65, "seguchi_asahi", "k-ko"),
+    (1035261, 66, 122, "seguchi_mahiru", "k-ko"),
+    (1035261, 123, 171, "seguchi_yayoi", "sakura misaki"),
+    (1035261, 172, 229, "seguchi_saya", "sakura misaki"),
+    (1035261, 233, 362, "seguchi_asahi", "k-ko"),
+    (1035261, 363, 454, "seguchi_mahiru", "k-ko"),
+    (1035261, 455, 568, "seguchi_yayoi", "sakura misaki"),
+    (1035261, 569, 654, "seguchi_saya", "sakura misaki"),
+
+    (1370031, 2, 290, "seguchi_asahi", "k-ko"),
+    (1370031, 291, 580, "seguchi_mahiru", "k-ko"),
+    (1370031, 581, 893, "seguchi_yayoi", "sakura misaki"),
+    (1370031, 894, 1170, "seguchi_saya", "sakura misaki"),
+
+    # uso(campus)
+    (878564, 1, 2000, "himeno_satsuki", "riichu"),
+    (928204, 1, 2000, "izumi_aoi", "riichu"),
+    (998646, 1, 2000, "eris_fall_cartlet", "riichu"),
+    (1096716, 1, 2000, "teidou_setsuka", "riichu"),
+
+    # Kanojo no Seiiki
+    (2493223, 1, 2000, "akiyoshi_fuyuka", "ryohka"),
+    (769445, 1, 2000, "akiyoshi_fuyuka", "ryohka"),
+    (847646, 1, 136, "nase_yukana", "ryohka"),
+    (2593173, 12, 163, "nase_yukana", "ryohka"),
+    (1000114, 5, 116, "ootori_maika", "ryohka"),
+    (1000114, 117, 231, "nase_yaeka", "ryohka"),
+    (2771291, 5, 116, "ootori_maika", "ryohka"),
+    (2771291, 117, 231, "nase_yaeka", "ryohka"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
