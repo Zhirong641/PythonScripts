@@ -184,10 +184,53 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2657600, 1, 408, "masumi_ai", "yuzuna hiyo"),
     (2657600, 814, 1142, "misono_tsubura", "mizuno sao"),
     # Amatsutsumi
+    (2285016, 4, 75, "oribe_kokoro", "koku"),
+    (2285016, 119, 318, "minazuki_hotaru_(amatsutsumi)", "koku"),
     (2285016, 334, 390, "asahina kyouko (amatsutsumi)", "tsukimori hiro"),
+    (2285016, 409, 504, " koizuka_mana_(amatsutsumi)", "koku"),
+    (2285016, 570, 752, "oribe_kokoro", "koku"),
+    (2285016, 753, 971, "minazuki_hotaru_(amatsutsumi)", "koku"),
     (2285016, 972, 1130, "asahina kyouko (amatsutsumi)", "tsukimori hiro"),
+    (2285016, 1131, 1330, " koizuka_mana_(amatsutsumi)", "koku"),
+    (1121856, 1, 564, "oribe_kokoro", "koku"),
     (1121856, 565, 1574, "asahina kyouko (amatsutsumi)", "tsukimori hiro"),
+    (1121856, 1575, 2000, " koizuka_mana_(amatsutsumi)", "koku"),
+    (1121870, 1, 110, "koizuka_mana_(amatsutsumi)", "koku"),
+    (1121870, 111, 620, "minazuki_hotaru_(amatsutsumi)", "koku"),
+    (1121870, 621, 810, None, "koku"),
     (959791, 726, 940, "asahina kyouko (amatsutsumi)", "tsukimori hiro"),
+    # Chrono Clock
+    (1140183, 12, 120, "dorothy_davenport", "tsukimori hiro"),
+    (1140183, 121, 290, "kuro_(chrono_clock)", "koku"),
+    (1140183, 291, 452, "jounouchi_makoto", "koku"),
+    (1140183, 453, 558, "sawatari_michiru", "tsukimori hiro"),
+
+    (904316, 12, 77, "dorothy_davenport", "tsukimori hiro"),
+    (904316, 63, 187, "kuro_(chrono_clock)", "koku"),
+    (904316, 192, 296, "jounouchi_makoto", "koku"),
+    (904316, 297, 350, "sawatari_michiru", "tsukimori hiro"),
+    (904316, 497, 540, "dorothy_davenport", "tsukimori hiro"),
+    (904316, 541, 601, "kuro_(chrono_clock)", "koku"),
+    (904316, 602, 672, "jounouchi_makoto", "koku"),
+    (904316, 673, 712, "sawatari_michiru", "tsukimori hiro"),
+
+    (1464212, 1, 155, "dorothy_davenport", "tsukimori hiro"),
+    (1464212, 454, 633, "kuro_(chrono_clock)", "koku"),
+    (1464151, 90, 479, "jounouchi_makoto", "koku"),
+    (1464151, 480, 1109, "sawatari_michiru", "tsukimori hiro"),
+    (1464151, 1366, 2000, "dorothy_davenport", "tsukimori hiro"),
+
+    # Hapymaher
+    (2564037, 4, 143, "toriumi_arisu", "koku"),
+    (2564037, 349, 460, "hasuno_saki", "tsukimori hiro"),
+    (2564037, 612, 708, "toriumi_arisu", "koku"),
+    (2564037, 801, 888, "hasuno_saki", "tsukimori hiro"),
+    (1256674, 4, 143, "toriumi_arisu", "koku"),
+    (1256674, 440, 567, "hasuno_saki", "tsukimori hiro"),
+    (1256674, 225, 334, None, "koku"),
+    (1179790, 2, 417, "toriumi_arisu", "koku"),
+    (1179790, 418, 942, "hasuno_saki", "tsukimori hiro"),
+
     # Soreyori no Prologue
     (793448, 1, 402, "tsuzuki_haruka", "mizuno sao"),
     (793448, 403, 2000, "himeno_towa", "yuzuna hiyo"),
@@ -294,24 +337,24 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1183093, 1417, 1795, "komagata yuzuki", "ashisyun"),
     (868964, 612, 2000, "kuragano sara", "sasorigatame"),
     # Zettai Saikyou ☆ Oppai Sensou!!
-    (536888, 348, 448, "kotone (zettai saikyou)", "any, annie"),
-    (1481653, 352, 452, "kotone (zettai saikyou)", "any, annie"),
+    (536888, 348, 448, "kotone (zettai saikyou)", "annie"),
+    (1481653, 352, 452, "kotone (zettai saikyou)", "annie"),
     # Amatarasu Riddle Star -
     (1033787, 2, 234, "ai_(amatarasu_riddle_star)", "syroh"),
     (1033787, 541, 731, "hatta_madori", "syroh"),
-    (1033787, 776, 1118, "yukishiro miu", "any, annie"),
+    (1033787, 776, 1118, "yukishiro miu", "annie"),
     (1033787, 1119, 1202, "arisu_rina", "annie"),
     (1033787, 1203, 1422, "arisu_yua", "2-g"),
 
     (1499212, 3, 235, "ai_(amatarasu_riddle_star)", "syroh"),
     (1499212, 542, 732, "hatta_madori", "syroh"),
-    (1499212, 777, 1119, "yukishiro miu", "any, annie"),
+    (1499212, 777, 1119, "yukishiro miu", "annie"),
     (1499212, 1120, 1202, "arisu_rina", "annie"),
     (1499212, 1203, 1421, "arisu_yua", "2-g"),
 
     (1115664, 1327, 1527, "ai_(amatarasu_riddle_star)", "syroh"),
     (1115664, 1528, 1666, "hatta_madori", "syroh"),
-    (1115664, 805, 1326, "yukishiro miu", "any, annie"),
+    (1115664, 805, 1326, "yukishiro miu", "annie"),
     (1115664, 1744, 1775, "arisu_rina", "annie"),
     (1115664, 1, 543, "arisu_yua", "2-g"),
     # Zettai Junshu New Kozukuri World
@@ -369,12 +412,15 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1322592, 5, 349, "kujou_himeno", None),
     # Koi wa Yumemiru Mouretsu Girl!
     (1009125, 7, 384, "mioka_aoi", "naenae"),
-    (1009125, 385, 669, "mioka_aoi", "naenae"),
+    (1009125, 385, 669, "koshiro_erika", "naenae"),
     (1009125, 673, 1060, "yuunagi_shizuku", "naenae"),
-    (1009125, 1305, 1368, "chie", "niki"),
+    (1009125, 1061, 1331, "shiosaki_yuki", "amamine"),
+    (1009125, 1332, 1349, None, "niki"),
+    (1009125, 1350, 1368, "chie", "niki"),
     (1257428, 30, 163, "mioka_aoi", "naenae"),
-    (1257428, 164, 256, "mioka_aoi", "naenae"),
+    (1257428, 164, 256, "koshiro_erika", "naenae"),
     (1257428, 257, 353, "yuunagi_shizuku", "naenae"),
+    (1257428, 354, 453, "shiosaki_yuki", "amamine"),
     # Garudoma
     (2653109, 3, 115, "fuyusaki_aiko", None),
     (2653109, 873, 987, "fuyusaki_aiko", None),
@@ -425,7 +471,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3423071, 1, 2000, "hoshikawa_kaguya", "kobuichi"),
     (3423072, 1, 2000, "hoshikawa_kaguya", "kobuichi"),
     # Limelight Lemonade Jam
-    (3556090, 1, 2000, "shimakoshi_tsukimi", None),
+    (3556090, 1, 2000, "shimakoshi_tsukimi", ""),
     (3556158, 1, 2000, "koishikawa_miku", "kobuichi"),
     (3556159, 1, 2000, "koishikawa_miku", "kobuichi"),
     (3556077, 1, 2000, "harumi_ena", "muririn"),
@@ -443,13 +489,13 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3556096, 1, 2000, "futamihara_ririko", "muririn"),
     (3556097, 1, 2000, "futamihara_ririko", "muririn"),
     (3553799, 22, 62, "harumi_ena", "muririn"),
-    (3553799, 88, 129, "shimakoshi_tsukimi", None),
+    (3553799, 88, 129, "shimakoshi_tsukimi", ""),
     (3553799, 130, 174, "futamihara_ririko", "muririn"),
     (3553799, 175, 189, "koishikawa_miku", "kobuichi"),
     (3553799, 190, 208, "saen_nayuka", "hadumi rio"),
 
     (3638988, 3, 1008, "harumi_ena", "muririn"),
-    (3590156, 2, 604, "shimakoshi_tsukimi", None),
+    (3590156, 2, 604, "shimakoshi_tsukimi", ""),
     (3590156, 605, 1321, "futamihara_ririko", "muririn"),
     (3590156, 1322, 1581, "koishikawa_miku", "kobuichi"),
     (3638988, 1467, 1890, "saen_nayuka", "hadumi rio"),
@@ -509,6 +555,28 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3442432, 1, 2000, "tomotake_yoshino", "kobuichi"),
     (1890822, 1, 994, "tomotake_yoshino", "kobuichi"),
     (960624, 3, 646, "tomotake_yoshino", "kobuichi"),
+    (960624, 647, 1018, "hitachi_mako", "muririn"),
+    (960624, 1019, 1256, "murasame_(senren)", "muririn"),
+    (960701, 1, 242, "lena_liechtenauer", "kobuichi"),
+    (960701, 243, 396, "kurama_koharu", "senji"),
+    (960701, 397, 557, "maniwa_roka", "muririn"),
+
+    (1890779, 7, 726, "murasame_(senren)", "muririn"),
+    (1890779, 811, 1504, "lena_liechtenauer", "kobuichi"),
+    (1890779, 1505, 1924, "kurama_koharu", "senji"),
+    (1890779, 1940, 2000, "maniwa_roka", "muririn"),
+    (1890811, 1, 305, "maniwa_roka", "muririn"),
+    (1890811, 418, 2000, "tomotake_yoshino", "kobuichi"),
+    (1890822, 1, 993, "tomotake_yoshino", "kobuichi"),
+    (1890822, 994, 2000, "hitachi_mako", "muririn"),
+
+    (1891159, 111, 1356, "tomotake_yoshino", "kobuichi"),
+    (1891159, 1357, 1875, "hitachi_mako", "muririn"),
+    (1891187, 1, 255, "hitachi_mako", "muririn"),
+    (1891187, 256, 665, "murasame_(senren)", "muririn"),
+    (1891187, 666, 1055, "lena_liechtenauer", "kobuichi"),
+    (1891187, 1056, 1355, "kurama_koharu", "senji"),
+    (1891187, 1356, 1655, "maniwa_roka", "muririn"),
     # Sanoba Witch
     (3424478, 1, 2000, "ayachi_nene", "muririn"),
     (3424479, 1, 2000, "ayachi_nene", "muririn"),
@@ -862,6 +930,14 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1305605, 611, 772, "hiiragi_hakua", "ikegami akane"),
     (1375991, 145, 250, "kurose_sakura", "ikegami akane"),
     (1375991, 505, 666, "hiiragi_hakua", "ikegami akane"),
+    # Ore no Hitomi de Maruhadaka
+    (2622635, 4, 124, "lucie_stella_ecarlate", "ikegami akane"),
+    (2622635, 125, 244, "yaezakura_koume", "ikegami akane"),
+    (2622635, 499, 612, "eliska_fortinova", "ikegami akane"),
+
+    (3590370, 1, 126, "lucie_stella_ecarlate", "ikegami akane"),
+    (3590370, 127, 353, "yaezakura_koume", "ikegami akane"),
+    (3590370, 737, 862, "eliska_fortinova", "ikegami akane"),
     # Natsuiro Recipe
     (819570, 157, 279, "yaehara_yuzu", "non"),
     # Hatsukoi Sankaime
@@ -1329,10 +1405,42 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1000114, 117, 231, "nase_yaeka", "ryohka"),
     (2771291, 5, 116, "ootori_maika", "ryohka"),
     (2771291, 117, 231, "nase_yaeka", "ryohka"),
+
+    # Hanahime * Absolute!
+    (1414902, 1, 305, "nekoyashiki_mea", "kannagi rei"),
+    (1414902, 306, 513, "reina_lil_rafen", "kannagi rei"),
+    (1414902, 514, 686, "polina_mirova_von_schwarzacher", "kannagi rei"),
+    (1414902, 687, 873, "aiuchi_hiyoko", "kannagi rei"),
+    (1414902, 874, 1007, "kamiya_ibu", "kannagi rei"),
+    (1414917, 1, 193, "ootori_anko", "kannagi rei"),
+    (1414917, 194, 421, "kumanomidou_ayane", "kannagi rei"),
+    (1414917, 422, 459, "biizu-chan", "kannagi rei"),
+    (1414917, 842, 861, "sawa", "tanihara natsuki"),
+    (970633, 5, 60, "nekoyashiki_mea", "kannagi rei"),
+    (970633, 61, 120, "reina_lil_rafen", "kannagi rei"),
+    (970633, 121, 175, "polina_mirova_von_schwarzacher", "kannagi rei"),
+    (970633, 176, 226, "aiuchi_hiyoko", "kannagi rei"),
+    (970633, 227, 260, "kamiya_ibu", "kannagi rei"),
+    (970633, 261, 265, "ootori_anko", "kannagi rei"),
+    (970633, 266, 269, "kumanomidou_ayane", "kannagi rei"),
+    # Shukusei no Girlfriend
+    (1262323, 1, 2000, "kamiizumi_yuuri", "kannagi rei"),
+    (1333093, 1, 2000, "maaya_klienke", "kannagi rei"),
+    (1333084, 1, 2000, "maaya_klienke", "kannagi rei"),
+    (1453992, 1, 2000, "satake_kanoko", "kannagi rei"),
+    (2265190, 1, 2000, "yonamine_fujiko", "kannagi rei"),
+    # Mayoeru Futari to Sekai no Subete Love Heaven 300%
+    (821044, 21, 255, "mizunomiya_nana", "moriyama shijimi"),
+    (821044, 256, 433, "saeki_touka", "youta"),
+
+    (758201, 60, 135, "mizunomiya_nana", "moriyama shijimi"),
+    (758201, 274, 342, "saeki_touka", "youta"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
 PATH_RE = re.compile(r"/webp/(\d+)/image_(\d+)\.webp$")
+# 某些目录 id 不调整 type 字段
+SKIP_TYPE_UPDATE_IDS = {793088, 1537457, 1537567, 1537491, 1537715, 2313627, 1805418}
 
 def lookup_targets(dir_id: int, num: int) -> Optional[Tuple[str, str]]:
     for d, start, end, character, artist in RANGES:
@@ -1364,10 +1472,20 @@ def process_file(in_path: str, out_path: str) -> int:
                 targets = lookup_targets(dir_id, num)
                 if targets:
                     target_character, target_artist = targets
+                    # # 若设置了包含多个画师的值，标记 type 便于区分（部分目录除外）
+                    # if target_artist and dir_id not in SKIP_TYPE_UPDATE_IDS:
+                    #     artists_split = [a.strip() for a in target_artist.split(",") if a.strip()]
+                    #     if len(artists_split) > 1:
+                    #         obj["type"] = "multi_artist"
                     # 命中范围：覆盖 character 与 artist
                     if (target_character and obj.get("character") != target_character) or (target_artist and obj.get("artist") != target_artist):
                         obj["character"] = target_character if target_character else obj.get("character", "")
                         obj["artist"] = target_artist if target_artist else obj.get("artist", "")
+                        # 若设置了包含多个画师的值，标记 type 便于区分（部分目录除外）
+                        if target_artist and dir_id not in SKIP_TYPE_UPDATE_IDS:
+                            artists_split = [a.strip() for a in target_artist.split(",") if a.strip()]
+                            if len(artists_split) > 1:
+                                obj["type"] = "multi_artist"
                         modified += 1
 
             # 紧凑写回，保持一行一个 JSON

@@ -310,7 +310,7 @@ def _is_headcount_tag(tag: str) -> bool:
     """Detect tags like 1girl/2boys/etc. so we can preserve them more often."""
     return bool(_HEADCOUNT_PATTERN.match(tag))
 
-def _artist_phrase(artists: List[str], p: float = 2.0) -> str:
+def _artist_phrase(artists: List[str], p: float = 2.0, include_all: bool = False) -> str:
     """
     n == 1: 返回 1 个
     n > 1 : 从 1..min(1,n) 中按权重 k**p 随机选取返回个数 k，再随机抽取 k 个
@@ -322,7 +322,11 @@ def _artist_phrase(artists: List[str], p: float = 2.0) -> str:
         return ""
 
     n = len(artists)
-    if n == 1:
+    if include_all:
+        # 保留最多 5 个，顺序打乱避免偏向前列
+        picked = random.sample(artists, k=min(len(artists), 5))
+        names = [_normalize_artist(a) for a in picked]
+    elif n == 1:
         names = [_normalize_artist(artists[0])]
     else:
         k_max = min(1, n)
@@ -334,12 +338,8 @@ def _artist_phrase(artists: List[str], p: float = 2.0) -> str:
         picked = random.sample(artists, k)
         names = [_normalize_artist(a) for a in picked]
 
-    if len(names) == 1:
-        return f"by {names[0]}"
-    elif len(names) == 2:
-        return f"by {names[0]} and {names[1]}"
-    else:
-        return "by " + ", ".join(names[:-1]) + f", and {names[-1]}"
+    # 每个画师独立带前缀，避免连在一起混淆
+    return ", ".join(f"by {n}" for n in names)
 
 def _rating_phrase(ratings: List[str], max_ratings: int = 1) -> str:
     if not ratings:
@@ -363,10 +363,10 @@ def _rating_phrase(ratings: List[str], max_ratings: int = 1) -> str:
             break
     return ", ".join(picked)
 
-def _character_phrase(characters: List[str], max_chars: int = 5, joiner: str = ", ") -> str:
+def _character_phrase(characters: List[str], max_chars: int = 6, joiner: str = ", ") -> str:
     """
     将 Camie/booru 风格的角色标签转成自然短语。
-    - 默认只取前 5 个（`max_chars=5`）
+    - 默认只取前 6 个（`max_chars=6`）
     - 规则：下划线->空格，去空格；不强制加前缀（如 'character '），更贴近常见提示。
     """
     if not characters:
@@ -542,8 +542,9 @@ def generate_phrase_variants(
     characters: Optional[List[str]] = None,
     ratings: Optional[List[str]] = None,
     years: Optional[List[str]] = None,
-    max_chars: int = 5,
+    max_chars: int = 6,
     groups: Optional[List[str]] = None,
+    type: Optional[str] = None,
 ) -> List[str]:
     # 预清洗 general
     g0 = []
@@ -572,7 +573,7 @@ def generate_phrase_variants(
         if char_phrase:
             parts.append(char_phrase)
         rating_phrase = _rating_phrase(ratings or [], max_ratings=1)
-        artist = _artist_phrase(artists)
+        artist = _artist_phrase(artists, include_all=(type or "").lower() in {"danbooru", "multi_artist"})
         if artist:
             parts.append(artist)
         group_phrase = _group_phrase(groups or [])
@@ -653,6 +654,7 @@ def generate_variants_with_nl_list(
     seed: Optional[int] = None,
     cfg_dropout: float = 0.0,
     groups: Optional[List[str]] = None,
+    type: Optional[str] = None,
 ) -> List[str]:
     """
     general_tags: 已按权重降序
@@ -667,13 +669,14 @@ def generate_variants_with_nl_list(
     """
     if seed is not None:
         random.seed(seed)
+    include_all_artists = (type or "").lower() in {"danbooru", "multi_artist"}
 
     # 1) 先生成短语式
     n_phrase = max(1, int(round(k * phrase_ratio)))
     phrase_caps = generate_phrase_variants(
         general_tags, artists, k=n_phrase, token_budget=token_budget,
         dropout=dropout, max_general_per_variant=max_general_per_variant, head_keep=head_keep,
-        characters=characters, ratings=ratings, years=years, groups=groups
+        characters=characters, ratings=ratings, years=years, groups=groups, type=type
     )
 
     # 2) 从 nl_texts 取若干，自然语言变体
@@ -691,10 +694,10 @@ def generate_variants_with_nl_list(
                 continue
             # 与 artist 锚定（50/50 放头或尾）
             anchors = []
-            char_anchor = _character_phrase(characters or [], max_chars=5)
+            char_anchor = _character_phrase(characters or [], max_chars=6)
             if char_anchor:
                 anchors.append(char_anchor)
-            art = _artist_phrase(artists)
+            art = _artist_phrase(artists, include_all=include_all_artists)
             if art:
                 anchors.append(art)
             group_anchor = _group_phrase(groups or [])
@@ -762,7 +765,7 @@ if __name__ == "__main__":
     caps = generate_variants_with_nl_list(
         general, artists, k=10, phrase_ratio=1, token_budget=72,
         head_keep=14, max_general_per_variant=18,
-        characters=characters, ratings=rating, years=years
+        characters=characters, ratings=rating, years=years, type="Danbooru"
     )
     for i, c in enumerate(caps, 1):
         print(f"{i}. {c}")

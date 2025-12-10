@@ -322,7 +322,7 @@ def _load_and_filter_index_dataset(
         if ("danbooru" not in src_path
             and any(bg in general_tags for bg in ["transparent_background", "simple_background", "black_background", "white_background", "tachi-e"])
             and "dakimakura_(medium)" not in general_tags):
-            if type_ == "Game CG" and rng.random() < 0.87:
+            if type_.lower() == "game cg" and rng.random() < 0.87:
                 return False
         year = example.get("year", "") or ""
         years = []
@@ -418,7 +418,7 @@ class LatentDataset(torch.utils.data.Dataset):
                     continue
 
                 def filter_fn(sample):
-                    _, general, _rating, _, year, character, artist, _, _group = sample
+                    _, general, _rating, _, year, character, artist, _, _group, _type = sample
                     if any(w in general for w in exclude_word_list):
                         return False
                     if year:
@@ -438,6 +438,7 @@ class LatentDataset(torch.utils.data.Dataset):
                         j.get("artist", "") or "",
                         j.get("copyright", "") or "",
                         j.get("group", "") or "",
+                        j.get("type", "") or "",
                     )
                     if filter_fn(sample):
                         self.items.append(sample)
@@ -449,10 +450,10 @@ class LatentDataset(torch.utils.data.Dataset):
         return len(self.items)
 
     def __getitem__(self, i):
-        fname, general, rating, meta, year, character, artist, copyright, group = self.items[i]
+        fname, general, rating, meta, year, character, artist, copyright, group, type_val = self.items[i]
         z = np.load(os.path.join(self.root, fname), allow_pickle=False)
         lat = z["latent"].astype(np.float16)  # already scaled
-        return torch.from_numpy(lat), general, rating, meta, year, character, artist, copyright, group
+        return torch.from_numpy(lat), general, rating, meta, year, character, artist, copyright, group, type_val
 
 
 def save_model_card(
@@ -1106,6 +1107,7 @@ def encode_prompt(
         character_values = _values_for("character")
         artist_values = _values_for("artist")
         group_values = _values_for("group")
+        type_values = _values_for("type")
 
         for idx in range(num_samples):
             general_tags = _split_clean_comma_list(general_values[idx] or "")
@@ -1116,6 +1118,7 @@ def encode_prompt(
             meta_tags = _split_clean_comma_list(meta_values[idx] or "")
             nl_texts = meta_tags if meta_tags else None
             group_tags = _split_clean_comma_list(group_values[idx] or "")
+            type_value = type_values[idx] if idx < len(type_values) else ""
             variants = generate_variants_with_nl_list(
                 general_tags,
                 artist_tags,
@@ -1129,6 +1132,7 @@ def encode_prompt(
                 years=year_tags,
                 nl_texts=nl_texts,
                 groups=group_tags,
+                type=type_value,
             )
             base_captions.append(variants[0] if variants else "")
 
@@ -1620,6 +1624,7 @@ def main(args):
             artist = [ex[6] for ex in examples]
             copyright = [ex[7] for ex in examples]
             group = [ex[8] for ex in examples]
+            type_values = [ex[9] for ex in examples]
 
             return {
                 "model_input": latents,
@@ -1631,6 +1636,7 @@ def main(args):
                 "artist": artist,
                 "copyright": copyright,
                 "group": group,
+                "type": type_values,
             }
 
         train_dataloader = torch.utils.data.DataLoader(
@@ -1754,16 +1760,9 @@ def main(args):
             try:
                 if preview_pipe is None:
                     vae_dtype = vae.dtype if hasattr(vae, "dtype") else torch.float32
-                    vae_local = AutoencoderKL.from_pretrained(
-                        vae_path,
-                        subfolder="vae" if args.pretrained_vae_model_name_or_path is None else None,
-                        revision=args.revision,
-                        variant=args.variant,
-                        torch_dtype=vae_dtype,
-                    )
                     preview_pipe = StableDiffusionXLPipeline.from_pretrained(
                         args.pretrained_model_name_or_path,
-                        vae=vae_local,
+                        vae=vae,
                         unet=unwrap_model(unet),
                         text_encoder=unwrap_model(text_encoder_one),
                         text_encoder_2=unwrap_model(text_encoder_two),
@@ -1780,6 +1779,8 @@ def main(args):
                     if args.train_text_encoder:
                         preview_pipe.text_encoder = unwrap_model(text_encoder_one)
                         preview_pipe.text_encoder_2 = unwrap_model(text_encoder_two)
+                preview_pipe.vae = vae
+                preview_pipe.vae.to(accelerator.device, dtype=vae.dtype if hasattr(vae, "dtype") else torch.float32)
 
                 if preview_compel is None:
                     preview_compel, preview_empty_conditioning = get_compel_for_sdxl(
@@ -1841,6 +1842,8 @@ def main(args):
             finally:
                 if args.use_ema:
                     ema_unet.restore(unet.parameters())
+                if accelerator.device.type == "cuda":
+                    torch.cuda.empty_cache()
 
         # ====== Text encode helper ======
         if args.train_text_encoder:
@@ -1948,6 +1951,7 @@ def main(args):
                     artist_tags = batch["artist"]
                     copyright_tags = batch["copyright"]
                     group_tags = batch.get("group") or []
+                    type_tags = batch.get("type") or []
                     chosen = []
                     for i in range(bsz):
                         text = generate_variants_with_nl_list(
@@ -1963,6 +1967,7 @@ def main(args):
                             years=_split_clean_comma_list(year_tags[i]),
                             groups=_split_clean_comma_list(group_tags[i] if i < len(group_tags) else ""),
                             cfg_dropout=args.proportion_empty_prompts,
+                            type=type_tags[i] if i < len(type_tags) else "",
                         )
                         chosen.append(text[0])
 
@@ -2667,16 +2672,9 @@ def main(args):
         try:
             if preview_pipe is None:
                 vae_dtype = vae.dtype if hasattr(vae, "dtype") else torch.float32
-                vae_local = AutoencoderKL.from_pretrained(
-                    vae_path,
-                    subfolder="vae" if args.pretrained_vae_model_name_or_path is None else None,
-                    revision=args.revision,
-                    variant=args.variant,
-                    torch_dtype=vae_dtype,
-                )
                 preview_pipe = StableDiffusionXLPipeline.from_pretrained(
                     args.pretrained_model_name_or_path,
-                    vae=vae_local,
+                    vae=vae,
                     unet=unwrap_model(unet),
                     text_encoder=unwrap_model(text_encoder_one),
                     text_encoder_2=unwrap_model(text_encoder_two),
@@ -2693,6 +2691,8 @@ def main(args):
                 if args.train_text_encoder:
                     preview_pipe.text_encoder = unwrap_model(text_encoder_one)
                     preview_pipe.text_encoder_2 = unwrap_model(text_encoder_two)
+            preview_pipe.vae = vae
+            preview_pipe.vae.to(accelerator.device, dtype=vae.dtype if hasattr(vae, "dtype") else torch.float32)
 
             if preview_compel is None:
                 preview_compel, preview_empty_conditioning = get_compel_for_sdxl(
@@ -2755,6 +2755,8 @@ def main(args):
         finally:
             if args.use_ema:
                 ema_unet.restore(unet.parameters())
+            if accelerator.device.type == "cuda":
+                torch.cuda.empty_cache()
 
     progress_bar = tqdm(
         range(0, args.max_train_steps),
@@ -2850,6 +2852,7 @@ def main(args):
                         character_tags = batch.get("character") or []
                         artist_tags = batch.get("artist") or []
                         group_tags = batch.get("group") or []
+                        type_tags = batch.get("type") or []
                         for i in range(bsz):
                             variants = generate_variants_with_nl_list(
                                 _split_clean_comma_list(general_tags[i] if i < len(general_tags) else ""),
@@ -2865,6 +2868,7 @@ def main(args):
                                 nl_texts=_split_clean_comma_list(meta_tags[i] if i < len(meta_tags) else ""),
                                 groups=_split_clean_comma_list(group_tags[i] if i < len(group_tags) else ""),
                                 cfg_dropout=args.proportion_empty_prompts,
+                                type=type_tags[i] if i < len(type_tags) else "",
                             )
                             chosen_prompts.append(variants[0] if variants else "")
                     else:
@@ -2978,6 +2982,7 @@ def main(args):
                             character_tags = batch.get("character") or []
                             meta_tags = batch.get("meta") or []
                             group_tags = batch.get("group") or []
+                            type_tags = batch.get("type") or []
                             if general_tags:
                                 preview_prompts = generate_variants_with_nl_list(
                                     _split_clean_comma_list(_first_str(general_tags)),
@@ -2992,6 +2997,7 @@ def main(args):
                                     years=_split_clean_comma_list(_first_str(year_tags)),
                                     nl_texts=_split_clean_comma_list(_first_str(meta_tags)),
                                     groups=_split_clean_comma_list(_first_str(group_tags)),
+                                    type=_first_str(type_tags),
                                 )
                         if not preview_prompts:
                             captions = batch.get("_caption_texts") or []
