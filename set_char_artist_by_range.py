@@ -187,18 +187,21 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2285016, 4, 75, "oribe_kokoro", "koku"),
     (2285016, 119, 318, "minazuki_hotaru_(amatsutsumi)", "koku"),
     (2285016, 334, 390, "asahina kyouko (amatsutsumi)", "tsukimori hiro"),
-    (2285016, 409, 504, " koizuka_mana_(amatsutsumi)", "koku"),
+    (2285016, 409, 504, "koizuka_mana_(amatsutsumi)", "koku"),
     (2285016, 570, 752, "oribe_kokoro", "koku"),
     (2285016, 753, 971, "minazuki_hotaru_(amatsutsumi)", "koku"),
     (2285016, 972, 1130, "asahina kyouko (amatsutsumi)", "tsukimori hiro"),
-    (2285016, 1131, 1330, " koizuka_mana_(amatsutsumi)", "koku"),
+    (2285016, 1131, 1330, "koizuka_mana_(amatsutsumi)", "koku"),
     (1121856, 1, 564, "oribe_kokoro", "koku"),
     (1121856, 565, 1574, "asahina kyouko (amatsutsumi)", "tsukimori hiro"),
-    (1121856, 1575, 2000, " koizuka_mana_(amatsutsumi)", "koku"),
+    (1121856, 1575, 2000, "koizuka_mana_(amatsutsumi)", "koku"),
     (1121870, 1, 110, "koizuka_mana_(amatsutsumi)", "koku"),
     (1121870, 111, 620, "minazuki_hotaru_(amatsutsumi)", "koku"),
     (1121870, 621, 810, None, "koku"),
     (959791, 726, 940, "asahina kyouko (amatsutsumi)", "tsukimori hiro"),
+    (959791, 4, 258, "oribe_kokoro", "koku"),
+    (959791, 959, 1254, "koizuka_mana_(amatsutsumi)", "koku"),
+    (959791, 302, 725, "minazuki_hotaru_(amatsutsumi)", "koku"),
     # Chrono Clock
     (1140183, 12, 120, "dorothy_davenport", "tsukimori hiro"),
     (1140183, 121, 290, "kuro_(chrono_clock)", "koku"),
@@ -300,16 +303,47 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2230428, 362, 532, "hongou_nijimu", "arisue tsukasa"),
     (2230428, 172, 361, "ishikawa_yae", "toranosuke"),
     (2562932, 4, 65, "arise_atena", "hontani kanae"),
-    (2560932, 73, 139, "arise_kaguya", "hontani kanae"),
+    (2562932, 73, 139, "arise_kaguya", "hontani kanae"),
     (2595303, 160, 215, "ishikawa_yae", "toranosuke"),
     # Kakenuke Seishun Sparking!
     (1719088, 6, 198, "kohinata_hibiki", "hontani kanae"),
+    (1719088, 199, 339, "hijiri_kikka", " "),
     (1719088, 340, 531, "kaidou_nagiko", "arisue tsukasa"),
-    (1719088, 198, 343, "kashima_riri", "toranosuke"),
+    (1719088, 532, 645, "toono_ritsu", " "),
+    (1719088, 646, 791, "kashima_riri", "toranosuke"),
+    (1719088, 792, 956, "hiiragi_shiori", "toranosuke"),
+
 
     (3097843, 5, 197, "kohinata_hibiki", "hontani kanae"),
+    (3097843, 198, 343, "kashima_riri", "toranosuke"),
+    (3097843, 344, 507, "hiiragi_shiori", "toranosuke"),
     (3097843, 508, 699, "kaidou_nagiko", "arisue tsukasa"),
-    (3097843, 646, 791, "kashima_riri", "toranosuke"),
+    (3097843, 700, 841, "hijiri_kikka", " "),
+    (3097843, 842, 954, "toono_ritsu", " "),
+    # Hatsuyuki Sakura
+    (3156090, 3, 151, "azuma_yoru", "chimaro"),
+    (3156090, 152, 224, "kozakai_aya", "toranosuke"),
+    (3156090, 225, 273, "shirokuma_(hatsuyuki_sakura)", "hontani kanae"),
+    (3156090, 302, 384, "shinonome_nozomu", "hontani kanae"),
+    (3156090, 386, 493, "tamaki_sakura", "hontani kanae"),
+
+    (1010116, 4, 109, "azuma_yoru", "chimaro"),
+    (1010116, 110, 185, "kozakai_aya", "toranosuke"),
+    (1010116, 186, 239, "shirokuma_(hatsuyuki_sakura)", "hontani kanae"),
+    (1010116, 269, 339, "shinonome_nozomu", "hontani kanae"),
+    (1010116, 341, 449, "tamaki_sakura", "hontani kanae"),
+
+    # Glass Hime to Kagami no Juusha
+    (1838084, 2, 290, None, "arisue tsukasa"),
+    (1838084, 291, 525, None, "syroh"),
+    (1838084, 526, 728, None, "arisue tsukasa"),
+    (1838084, 729, 916, None, "syroh"),
+    # Karumaruka ＊ Circle
+    (633332, 2, 152, "natsume_koyomi", "toranosuke"),
+    (633332, 153, 315, "otone_nicole", "hontani kanae"),
+    (633332, 316, 481, "amagase_natsuki", "hontani kanae"),
+    (633332, 482, 576, "asahina_shin", "toranosuke"),
+    (633332, 577, 620, "yukiha_kousaka", "chimaro"),
     # Primal x Hearts 2
     (1939336, 1, 2000, "alicetia wallenberg kezouji", "sasorigatame"),
     (868985, 1, 127, "tsukiyono usagi", "sasorigatame"),
@@ -1472,6 +1506,10 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (763324, 2, 58, "kawanaka_moeka, kamijou_shiori", "rozea"),
     (763324, 59, 142, " kawanaka_moeka", "rozea"),
     (763324, 143, 331, "kamijou_shiori", "rozea"),
+    # Koi iro Marriage
+    (1182420, 5, 13, "morikawa_mihono", "sasorigatame"),
+    (1182420, 384, 847, "morikawa_mihono", "sasorigatame"),
+    (1182420, 1202, 1568, "luriastis_t_mikuriya", "chikotam"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
