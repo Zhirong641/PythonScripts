@@ -471,7 +471,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3423071, 1, 2000, "hoshikawa_kaguya", "kobuichi"),
     (3423072, 1, 2000, "hoshikawa_kaguya", "kobuichi"),
     # Limelight Lemonade Jam
-    (3556090, 1, 2000, "shimakoshi_tsukimi", ""),
+    (3556090, 1, 2000, "shimakoshi_tsukimi", " "),
     (3556158, 1, 2000, "koishikawa_miku", "kobuichi"),
     (3556159, 1, 2000, "koishikawa_miku", "kobuichi"),
     (3556077, 1, 2000, "harumi_ena", "muririn"),
@@ -489,13 +489,13 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3556096, 1, 2000, "futamihara_ririko", "muririn"),
     (3556097, 1, 2000, "futamihara_ririko", "muririn"),
     (3553799, 22, 62, "harumi_ena", "muririn"),
-    (3553799, 88, 129, "shimakoshi_tsukimi", ""),
+    (3553799, 88, 129, "shimakoshi_tsukimi", " "),
     (3553799, 130, 174, "futamihara_ririko", "muririn"),
     (3553799, 175, 189, "koishikawa_miku", "kobuichi"),
     (3553799, 190, 208, "saen_nayuka", "hadumi rio"),
 
     (3638988, 3, 1008, "harumi_ena", "muririn"),
-    (3590156, 2, 604, "shimakoshi_tsukimi", ""),
+    (3590156, 2, 604, "shimakoshi_tsukimi", " "),
     (3590156, 605, 1321, "futamihara_ririko", "muririn"),
     (3590156, 1322, 1581, "koishikawa_miku", "kobuichi"),
     (3638988, 1467, 1890, "saen_nayuka", "hadumi rio"),
@@ -707,12 +707,19 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Wan Nyan ☆ A La Mode!
     (887743, 3, 60, "nekohana_korone", "naenae"),
     (887743, 246, 300, "inuta_hana", "naenae"),
+    (887743, 61, 117, "nekodomari_makoto", "rokudou itsuki"),
     (1131217, 3, 81, "nekohana_korone", "naenae"),
     (1131217, 467, 555, "inuta_hana", "naenae"),
+    (1131217, 83, 161, "nekodomari_makoto", "rokudou itsuki"),
     (1886653, 2, 89, "nekohana_korone", "naenae"),
     (1886653, 407, 525, "inuta_hana", "naenae"),
+    (1886653, 90, 171, "nekodomari_makoto", "rokudou itsuki"),
+    (1731737, 7, 68, "nekohana_korone", "naenae"),
+    (1731737, 291, 362, "inuta_hana", "naenae"),
+    (1731737, 69, 129, "nekodomari_makoto", "rokudou itsuki"),
     (1735897, 29, 248, "nekohana_korone", "naenae"),
     (1735897, 865, 1044, "inuta_hana", "naenae"),
+    (1735897, 249, 468, "nekodomari_makoto", "rokudou itsuki"),
     # Love Love ♥ Princess
     (839209, 3, 213, "marigold_bruette_erland", "rubi-sama"),
     (839209, 214, 233, "marigold_bruette_erland,  anastasia_imperator_erland", "wori, rubi-sama"),
@@ -1260,7 +1267,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1353705, 535, 788, "liliana_echsun", "umetori uriri"),
 
     # Houkago⇒Education! ~Sensei to Hajimeru Miwaku no Lesson~
-    (1964980, 2, 250, "tenkawa_sayuki", ""),
+    (1964980, 2, 250, "tenkawa_sayuki", " "),
     (1964980, 443, 632, "orime_tamaki", None),
 
     # Sennagi
@@ -1277,19 +1284,19 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2710683, 91, 206, "yakumo_azusa", "yuurin"),
     (2710683, 207, 272, "kagami_shuri", "chobipero"),
     (2710683, 275, 344, "emma_aaron_yakushiin", "aose"),
-    (2710683, 346, 432, "karasuno_tsubame", ""),
-    (2710683, 435, 518, "furube_yurara", ""),
-    (2710683, 521, 589, "osakabe_rei", ""),
-    (2710683, 592, 660, "yuzuriha_manaka", ""),
+    (2710683, 346, 432, "karasuno_tsubame", " "),
+    (2710683, 435, 518, "furube_yurara", " "),
+    (2710683, 521, 589, "osakabe_rei", " "),
+    (2710683, 592, 660, "yuzuriha_manaka", " "),
 
     (2410167, 10, 183, "kagome", "aiu"),
     (2410167, 413, 660, "yakumo_azusa", "yuurin"),
     (2410167, 184, 412, "kagami_shuri", "chobipero"),
     (2410167, 661, 770, "emma_aaron_yakushiin", "aose"),
-    (2410167, 771, 881, "karasuno_tsubame", ""),
-    (2410167, 882, 988, "furube_yurara", ""),
-    (2410167, 989, 1105, "osakabe_rei", ""),
-    (2410167, 1106, 1208, "yuzuriha_manaka", ""),
+    (2410167, 771, 881, "karasuno_tsubame", " "),
+    (2410167, 882, 988, "furube_yurara", " "),
+    (2410167, 989, 1105, "osakabe_rei", " "),
+    (2410167, 1106, 1208, "yuzuriha_manaka", " "),
 
     (3103887, 1, 174, "kagome", None),
     (3103887, 175, 388, "yakumo_azusa", None),
@@ -1435,6 +1442,36 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
 
     (758201, 60, 135, "mizunomiya_nana", "moriyama shijimi"),
     (758201, 274, 342, "saeki_touka", "youta"),
+
+    # Konekone Koneko
+    (1215915, 52, 186, "nekokawa_shirone", "noda shuha"),
+    (1215915, 187, 188, "nekokawa_shirone, nekoya_kohina, nekohada_miyabi", "noda shuha, naenae, wori"),
+    (1215915, 189, 332, "nekoya_kohina", "naenae"),
+    (1215915, 333, 486, "nekohada_miyabi", "wori"),
+    (1215915, 521, 555, "nekokawa_shirone, nekoya_kohina, nekohada_miyabi", "noda shuha, naenae, wori"),
+    # Can Can Bunny Premiere 3
+    (1305782, 7, 98, None, "wori"),
+    (1305782, 465, 473, None, "wori"),
+    (1305782, 310, 396, None, "naenae"),
+    (1305782, 524, 545, None, "naenae"),
+    (1305782, 205, 309, None, "rokudou itsuki"),
+    (1305782, 504, 523, None, "rokudou itsuki"),
+    (1305782, 99, 204, "suzaki_kagome", "noda shuha"),
+    (1305782, 474, 503, "suzaki_kagome", "noda shuha"),
+    # Hoshizora Tea Party Extra ~"Ai" Hajimarimashita!~
+    (1043987, 577, 687, "yamane_nemu", "noda shuha"),
+    (1043987, 1017, 1032, "yamane_nemu", "noda shuha"),
+    (1043987, 261, 276, "arisuno_arisu", "wori"),
+    (1043987, 316, 375, "arisuno_arisu", "wori"),
+    (1043987, 962, 985, "arisuno_arisu", "wori"),
+    (1043987, 376, 465, None, "rokudou itsuki"),
+    (1043987, 986, 1005, None, "rokudou itsuki"),
+    # Tsukumome Aoe
+    (741954, 1, 141, "aoe", "kokusan moyashi"),
+    # Tsukiyo no Mura
+    (763324, 2, 58, "kawanaka_moeka, kamijou_shiori", "rozea"),
+    (763324, 59, 142, " kawanaka_moeka", "rozea"),
+    (763324, 143, 331, "kamijou_shiori", "rozea"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
@@ -1464,7 +1501,7 @@ def process_file(in_path: str, out_path: str) -> int:
                 fout.write(line)
                 continue
 
-            path = obj.get("path", "")
+            path = obj.get("path", " ")
             m = PATH_RE.search(path)
             if m:
                 dir_id = int(m.group(1))
@@ -1479,8 +1516,8 @@ def process_file(in_path: str, out_path: str) -> int:
                     #         obj["type"] = "multi_artist"
                     # 命中范围：覆盖 character 与 artist
                     if (target_character and obj.get("character") != target_character) or (target_artist and obj.get("artist") != target_artist):
-                        obj["character"] = target_character if target_character else obj.get("character", "")
-                        obj["artist"] = target_artist if target_artist else obj.get("artist", "")
+                        obj["character"] = target_character if target_character else obj.get("character", " ")
+                        obj["artist"] = target_artist if target_artist else obj.get("artist", " ")
                         # 若设置了包含多个画师的值，标记 type 便于区分（部分目录除外）
                         if target_artist and dir_id not in SKIP_TYPE_UPDATE_IDS:
                             artists_split = [a.strip() for a in target_artist.split(",") if a.strip()]

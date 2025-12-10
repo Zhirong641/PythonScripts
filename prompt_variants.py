@@ -323,8 +323,8 @@ def _artist_phrase(artists: List[str], p: float = 2.0, include_all: bool = False
 
     n = len(artists)
     if include_all:
-        # 保留最多 5 个，顺序打乱避免偏向前列
-        picked = random.sample(artists, k=min(len(artists), 5))
+        # 保留最多 3 个，顺序打乱避免偏向前列
+        picked = random.sample(artists, k=min(len(artists), 3))
         names = [_normalize_artist(a) for a in picked]
     elif n == 1:
         names = [_normalize_artist(artists[0])]
