@@ -88,7 +88,6 @@ DATASET_NAME_MAPPING = {
 
 FILTER_LIST_DIR = Path(__file__).resolve().parent / "filter_lists"
 
-
 # ===== Helpers for dynamic text variants =====
 def _split_clean_comma_list(s: str):
     if not s:
@@ -1740,6 +1739,16 @@ def main(args):
                 plt.ylim(*y_range)
             plt.tight_layout(); plt.savefig(loss_png); plt.close()
 
+        def _maybe_empty_cache():
+            if accelerator.device.type != "cuda":
+                return
+            try:
+                free_bytes, _ = torch.cuda.mem_get_info(torch.cuda.current_device())
+            except Exception:
+                return
+            if free_bytes < 2.5 * 1024**3:
+                torch.cuda.empty_cache()
+
         # ====== Preview helper ======
         preview_pipe = None
         preview_compel = None
@@ -1779,8 +1788,8 @@ def main(args):
                     if args.train_text_encoder:
                         preview_pipe.text_encoder = unwrap_model(text_encoder_one)
                         preview_pipe.text_encoder_2 = unwrap_model(text_encoder_two)
-                preview_pipe.vae = vae
-                preview_pipe.vae.to(accelerator.device, dtype=vae.dtype if hasattr(vae, "dtype") else torch.float32)
+                    preview_pipe.vae = vae
+                    preview_pipe.vae.to(accelerator.device, dtype=vae.dtype if hasattr(vae, "dtype") else torch.float32)
 
                 if preview_compel is None:
                     preview_compel, preview_empty_conditioning = get_compel_for_sdxl(
@@ -1842,8 +1851,6 @@ def main(args):
             finally:
                 if args.use_ema:
                     ema_unet.restore(unet.parameters())
-                if accelerator.device.type == "cuda":
-                    torch.cuda.empty_cache()
 
         # ====== Text encode helper ======
         if args.train_text_encoder:
@@ -2052,6 +2059,8 @@ def main(args):
                                 with open(os.path.join(args.output_dir, "preview", f"prompt-{global_step + i}.txt"), "w") as f:
                                     f.write(prev_prompt)
                     train_loss = 0.0
+                    if global_step % 10 == 0:
+                        _maybe_empty_cache()
 
                     # checkpointing
                     if accelerator.distributed_type == DistributedType.DEEPSPEED or accelerator.is_main_process:
@@ -2657,6 +2666,16 @@ def main(args):
         plt.savefig(loss_png)
         plt.close()
 
+    def _maybe_empty_cache():
+        if accelerator.device.type != "cuda":
+            return
+        try:
+            free_bytes, _ = torch.cuda.mem_get_info(torch.cuda.current_device())
+        except Exception:
+            return
+        if free_bytes < 2.5 * 1024**3:
+            torch.cuda.empty_cache()
+
     @torch.no_grad()
     def save_preview(step: int, prompt: str, height: Optional[int] = None, width: Optional[int] = None):
         nonlocal preview_pipe, preview_compel, preview_empty_conditioning
@@ -2691,8 +2710,8 @@ def main(args):
                 if args.train_text_encoder:
                     preview_pipe.text_encoder = unwrap_model(text_encoder_one)
                     preview_pipe.text_encoder_2 = unwrap_model(text_encoder_two)
-            preview_pipe.vae = vae
-            preview_pipe.vae.to(accelerator.device, dtype=vae.dtype if hasattr(vae, "dtype") else torch.float32)
+                preview_pipe.vae = vae
+                preview_pipe.vae.to(accelerator.device, dtype=vae.dtype if hasattr(vae, "dtype") else torch.float32)
 
             if preview_compel is None:
                 preview_compel, preview_empty_conditioning = get_compel_for_sdxl(
@@ -2755,8 +2774,6 @@ def main(args):
         finally:
             if args.use_ema:
                 ema_unet.restore(unet.parameters())
-            if accelerator.device.type == "cuda":
-                torch.cuda.empty_cache()
 
     progress_bar = tqdm(
         range(0, args.max_train_steps),
@@ -2962,6 +2979,8 @@ def main(args):
                     if args.plot_interval and (global_step % int(args.plot_interval) == 0):
                         _save_plot()
                 train_loss = 0.0
+                if global_step % 10 == 0:
+                    _maybe_empty_cache()
 
                 if accelerator.is_main_process and args.preview_save_steps:
                     if global_step % int(args.preview_save_steps) == 0 or global_step == 1:
