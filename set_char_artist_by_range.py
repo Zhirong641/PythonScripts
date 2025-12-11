@@ -162,6 +162,12 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1936004, 391, 605, "kisaki_reina", "toranosuke"),
     (1369330, 37, 249, "jougasaki_ayaka", "arisue tsukasa"),
     (2274092, 34, 246, "jougasaki_ayaka", "arisue tsukasa"),
+    # KisaragiGOLD★STAR~Moonlight serenade in autum
+    (713608, 3, 109, "nitta_ichika", "chimaro"),
+    (713608, 117, 126, "nitta_ichika", "chimaro"),
+    (713608, 127, 241, "fujimaru_mikoto", "toranosuke"),
+    (713608, 242, 365, "endou_saya_(kisaragi_gold_star)", "hontani kanae"),
+    (713608, 445, 573, "haotone_tsubasa", "hontani kanae"),
     # Hanayome to Maou
     (746122, 9, 67, "celica tepes lunatica", None),
     # Anata ni Koisuru Renai Recette
@@ -1111,6 +1117,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2555429, 25, 32, "uryuu_futaba", "teeta.j"),
     (2555429, 41, 47, "uryuu_futaba", "teeta.j"),
     (2555429, 87, 91, "uryuu_futaba", "teeta.j"),
+
+    (2311852, 541, 732, "uryuu_futaba", "teeta.j"),
     # Ore no Ue de Agaku Rokunin no Togime
     (1328609, 1, 135, "amaya_tomoko", "noba"),
     (1328609, 136, 249, "kaji_nana", "noba"),
@@ -1510,6 +1518,168 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1182420, 5, 13, "morikawa_mihono", "sasorigatame"),
     (1182420, 384, 847, "morikawa_mihono", "sasorigatame"),
     (1182420, 1202, 1568, "luriastis_t_mikuriya", "chikotam"),
+    # Mirai Kanojo
+    (807638, 591, 975, None, "annie"),
+    # Fureraba ~Friend to Lover~
+    (607567, 2, 139, "minahara_himari", "ameto yuki"),
+    (607567, 140, 321, "mochizuki_rina", "rei"),
+    (607567, 322, 495, "hiiragi_yuzuyu", "hinata momo"),
+    (607567, 498, 609, "sawatari_misaki", "ameto yuki"),
+
+    (735501, 3, 21, "minahara_himari", "ameto yuki"),
+    (735501, 22, 44, "mochizuki_rina", "rei"),
+    (735501, 45, 57, "hiiragi_yuzuyu", "hinata momo"),
+    (735501, 58, 81, "sawatari_misaki", "ameto yuki"),
+
+    (989888, 3, 282, "minahara_himari", "ameto yuki"),
+    (989888, 502, 795, "mochizuki_rina", "rei"),
+    (989888, 796, 1100, "hiiragi_yuzuyu", "hinata momo"),
+    (989888, 285, 501, "sawatari_misaki", "ameto yuki"),
+
+    (994172, 3, 27, "minahara_himari", "ameto yuki"),
+    (994172, 57, 88, "mochizuki_rina", "rei"),
+    (994172, 89, 105, "hiiragi_yuzuyu", "hinata momo"),
+    (994172, 28, 56, "sawatari_misaki", "ameto yuki"),
+
+    (1206439, 2, 281, "minahara_himari", "ameto yuki"),
+    (1206439, 501, 794, "mochizuki_rina", "rei"),
+    (1206439, 795, 1099, "hiiragi_yuzuyu", "hinata momo"),
+    (1206439, 284, 500, "sawatari_misaki", "ameto yuki"),
+
+    (1316592, 2, 281, "minahara_himari", "ameto yuki"),
+    (1316592, 501, 794, "mochizuki_rina", "rei"),
+    (1316592, 795, 1099, "hiiragi_yuzuyu", "hinata momo"),
+    (1316592, 284, 500, "sawatari_misaki", "ameto yuki"),
+
+    (1461004, 3, 27, "minahara_himari", "ameto yuki"),
+    (1461004, 57, 88, "mochizuki_rina", "rei"),
+    (1461004, 89, 105, "hiiragi_yuzuyu", "hinata momo"),
+    (1461004, 28, 56, "sawatari_misaki", "ameto yuki"),
+    # Otome * Domain
+    (948037, 11, 55, "saionji_kazari", "tatekawa mako"),
+    (948037, 56, 119, "kifune_yuzu", "tatekawa mako"),
+    (948037, 120, 173, "oogaki_hinata", "tatekawa mako"),
+    (948037, 185, 256, "saionji_kazari", "tatekawa mako"),
+    (948037, 257, 353, "kifune_yuzu", "tatekawa mako"),
+    (948037, 354, 440, "oogaki_hinata", "tatekawa mako"),
+
+    (3284505, 1, 2000, "saionji_kazari", "tatekawa mako"),
+    (3284511, 1, 2000, "oogaki_hinata", "tatekawa mako"),
+    (3284512, 1, 290, "oogaki_hinata", "tatekawa mako"),
+    (3284512, 291, 2000, "kifune_yuzu", "tatekawa mako"),
+    (3284513, 1, 2000, None, "tatekawa mako"),
+    # Yakimochi Stream
+    (742858, 2, 485, " kirishima_sana", "syroh"),
+    (742858, 503, 979, "tania_helvellyn", "syroh"),
+    (742858, 1006, 1456, "ibuki_kohane", "syroh"),
+    (742858, 1472, 1898, "yukikura_mutsuki", "syroh"),
+    # Anata o Otoko ni Shiteageru!
+    (929570, 2, 129, " futaba_itsuki", "chiri"),
+    (929570, 130, 321, "ayukawa_kogane", "syroh"),
+    (929570, 322, 453, "toumi_beniyuki", "chiri"),
+    (929570, 454, 627, "shuukaidou_rika", "syroh"),
+    # Raspberry Cube
+    (1293000, 4, 274, "kaidou_mikoto", "hasune"),
+    (1293000, 305, 552, "kanou_minato", "hasune"),
+    (1293000, 590, 826, "sakuraba_victoria_ruri", "hasune"),
+    (1293000, 845, 1100, "yuzuki_yuu", "hasune"),
+    # Tokeijikake no Ley-Line
+    (513772, 126, 149, "shishigatani_ushio", "urabi"),
+    (562008, 171, 205, "shishigatani_ushio", "urabi"),
+    (562279, 171, 205, "shishigatani_ushio", "urabi"),
+    (782270, 16, 31, "shishigatani_ushio", "urabi"),
+    (782270, 150, 220, "shishigatani_ushio", "urabi"),
+    (1139193, 126, 149, "shishigatani_ushio", "urabi"),
+    (1336626, 164, 205, "shishigatani_ushio", "urabi"),
+    # Kizuna Kirameku Koi Iroha
+    (1334517, 2, 226, "kamiizumi_saya", "niro"),
+    (1334517, 228, 398, "suzakuin_tsubaki", "pero"),
+    (1334517, 399, 585, "aihara_shion", "usume shirou"),
+    (1334517, 586, 746, "freesia_godspeed", "moeki yuuta"),
+
+    (1354508, 408, 422, "kamiizumi_saya", "niro"),
+    (1354508, 6, 29, "suzakuin_tsubaki", "pero"),
+    (1354508, 48, 314, "suzakuin_tsubaki", "pero"),
+    (1354508, 423, 437, "aihara_shion", "usume shirou"),
+    (1354508, 438, 452, "freesia_godspeed", "moeki yuuta"),
+    (1354508, 453, 485, "kamiizumi_saya, suzakuin_tsubaki, aihara_shion, freesia_godspeed", "niro, pero, usume shirou, moeki yuuta"),
+
+    (1359096, 408, 422, "kamiizumi_saya", "niro"),
+    (1359096, 6, 29, "suzakuin_tsubaki", "pero"),
+    (1359096, 48, 314, "suzakuin_tsubaki", "pero"),
+    (1359096, 423, 437, "aihara_shion", "usume shirou"),
+    (1359096, 438, 452, "freesia_godspeed", "moeki yuuta"),
+    (1359096, 453, 485, "kamiizumi_saya, suzakuin_tsubaki, aihara_shion, freesia_godspeed", "niro, pero, usume shirou, moeki yuuta"),
+
+    (1696272, 1, 123, "suzakuin_tsubaki", "pero"),
+    (1696272, 129, 2000, "suzakuin_tsubaki", "pero"),
+    (1696276, 1, 2000, "aihara_shion", "usume shirou"),
+    # Akatsuki Yureru Koi Akari
+    (1807851, 24, 131, "kazamine_setsugekka", "pero"),
+    (1807851, 132, 216, "suzakuin_momiji", "pero"),
+    (1807851, 217, 308, "kuki_asahi", "usume shirou"),
+
+    (1972660, 1, 2000, "suzakuin_momiji", "pero"),
+    (1976332, 1, 2000, "kuki_asahi", "usume shirou"),
+    # Setsuna ni Kakeru Koi Hanabi
+    (2836561, 46, 141, " suzakuin_nadeshiko", "pero"),
+    (2836561, 142, 217, "takigawa_komari", "haiba"),
+    (2836561, 218, 274, "hanabusa_palvi", "usume shirou"),
+    (3042507, 142, 217, "takigawa_komari", "haiba"),
+    (3042508, 46, 141, " suzakuin_nadeshiko", "pero"),
+
+    # 9-nine-
+    (3655617, 1, 256, "kujou_miyako", "izumi tsubasu"),
+    (3655619, 1, 148, "niimi_sora", "izumi tsubasu"),
+    (3655622, 1, 441, "kousaka_haruka", "izumi tsubasu"),
+    (3655622, 457, 544, "kujou_miyako", "izumi tsubasu"),
+    (3655623, 1, 236, "yuuki_noa", "izumi tsubasu"),
+
+    (1056030, 1, 90, "kujou_miyako", "izumi tsubasu"),
+    (1215917, 16, 86, "niimi_sora", "izumi tsubasu"),
+    (1403990, 13, 115, "kousaka_haruka", "izumi tsubasu"),
+    (1620258, 33, 176, "yuuki_noa", "izumi tsubasu"),
+
+    (2392344, 1, 99, "kujou_miyako", "izumi tsubasu"),
+    (2392344, 100, 171, "niimi_sora", "izumi tsubasu"),
+    (2392344, 174, 246, "kousaka_haruka", "izumi tsubasu"),
+    (2392344, 249, 402, "yuuki_noa", "izumi tsubasu"),
+
+    # lose
+    (3511654, 1, 2000, None, "cura"),
+    (3511487, 1, 2000, None, "cura"),
+    # Ano Ko wa Ore kara Hanarenai
+    (1011409, 389, 578, "naruse_manami_(ano_ko_wa_ore_kara_hanarenai)", "usume shirou"),
+    (1011409, 759, 891, "sakurai_yuzuki", "usume shirou"),
+    # Harvest OverRay
+    (762959, 2, 126, "tamaki_yuuka", "usume shirou"),
+    (762959, 127, 231, "mikami_lilia", "niro"),
+    (762959, 232, 361, "ouno_sumi", "niro"),
+    (762959, 362, 507, "yatsurugi_komachi", "usume shirou"),
+    # Chiccha Love Apart
+    (714476, 4, 11, "komori_hinata", "usume shirou"),
+    (714476, 260, 559, "komori_hinata", "usume shirou"),
+    (1116649, 1, 677, "komori_hinata", "usume shirou"),
+    # Lautes Alltags -Herrenlose Katze und Teehaus-
+    (782112, 2, 276, "takanashi_nanase", "sorai shinya"),
+    (782112, 277, 456, "kasahara_himari", "sorai shinya"),
+    (782393, 127, 882, "takanashi_nanase", "sorai shinya"),
+    (782393, 883, 1701, "kasahara_himari", "sorai shinya"),
+    # Yomegami - My Sweet Goddess!
+    (998648, 12, 101, "narukawa_iris", "hisama_kumako"),
+    (998648, 139, 243, "hakari_mari", "mikeou"),
+    (998648, 256, 352, "ichijiku_mikoto", "shiraichigo"),
+    (998648, 363, 468, "riko", "suimya"),
+
+    (998648, 469, 493, "narukawa_iris", "hisama_kumako"),
+    (998648, 495, 512, "hakari_mari", "mikeou"),
+    (998648, 513, 533, "ichijiku_mikoto", "shiraichigo"),
+    (998648, 534, 559, "riko", "suimya"),
+
+    (3525197, 2, 67, "narukawa_iris", "hisama_kumako"),
+    (3525197, 68, 134, "hakari_mari", "mikeou"),
+    (3525197, 135, 182, "ichijiku_mikoto", "shiraichigo"),
+    (3525197, 183, 271, "riko", "suimya"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp

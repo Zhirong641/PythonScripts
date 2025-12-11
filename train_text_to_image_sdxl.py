@@ -101,13 +101,16 @@ def _normalize_artist_tags(artist_tags):
                   "anapon": "anapom",
                   "fumi": "fummy",
                   "narumi yu": "narumi yuu",
-                  "akizora momidi": "akizora momiji"}
+                  "akizora momidi": "akizora momiji",
+                  "moeki yuta": "moeki yuuta",
+                  "shira ichigo": "shiraichigo",}
     normalized = []
     seen = set()
     for tag in artist_tags or []:
         if not tag:
             continue
         tag_norm = rename_map.get(tag.lower(), tag)
+        tag_norm = tag_norm.replace("_", " ").strip()
         key = tag_norm.lower()
         if key in seen:
             continue
