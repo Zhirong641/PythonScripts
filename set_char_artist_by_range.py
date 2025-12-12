@@ -375,6 +375,12 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1183093, 443, 858, "kanna kana", "ashisyun"),
     (1183093, 874, 1416, "kuragano sara", "sasorigatame"),
     (1183093, 1417, 1795, "komagata yuzuki", "ashisyun"),
+
+    (1317096, 36, 439, "tenjindaira haruhi", "sasorigatame"),
+    (1317096, 440, 855, "kanna kana", "ashisyun"),
+    (1317096, 871, 1413, "kuragano sara", "sasorigatame"),
+    (1317096, 1414, 1792, "komagata yuzuki", "ashisyun"),
+
     (868964, 612, 2000, "kuragano sara", "sasorigatame"),
     # Zettai Saikyou ☆ Oppai Sensou!!
     (536888, 348, 448, "kotone (zettai saikyou)", "annie"),
@@ -802,7 +808,11 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1438799, 378, 562, "onami_kohaku", "k-ko"),
     (1438799, 563, 734, "onami_sumi", "k-ko"),
     # Yakusoku no Natsu, Mahoroba no Yume
+    (1230539, 1, 726, "kamiya_rinka", "hisama kumako"),
     (1230539, 727, 1421, "azuma_nagisa", "chikotam"),
+    (1230539, 1422, 2000, "ichinose_serina", "naruse hirofumi"),
+    (1230540, 1, 381, "ichinose_serina", "naruse hirofumi"),
+    (1230540, 382, 843, "kazami_himari", "narumi yuu"),
     # Hare Nochi Kitto Nanohana Biyori
     (1919557, 3, 97, "ayasaki_nanoka", "chikotam"),
     (1919557, 98, 202, None, "chikotam"),
@@ -1445,6 +1455,11 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (998646, 1, 2000, "eris_fall_cartlet", "riichu"),
     (1096716, 1, 2000, "teidou_setsuka", "riichu"),
 
+    (1209328, 64, 89, "himeno_satsuki", "riichu"),
+    (1209328, 5, 31, "izumi_aoi", "riichu"),
+    (1209328, 32, 57, "eris_fall_cartlet", "riichu"),
+    (1209328, 90, 127, "teidou_setsuka", "riichu"),
+
     # Kanojo no Seiiki
     (2493223, 1, 2000, "akiyoshi_fuyuka", "ryohka"),
     (769445, 1, 2000, "akiyoshi_fuyuka", "ryohka"),
@@ -1625,8 +1640,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2836561, 46, 141, " suzakuin_nadeshiko", "pero"),
     (2836561, 142, 217, "takigawa_komari", "haiba"),
     (2836561, 218, 274, "hanabusa_palvi", "usume shirou"),
-    (3042507, 142, 217, "takigawa_komari", "haiba"),
-    (3042508, 46, 141, " suzakuin_nadeshiko", "pero"),
+    (3042507, 1, 282, "takigawa_komari", "haiba"),
+    (3042508, 1, 274, " suzakuin_nadeshiko", "pero"),
 
     # 9-nine-
     (3655617, 1, 256, "kujou_miyako", "izumi tsubasu"),
@@ -1680,6 +1695,60 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3525197, 68, 134, "hakari_mari", "mikeou"),
     (3525197, 135, 182, "ichijiku_mikoto", "shiraichigo"),
     (3525197, 183, 271, "riko", "suimya"),
+
+    # Yome no Imouto to H na Kankei ni Natte Yabai!?
+    (1678091, 1, 163, "fujimura_hinata", "maccha reika"),
+    (1678091, 164, 283, None, "maccha reika"),
+
+    (1669463, 1, 111, "fujimura_hinata", "maccha reika"),
+    (1669463, 124, 142, "fujimura_hinata", "maccha reika"),
+    (1669463, 152, 168, "fujimura_hinata", "maccha reika"),
+    (1669463, 177, 203, "fujimura_hinata", "maccha reika"),
+
+    # Traveling Stars
+    (1001634, 1, 147, "zirconia", "matsushita makako"),
+    (847945, 206, 381, "zirconia", "matsushita makako"),
+    # Koi Suru Amairo Homestay -Ryuugakusei wa Wanko-kei Osananajimi
+    (2254599, 1, 155, "mary_mea_heart", "hiiragi ringo"),
+    # Namaiki Yume-chan wa Onii to Mechakucha H Shitai
+    (2520412, 1, 144, "hinamori_yume", "hiiragi ringo"),
+    # The Rising Sun Marriage
+    (3042610, 1, 1, "alphine_midill", "hiiragi ringo, nanotaro, mizuki yuuma"),
+    (3042610, 490, 690, "alphine_midill", "hiiragi ringo"),
+    (3042610, 2, 208, None, "nanotaro"),
+    (3042610, 209, 489, None, "mizuki yuuma"),
+    (3042610, 691, 883, None, " "),
+    # Bakappuru Supplement
+    (3658306, 4, 641, "kurumi_akiha", "kiba_satoshi"),
+    (3658306, 642, 1297, "frederica_ahlqvist", "gintarou"),
+    (3658306, 1306, 2000, "ayase_rena", "emily"),
+    (3658307, 2, 553, "shishio_rin", "emily"),
+    # Study Steady
+    (1491074, 915, 1965, "maisaka_mai", "emily"),
+    (1491075, 837, 1423, "omaezaki_yuu", "emily"),
+    (1919798, 1, 268, "omaezaki_yuu", "emily"),
+    (1491074, 1, 2000, None, "kiba_satoshi"),
+    (1491075, 1, 2000, None, "kiba_satoshi"),
+    # Study § Steady 2
+    (2361534, 2, 806, "mamanoue_yuno", "emily"),
+    (2361534, 827, 1748, None, "emily"),
+    (2361497, 1, 2000, None, "kiba_satoshi"),
+    (2871902, 1, 693, "mamanoue_yuno", "emily"),
+    # Golden Marriage
+    (705391, 213, 341, "amaya_rei", "hayakawa halui"),
+    (705391, 613, 727, "kasugano_yukariko", "hayakawa halui"),
+    (799691, 107, 169, "amaya_rei", "hayakawa halui"),
+    (799691, 283, 306, "kasugano_yukariko", "hayakawa halui"),
+    (799691, 467, 508, "amaya_rei", "hayakawa halui"),
+    (799691, 624, 670, "kasugano_yukariko", "hayakawa halui"),
+    # HoneDevi! Honey&Devil
+    (1068260, 6, 220, "takamiya_ouka", "hayakawa halui"),
+    (1068260, 526, 697, "nishinozono_kaoruko", "hayakawa halui"),
+    (1068260, 771, 777, "nishinozono_kaoruko", "hayakawa halui"),
+    # Nakadashi Trilogy
+    (1582264, 2, 477, "unazuki_sakuya", "koku"),
+    (1582264, 478, 984, "hinohara_haruna", "koku"),
+    (1582264, 985, 1056, "unazuki_sakuya, hinohara_haruna", "koku"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
@@ -1731,6 +1800,8 @@ def process_file(in_path: str, out_path: str) -> int:
                             artists_split = [a.strip() for a in target_artist.split(",") if a.strip()]
                             if len(artists_split) > 1:
                                 obj["type"] = "multi_artist"
+                            else:
+                                obj["type"] = "Game CG"
                         modified += 1
 
             # 紧凑写回，保持一行一个 JSON
