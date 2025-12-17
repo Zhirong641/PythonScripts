@@ -54,8 +54,12 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1146404, 14, 196, "konata konatsu", "kimishima ao"),
     (1146404, 197, 406, None, "kimishima ao"),
     (1409248, 1, 2000, "konata konatsu", None),
-    (3000014, 35, 137, None, "kimishima ao"),
-    (3000014, 220, 324, None, "shiratama"),
+    # Koi Kakeru Shinai Kanojo
+    (3000014, 35, 137, "himeno sena", "kimishima ao"),
+    (3000014, 140, 219, "shindou_ayane", "kurasawa moko"),
+    (3000014, 220, 324, "komari yui", "shiratama"),
+    (3000014, 325, 434, "shijou_rinka", "kurasawa moko"),
+    # Maho x Roba -Witches Spiritual Home- 
     (1340509, 1, 66, "konata konatsu", "kimishima ao"),
     (1340509, 67, 174, None, "kimishima ao"),
     (1340509, 175, 274, "kujou_shizuru", "shiramori yuse"),
@@ -85,8 +89,16 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1920176, 429, 474, "momose kaguya", "shiratama"),
     (1562101, 50, 89, "yukimura chieri", "shiratama"),
     (1562101, 155, 196, "yukimura chieri", "shiratama"),
-    (868607, 39, 141, "himeno sena", "kimishima ao"),
+    # Koi Kakeru Shinai Kanojo
+    (868607, 39, 143, "himeno sena", "kimishima ao"),
+    (868607, 144, 223, "shindou_ayane", "kurasawa moko"),
     (868607, 224, 328, "komari yui", "shiratama"),
+    (868607, 329, 328, "shijou_rinka", "kurasawa moko"),
+    (868607, 439, 640, "himeno sena", "kimishima ao"),
+    (868607, 641, 855, "shindou_ayane", "kurasawa moko"),
+    (868607, 856, 1090, "komari yui", "shiratama"),
+    (868607, 1091, 1326, "shijou_rinka", "kurasawa moko"),
+    # miagete goran yoru no hoshi o
     (1245707, 13, 23, "amanogawa saya", "motoi ayumu"),
     (1245707, 48, 72, "amanogawa saya", "motoi ayumu"),
     (1245707, 107, 130, "amanogawa saya", "motoi ayumu"),
@@ -1828,6 +1840,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (929519, 100, 176, "murakami_rino", None),
     (929519, 177, 270, "saitou_kanna", "miyasaka naco"),
     (929519, 271, 349, "olivia_campbell", None),
+    # HajiLove
+    # hamidashi creative
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
