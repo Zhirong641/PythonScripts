@@ -324,7 +324,7 @@ def _load_and_filter_index_dataset(
         if ("danbooru" not in src_path
             and any(bg in general_tags for bg in ["transparent_background", "simple_background", "black_background", "white_background", "tachi-e"])
             and "dakimakura_(medium)" not in general_tags):
-            if type_.lower() == "game cg" and rng.random() < 0.75:
+            if type_.lower() == "game cg" and rng.random() < 0.66:
                 return False
         year = example.get("year", "") or ""
         years = []

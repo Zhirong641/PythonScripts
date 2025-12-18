@@ -305,10 +305,27 @@ _HEADCOUNT_PATTERN = re.compile(
     r"^\d+\s*(girl|boy|girls|boys|male|female|man|men|woman|women|person|people|character|characters)\b"
 )
 
+_BACKGROUND_PATTERN = re.compile(
+    r"^(simple|white|transparent) background$"
+)
+_LOW_DROPOUT_EXACT = {
+    "dakimakura (medium)",
+    "tachi-e",
+}
+
 
 def _is_headcount_tag(tag: str) -> bool:
     """Detect tags like 1girl/2boys/etc. so we can preserve them more often."""
     return bool(_HEADCOUNT_PATTERN.match(tag))
+
+def _is_low_dropout_tag(tag: str) -> bool:
+    """Detect tags that should have lower dropout (headcount/background)."""
+    t = _normalize(tag)
+    return (
+        _is_headcount_tag(t)
+        or bool(_BACKGROUND_PATTERN.search(t))
+        or t in _LOW_DROPOUT_EXACT
+    )
 
 def _artist_phrase(artists: List[str], p: float = 2.0, include_all: bool = False) -> str:
     """
@@ -600,8 +617,8 @@ def generate_phrase_variants(
         for t in cand:
             if general_added >= max_general_per_variant:
                 break
-            # Headcount tags (e.g., 1girl/2boys) get a lower drop rate to keep subject count stable.
-            tag_dropout = 0.07 if _is_headcount_tag(t) else dropout
+            # Headcount/background tags get a lower drop rate to keep key context stable.
+            tag_dropout = 0.05 if _is_low_dropout_tag(t) else dropout
             if random.random() < tag_dropout:
                 continue
             # 互斥：同槽位只取一次

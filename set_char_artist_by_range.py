@@ -93,7 +93,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (868607, 39, 143, "himeno sena", "kimishima ao"),
     (868607, 144, 223, "shindou_ayane", "kurasawa moko"),
     (868607, 224, 328, "komari yui", "shiratama"),
-    (868607, 329, 328, "shijou_rinka", "kurasawa moko"),
+    (868607, 329, 438, "shijou_rinka", "kurasawa moko"),
     (868607, 439, 640, "himeno sena", "kimishima ao"),
     (868607, 641, 855, "shindou_ayane", "kurasawa moko"),
     (868607, 856, 1090, "komari yui", "shiratama"),
@@ -1842,6 +1842,16 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (929519, 271, 349, "olivia_campbell", None),
     # HajiLove
     # hamidashi creative
+    (1740846, 5, 13, "izumi_hiyori", "utsunomiya tsumire"),
+    (1740846, 267, 423, "izumi_hiyori", "utsunomiya tsumire"),
+    (1740846, 560, 677, "kamakura_shio", "utsunomiya tsumire"),
+    (1741935, 809, 1411, "izumi_hiyori", "utsunomiya tsumire"),
+    (1741936, 310, 687, "kamakura_shio", "utsunomiya tsumire"),
+    (1741935, 1, 2000, None, "utsunomiya tsumire"),
+    (1741936, 1, 2000, None, "utsunomiya tsumire"),
+
+    (2384486, 527, 745, "izumi_hiyori", "utsunomiya tsumire"),
+    (2384486, 897, 1061, "kamakura_shio", "utsunomiya tsumire"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
