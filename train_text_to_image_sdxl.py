@@ -103,7 +103,8 @@ def _normalize_artist_tags(artist_tags):
                   "narumi yu": "narumi yuu",
                   "akizora momidi": "akizora momiji",
                   "moeki yuta": "moeki yuuta",
-                  "shira ichigo": "shiraichigo",}
+                  "shira ichigo": "shiraichigo",
+                  "hinata momoko": "hinata momo",}
     normalized = []
     seen = set()
     for tag in artist_tags or []:
@@ -269,7 +270,8 @@ def _load_and_filter_index_dataset(
     exclude_artist_set,
     exclude_danbooru_set,
     exclude_source_id_set,
-    seed,
+    include_source_id_set=None,
+    seed=None,
 ):
     if not os.path.isfile(index_path):
         raise FileNotFoundError(f"index.jsonl not found: {index_path}")
@@ -309,11 +311,10 @@ def _load_and_filter_index_dataset(
         ext = ext.split("?")[0].lower()
         if ext not in valid_exts:
             return False
-        if exclude_source_id_set:
-            norm_path = os.path.normpath(src_path)
-            path_parts = Path(norm_path).parts
-            if any(part in exclude_source_id_set for part in path_parts):
-                return False
+        norm_path = os.path.normpath(src_path)
+        path_parts = Path(norm_path).parts
+        if exclude_source_id_set and any(part in exclude_source_id_set for part in path_parts):
+            return False
 
         general = example.get("general", "") or ""
         general_tags = _split_clean_comma_list(general)
@@ -324,8 +325,9 @@ def _load_and_filter_index_dataset(
         if ("danbooru" not in src_path
             and any(bg in general_tags for bg in ["transparent_background", "simple_background", "black_background", "white_background", "tachi-e"])
             and "dakimakura_(medium)" not in general_tags):
-            if type_.lower() == "game cg" and rng.random() < 0.66:
-                return False
+            if not (include_source_id_set and any(part in include_source_id_set for part in path_parts)):
+                if type_.lower() == "game cg" and rng.random() < 0.66:
+                    return False
         year = example.get("year", "") or ""
         years = []
         for y in _split_clean_comma_list(year):
@@ -2151,9 +2153,11 @@ def main(args):
             exclude_artist_entries = _load_filter_list("exclude_artists.txt")
             exclude_danbooru_entries = _load_filter_list("exclude_danbooru_artists.txt")
             exclude_source_id_entries = _load_filter_list("exclude_source_ids.txt")
+            include_source_id_entries = _load_filter_list("include_source_ids.txt")
             exclude_artist_set = _build_filter_name_set(exclude_artist_entries)
             exclude_danbooru_set = _build_filter_name_set(exclude_danbooru_entries)
             exclude_source_id_set = {entry for entry in exclude_source_id_entries if entry}
+            include_source_id_set = {entry for entry in include_source_id_entries if entry}
 
             if resolution_sets_config:
                 per_resolution = []
@@ -2166,6 +2170,7 @@ def main(args):
                         exclude_artist_set,
                         exclude_danbooru_set,
                         exclude_source_id_set,
+                        include_source_id_set,
                         (args.seed if args.seed is not None else 42) + idx,
                     )
                     ds["train"] = ds["train"].map(
@@ -2191,6 +2196,7 @@ def main(args):
                         exclude_artist_set,
                         exclude_danbooru_set,
                         exclude_source_id_set,
+                        include_source_id_set,
                         args.seed,
                     )
                     dataset["train"] = dataset["train"].map(

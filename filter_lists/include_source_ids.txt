@@ -1,0 +1,44 @@
+# Add source IDs (one per line) to always include when loading index datasets.
+3455080
+# mikagami
+3450027
+1445329
+2177903
+1147899
+1147801
+# Koi Kakeru Shinai Kanojo
+868607
+# maho x roba
+1340509
+# Kanojo to Ore no Lovely Day
+1134208
+# Ouchi ni Kaeru made ga Marshmallow desu
+1113364
+# Otome * Domain
+3284505
+3284511
+3284512
+# Ama Koi Syrups
+1166649
+# Wan Nyan
+1735897
+# Love Love ♥ Princess
+839731
+# Sakura Hitohira Koimoyou
+1134207
+# 9-nine
+3655617
+3655619
+3655622
+3655623
+# Amairo Chocolata
+2789734
+# naenae
+1257428
+1506539
+1503641
+# matsumiya kiseri
+1538757
+1441286
+# Osananajimi Ojou-sama to H de Himitsu na Dousei Seikatsu
+2622654
