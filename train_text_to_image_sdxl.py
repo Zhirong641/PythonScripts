@@ -2989,7 +2989,7 @@ def main(args):
                     if args.plot_interval and (global_step % int(args.plot_interval) == 0):
                         _save_plot()
                 train_loss = 0.0
-                if global_step % 10 == 0:
+                if global_step % 5 == 0:
                     _maybe_empty_cache()
 
                 if accelerator.is_main_process and args.preview_save_steps:

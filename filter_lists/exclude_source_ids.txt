@@ -144,3 +144,6 @@
 # Kyonyuu Yuurei-san ni Iyasareru Shachiku-san no Seikatsu
 2342492
 2342490
+# shiratama
+1138309
+716762
