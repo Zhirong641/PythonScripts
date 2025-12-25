@@ -93,6 +93,8 @@ def parse_args():
                     help="把桶计数另存为 CSV（可选），例如 counts.csv")
     ap.add_argument("--errors-file", default="errors.jsonl",
                     help="无法读取图片的行写到该文件（默认 errors.jsonl）")
+    ap.add_argument("--skip-animated", action="store_true",
+                    help="如果为真，检测到动图（如 GIF / animated WebP）时不进行分桶")
     ap.add_argument("--min-width", type=int, default=0,
                     help="只对宽度不少于该值的图片进行分桶（默认 0，无下限）")
     ap.add_argument("--min-height", type=int, default=0,
@@ -180,6 +182,7 @@ def main():
     counts: Counter = Counter()
     skipped_small_dim = 0
     skipped_low_pixels = 0
+    skipped_animated = 0
 
     # LRU 文件缓存
     file_cache = LRUFileCache(capacity=args.max_open)
@@ -208,6 +211,9 @@ def main():
             try:
                 with Image.open(src) as im:
                     w, h = im.size
+                    if args.skip_animated and (getattr(im, "is_animated", False) or getattr(im, "n_frames", 1) > 1):
+                        skipped_animated += 1
+                        continue
             except (FileNotFoundError, UnidentifiedImageError, OSError) as e:
                 errors_fp.write(json.dumps({"error": f"{type(e).__name__}: {str(e)}", "src": src, "line": obj}, ensure_ascii=False) + "\n")
                 continue
@@ -258,6 +264,9 @@ def main():
     if skipped_low_pixels:
         prefix = "\n" if not skipped_small_dim else ""
         print(f"{prefix}Skipped {skipped_low_pixels} images with fewer than {args.min_pixels} pixels.")
+    if skipped_animated:
+        prefix = "\n" if not (skipped_small_dim or skipped_low_pixels) else ""
+        print(f"{prefix}Skipped {skipped_animated} animated images (flag --skip-animated).")
 
     # 可选导出到 CSV
     if args.save_counts:

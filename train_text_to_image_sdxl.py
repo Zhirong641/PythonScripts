@@ -326,9 +326,12 @@ def _load_and_filter_index_dataset(
         if ("danbooru" not in src_path
             and any(bg in general_tags for bg in ["transparent_background", "simple_background", "black_background", "white_background", "tachi-e"])
             and "dakimakura_(medium)" not in general_tags):
-            if not (include_source_id_set and any(part in include_source_id_set for part in path_parts)):
-                if type_.lower() == "game cg" and rng.random() < 0.66:
-                    return False
+            group = example.get("group", "") or ""
+            if ("dmm.com" not in group and 
+                not (include_source_id_set and any(part in include_source_id_set for part in path_parts)) and
+                type_.lower() == "game cg" and 
+                rng.random() < 0.66):
+                return False
         year = example.get("year", "") or ""
         years = []
         for y in _split_clean_comma_list(year):

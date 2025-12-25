@@ -2024,6 +2024,82 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3450024, 1081, 1326, "saraira", "mikagami mamizu"),
     # Osananajimi Ojou-sama to H de Himitsu na Dousei Seikatsu
     (2622654, 1, 1548, "minegishi_yuuma", "mitsuhamochi."),
+    # Jewelry Hearts Academia
+    (2284346, 178, 224, "ruby_(jewelry_hearts_academia)", "shiratama"),
+    (2284346, 665, 714, "ruby_(jewelry_hearts_academia)", "shiratama"),
+
+    (2397624, 1204, 1342, "ruby_(jewelry_hearts_academia)", "shiratama"),
+
+    (3255696, 44, 51, "ruby_(jewelry_hearts_academia)", "shiratama"),
+    (3255696, 294, 316, "ruby_(jewelry_hearts_academia)", "shiratama"),
+
+    # Secret Agent
+    (1648992, 38, 133, "shirogane_kagura", "odawara hakone"),
+    (1648992, 134, 232, "kanon_mayfield", "mutou kurihito"),
+    (1648992, 241, 348, "renjouji_mai", "ayase hazuki"),
+    (1648992, 354, 466, "amenomori_yui", "awayume"),
+
+    (1657228, 769, 2000, "shirogane_kagura", "odawara hakone"),
+    (1657228, 1, 768, "kanon_mayfield", "mutou kurihito"),
+    (1657204, 1, 614, "renjouji_mai", "ayase hazuki"),
+    (1657204, 615, 1094, "amenomori_yui", "awayume"),
+    # Idol Wars Z
+    (1066329, 1, 94, "amane_ai", None),
+    (1624559, 112, 121, "amane_ai", None),
+    (1624559, 1172, 1181, "amane_ai", None),
+    (1624559, 1434, 1443, "amane_ai", None),
+
+    (1624589, 189, 198, "amane_ai", None),
+    (1624589, 431, 440, "amane_ai", None),
+    (1624589, 955, 964, "amane_ai", None),
+
+    (1624562, 54, 72, "amane_ai", None),
+    (1624562, 317, 326, "amane_ai", None),
+    (1624562, 1213, 1222, "amane_ai", None),
+
+    (1676574, 1, 11, "amane_ai", None),
+    (1676574, 57, 66, "amane_ai", None),
+
+    (1730956, 181, 200, "amane_ai", None),
+    (1730956, 301, 310, "amane_ai", None),
+    (1730956, 331, 350, "amane_ai", None),
+
+    (3088879, 1, 9, "amane_ai", None),
+    (3088879, 340, 349, "amane_ai", None),
+    (3088879, 370, 389, "amane_ai", None),
+    (3088879, 910, 919, "amane_ai", None),
+    (3088879, 1020, 1029, "amane_ai", None),
+    (3088879, 1090, 1109, "amane_ai", None),
+    (3088879, 1205, 1214, "amane_ai", None),
+    (3088879, 1280, 1289, "amane_ai", None),
+    (3088879, 1575, 1594, "amane_ai", None),
+    (3088879, 1625, 1634, "amane_ai", None),
+
+    (3088880, 1, 20, "amane_ai", None),
+    (3088880, 106, 110, "amane_ai", None),
+
+    (3088881, 1, 19, "amane_ai", None),
+    (3088881, 49, 67, "amane_ai", None),
+    (3088881, 202, 220, "amane_ai", None),
+    (3088881, 231, 249, "amane_ai", None),
+    (3088881, 460, 464, "amane_ai", None),
+    # Twinkle Star Knights
+    (3163484, 9, 12, " venus_(twinkle_star_knights)", "kannagi rei"),
+    (3163484, 243, 244, " venus_(twinkle_star_knights)", "kannagi rei"),
+    (3692789, 14, 19, " venus_(twinkle_star_knights)", "kannagi rei"),
+    # Aria the Godslayer
+    (2072970, 1, 3, "kuonji_maki", None),
+    (2072970, 184, 189, None, "motoi ayumu"),
+    (2044170, 3, 4, "kuonji_maki", None),
+    # Plus Links
+    (2105816, 2, 21, "misaki_himawari", None),
+    (2105816, 95, 120, "kanagumo_miyabi", None),
+    (2105816, 162, 182, "shiromiya_rin", None),
+    (2105816, 183, 203, "kamiyugi_tama", None),
+    (2105816, 237, 242, "misaki_himawari", None),
+    (2105816, 217, 220, "kanagumo_miyabi", None),
+    (2105816, 275, 282, "kamiyugi_tama", None),
+    (2105816, 322, 323, "kamiyugi_tama", None),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
