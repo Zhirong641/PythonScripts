@@ -335,7 +335,7 @@ def _artist_phrase(artists: List[str], p: float = 2.0, include_all: bool = False
     """
     if random.random() < 0.15:
         return ""  # 15% 概率不加画师标签
-    if not artists:
+    if not artists or len(artists) > 10:
         return ""
 
     n = len(artists)
@@ -361,8 +361,8 @@ def _artist_phrase(artists: List[str], p: float = 2.0, include_all: bool = False
 def _rating_phrase(ratings: List[str], max_ratings: int = 1) -> str:
     if not ratings:
         return ""
-    if random.random() < 0.2:
-        return ""  # 20% 概率不加 rating 标签
+    if random.random() < 0.4:
+        return ""  # 40% 概率不加 rating 标签
     picked = []
     seen = set()
     for tag in ratings:

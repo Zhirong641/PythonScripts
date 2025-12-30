@@ -175,9 +175,21 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (960177, 648, 890, "tokisaka nanao", "toranosuke"),
     # Kiniro Loveriche -Golden Time-
     (1953903, 2, 323, "sylvia_le_cruzcrown_sortilege_sisua", "hontani kanae"),
-    (1953903, 324, 543, "kisaki_reina", "toranosuke"),
+    (1953903, 324, 542, "kisaki_reina", "toranosuke"),
+    (1953903, 543, 818, "heroina_di_caballero_ista", "toranosuke"),
+    (1953903, 820, 862, "souma_ria", "hontani kanae"),
+    (1953903, 907, 958, "souma_ria", "hontani kanae"),
+    (1953903, 1005, 1120, "kuryuu_akane", "arisue tsukasa"),
+    (1936004, 2, 117, "kuryuu_akane", "arisue tsukasa"),
+    (1936004, 118, 347, "heroina_di_caballero_ista", "toranosuke"),
     (1936004, 771, 1089, "sylvia_le_cruzcrown_sortilege_sisua", "hontani kanae"),
     (1936004, 391, 605, "kisaki_reina", "toranosuke"),
+
+    (1157754, 2, 117, "kuryuu_akane", "arisue tsukasa"),
+    (1157754, 118, 393, "heroina_di_caballero_ista", "toranosuke"),
+    (1157754, 844, 1161, "sylvia_le_cruzcrown_sortilege_sisua", "hontani kanae"),
+    (1157754, 435, 653, "kisaki_reina", "toranosuke"),
+
     (1369330, 37, 249, "jougasaki_ayaka", "arisue tsukasa"),
     (2274092, 34, 246, "jougasaki_ayaka", "arisue tsukasa"),
     # KisaragiGOLD★STAR~Moonlight serenade in autum
@@ -449,6 +461,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1977150, 1453, 2000, "nanase ririna", "itou life"),
     (1977160, 1, 892, "nanase ririna", "itou life"),
     (1977178, 1317, 2000, "nanase chiharu", "itou life"),
+    (1977187, 1, 396, "nanase chiharu", "itou life"),
+    (1977187, 397, 2000, "nanase shizuku", "itou life"),
     (1977201, 1, 600, "nanase shizuku", "itou life"),
     # Amanatsu Adolescence
     (1043759, 2, 22, "hyuuga_natsu", "hisama kumako"),
@@ -2084,9 +2098,9 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3088881, 231, 249, "amane_ai", None),
     (3088881, 460, 464, "amane_ai", None),
     # Twinkle Star Knights
-    (3163484, 9, 12, " venus_(twinkle_star_knights)", "kannagi rei"),
-    (3163484, 243, 244, " venus_(twinkle_star_knights)", "kannagi rei"),
-    (3692789, 14, 19, " venus_(twinkle_star_knights)", "kannagi rei"),
+    (3163484, 9, 12, "venus_(twinkle_star_knights)", "kannagi rei"),
+    (3163484, 243, 244, "venus_(twinkle_star_knights)", "kannagi rei"),
+    (3692789, 14, 19, "venus_(twinkle_star_knights)", "kannagi rei"),
     # Aria the Godslayer
     (2072970, 1, 3, "kuonji_maki", None),
     (2072970, 184, 189, None, "motoi ayumu"),
@@ -2100,6 +2114,32 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2105816, 217, 220, "kanagumo_miyabi", None),
     (2105816, 275, 282, "kamiyugi_tama", None),
     (2105816, 322, 323, "kamiyugi_tama", None),
+
+    (1964286, 419, 421, "misaki_himawari", None),
+    (1964286, 434, 438, "kanagumo_miyabi", None),
+    (1964286, 445, 447, "shiromiya_rin", None),
+    (1964286, 448, 450, "kamiyugi_tama", None),
+    # Rensou Relation
+    (819614, 5, 72, "sengoku_ichika", "moekibara fumitake"),
+    (819614, 320, 343, "sengoku_ichika", "moekibara fumitake"),
+    (1124566, 372, 505, "sengoku_ichika", "moekibara fumitake"),
+    # Sweet Homemade
+    (2766424, 4, 7, "ezaki_iroha", None),
+    (2766424, 32, 66, "ezaki_iroha", None),
+    (2766424, 12, 16, "koike_kanon", None),
+    (2766424, 98, 128, "koike_kanon", None),
+    (2766424, 28, 31, "yamazaki_himariko", None),
+    (2766424, 219, 250, "yamazaki_himariko", None),
+
+    (2949996, 6, 10, "ezaki_iroha", None),
+    (2949996, 41, 115, "ezaki_iroha", None),
+    (2949996, 16, 20, "ezaki_iroha", None),
+    (2949996, 12, 16, "koike_kanon", None),
+    (2949996, 191, 265, "koike_kanon", None),
+    (2949996, 651, 655, "koike_kanon", None),
+    (2949996, 36, 40, "yamazaki_himariko", None),
+    (2949996, 491, 565, "yamazaki_himariko", None),
+    (2949996, 671, 675, "yamazaki_himariko", None),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
