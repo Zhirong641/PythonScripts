@@ -2198,6 +2198,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1434600, 1, 1261, "hoshiyomi_mashiro", "shiromochi sakura"),
     # Panical Confusion
     (1576268, 11, 131, "hanabishi_honoka", "shiromochi sakura"),
+    (800033, 12, 62, "hanabishi_honoka", "shiromochi sakura"),
     # PURELY x CATION
     (929041, 7, 395, "minami_mai", "nanaroba hana"),
     (929041, 396, 714, "aoi_sumire", "nanaroba hana"),
