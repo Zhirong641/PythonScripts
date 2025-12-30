@@ -377,6 +377,9 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1838084, 291, 525, None, "syroh"),
     (1838084, 526, 728, None, "arisue tsukasa"),
     (1838084, 729, 916, None, "syroh"),
+    (1988314, 1, 338, None, "syroh"),
+    (1988314, 339, 2000, None, "arisue tsukasa"),
+    (1988315, 1, 265, None, "arisue tsukasa"),
     # Karumaruka ＊ Circle
     (633332, 2, 152, "natsume_koyomi", "toranosuke"),
     (633332, 153, 315, "otone_nicole", "hontani kanae"),
@@ -738,11 +741,17 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Ren'ai, Hajimemashite
     (3255903, 1, 177, "tenshi-chan_(ren'ai_hajimemashite) ", "fuyuichi monme"),
     (3255903, 180, 306, "aizawa_yukari", "unasaka"),
+    (3255903, 308, 438, None, "yuunagi seshina"),
+    (3255903, 439, 566, "inuya_komaru", "sacraneco"),
     (3255903, 567, 604, None, "unasaka"),
     (3554542, 2, 63, "tenshi-chan_(ren'ai_hajimemashite) ", "fuyuichi monme"),
     (3554542, 64, 110, "aizawa_yukari", "unasaka"),
+    (3554542, 111, 142, None, "yuunagi seshina"),
+    (3554542, 143, 179, "inuya_komaru", "sacraneco"),
     (3554542, 258, 262, "tenshi-chan_(ren'ai_hajimemashite) ", "fuyuichi monme"),
     (3554542, 263, 268, "aizawa_yukari", "unasaka"),
+    (3554542, 269, 274, None, "yuunagi seshina"),
+    (3554542, 275, 278, "inuya_komaru", "sacraneco"),
     # Koibana Ren'ai
     (2872360, 3, 40, "otome_kokoro", "yuuki rika"),
     (2872360, 42, 80, "adachi_chii", "fuyuichi monme"),
@@ -2140,6 +2149,75 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2949996, 36, 40, "yamazaki_himariko", None),
     (2949996, 491, 565, "yamazaki_himariko", None),
     (2949996, 671, 675, "yamazaki_himariko", None),
+    # Omokage
+    (917558, 3, 170, "ichinose_minato", "amakusa tobari"),
+    (917558, 171, 340, "tachibana_gekka", "amakusa tobari"),
+    (917558, 341, 493, "suzu_hinami", "amakusa tobari"),
+
+    (918417, 95, 104, "ichinose_minato", "amakusa tobari"),
+    (918417, 105, 118, "tachibana_gekka", "amakusa tobari"),
+    # Unmei Senjou no Phi
+    (753603, 41, 81, "kuon_nagisa", "nanaroba hana"),
+    (753603, 284, 359, "kuon_nagisa", "nanaroba hana"),
+    # mono no aware wa sai no koro
+    (3534610, 35, 69, "nonomiya_kyouka", "nanaroba hana"),
+    (3534610, 70, 120, "kinami_misaki", "nanaroba hana"),
+    (3534610, 121, 156, "kohaku_(mono_no_aware_wa_sai_no_koro.)", "nanaroba hana"),
+    (3534610, 157, 191, "claire_courtney_claire", "nanaroba hana"),
+    (3534610, 268, 286, "nonomiya_kyouka", "nanaroba hana"),
+    (3534610, 287, 303, "kinami_misaki", "nanaroba hana"),
+    (3534610, 304, 320, "kohaku_(mono_no_aware_wa_sai_no_koro.)", "nanaroba hana"),
+    (3534610, 321, 333, "claire_courtney_claire", "nanaroba hana"),
+    (3534610, 334, 368, "nonomiya_kyouka", "nanaroba hana"),
+    (3534610, 369, 402, "kinami_misaki", "nanaroba hana"),
+    (3534610, 403, 436, "kohaku_(mono_no_aware_wa_sai_no_koro.)", "nanaroba hana"),
+    (3534610, 437, 469, "claire_courtney_claire", "nanaroba hana"),
+
+    (1122195, 36, 70, "nonomiya_kyouka", "nanaroba hana"),
+    (1122195, 71, 121, "kinami_misaki", "nanaroba hana"),
+    (1122195, 121, 157, "kohaku_(mono_no_aware_wa_sai_no_koro.)", "nanaroba hana"),
+    (1122195, 158, 192, "claire_courtney_claire", "nanaroba hana"),
+    (1122195, 278, 287, "nonomiya_kyouka", "nanaroba hana"),
+    (1122195, 288, 304, "kinami_misaki", "nanaroba hana"),
+    (1122195, 305, 321, "kohaku_(mono_no_aware_wa_sai_no_koro.)", "nanaroba hana"),
+    (1122195, 322, 334, "claire_courtney_claire", "nanaroba hana"),
+    (1122195, 335, 369, "nonomiya_kyouka", "nanaroba hana"),
+    (1122195, 370, 403, "kinami_misaki", "nanaroba hana"),
+    (1122195, 404, 437, "kohaku_(mono_no_aware_wa_sai_no_koro.)", "nanaroba hana"),
+    (1122195, 438, 470, "claire_courtney_claire", "nanaroba hana"),
+    # Koisuru Kokoro to Mahou no Kotoba
+    (1230458, 43, 208, "haruharu", "shiromochi sakura"),
+    (1230458, 209, 367, "hitohira_kazane", "shiromochi sakura"),
+    (1230458, 368, 540, "futaba_mikana", "shiromochi sakura"),
+    (1230458, 541, 718, "hoshiyomi_mashiro", "shiromochi sakura"),
+
+    (1434182, 1, 2000, "haruharu", "shiromochi sakura"),
+    (1434567, 1, 2000, "hitohira_kazane", "shiromochi sakura"),
+    (1434574, 1, 2000, "futaba_mikana", "shiromochi sakura"),
+    (1434594, 1, 2000, "hoshiyomi_mashiro", "shiromochi sakura"),
+    (1434600, 1, 1261, "hoshiyomi_mashiro", "shiromochi sakura"),
+    # Panical Confusion
+    (1576268, 11, 131, "hanabishi_honoka", "shiromochi sakura"),
+    # PURELY x CATION
+    (929041, 7, 395, "minami_mai", "nanaroba hana"),
+    (929041, 396, 714, "aoi_sumire", "nanaroba hana"),
+    (929041, 715, 989, "natsuki_hikari", "nanaroba hana"),
+    (929041, 990, 1211, "ayase_touka", "nanaroba hana"),
+
+    (1413861, 5, 116, "minami_mai", "nanaroba hana"),
+    (1413861, 117, 235, "aoi_sumire", "nanaroba hana"),
+    (1413861, 236, 316, "natsuki_hikari", "nanaroba hana"),
+    (1413861, 317, 439, "ayase_touka", "nanaroba hana"),
+
+    (1413861, 449, 451, "minami_mai", "nanaroba hana"),
+    (1413861, 440, 443, "aoi_sumire", "nanaroba hana"),
+    (1413861, 452, 454, "natsuki_hikari", "nanaroba hana"),
+    (1413861, 444, 448, "ayase_touka", "nanaroba hana"),
+    # PURELY x CATION 2
+    (1218763, 10, 268, "himekawa_honami", "asami asami"),
+    (1218763, 269, 522, "ashiya_suzuka", "asami asami"),
+    (1218763, 523, 790, "kurashiki_azusa", "asami asami"),
+    (1218763, 791, 1039, "hayase_chitose", "asami asami"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
