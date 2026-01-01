@@ -18,6 +18,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3000209, 1, 2000, None, "yuzuna hiyo"),
     (3000440, 1, 2000, None, "yuzuna hiyo"),
     (3000441, 1, 2000, None, "yuzuna hiyo"),
+    (3101372, 1, 2000, None, "mutou kurihito"),
+    (3101373, 1, 2000, None, "mutou kurihito"),
     (727768, 345, 461, "rindo tsubame", "chikotam"),
     (727768, 630, 647, "rindo tsubame", "chikotam"),
     (727768, 3, 25, "takakura anzu", "primil"),
@@ -33,6 +35,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1093883, 1130, 1829, "misuzu sasa", "chikotam"),
     (1093883, 1867, 2000, "asaka ushio", "sasorigatame"),
     (1093884, 2, 434, "asaka ushio", "sasorigatame"),
+    (1113364, 1, 104, None, "ashisyun"),
     (1113364, 105, 264, "kasukabe kanon", "sasorigatame"),
     (1113364, 332, 592, "raiha raikkonen", "ashisyun"),
     (1113364, 593, 872, "misuzu sasa", "chikotam"),
@@ -407,6 +410,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (868977, 1195, 1210, "kuragano sara", "sasorigatame"),
     (868977, 1211, 1689, "tatebayashi tateha", "ashisyun"),
     (868977, 1690, 2000, "tsukiyono usagi", "sasorigatame"),
+    # Primal x Hearts
     (1183093, 39, 442, "tenjindaira haruhi", "sasorigatame"),
     (1183093, 443, 858, "kanna kana", "ashisyun"),
     (1183093, 874, 1416, "kuragano sara", "sasorigatame"),
@@ -416,6 +420,15 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1317096, 440, 855, "kanna kana", "ashisyun"),
     (1317096, 871, 1413, "kuragano sara", "sasorigatame"),
     (1317096, 1414, 1792, "komagata yuzuki", "ashisyun"),
+
+    (1183141, 1, 186, "tenjindaira haruhi", "sasorigatame"),
+    (1183141, 187, 342, "kanna kana", "ashisyun"),
+    (1183141, 567, 740, "kuragano sara", "sasorigatame"),
+    (1183141, 798, 986, "komagata yuzuki", "ashisyun"),
+    (1183141, 987, 1017, "tenjindaira haruhi", "sasorigatame"),
+    (1183141, 1018, 1043, "kanna kana", "ashisyun"),
+    (1183141, 1070, 1098, "kuragano sara", "sasorigatame"),
+    (1183141, 1099, 1125, "komagata yuzuki", "ashisyun"),
 
     (868964, 612, 2000, "kuragano sara", "sasorigatame"),
     # Zettai Saikyou ☆ Oppai Sensou!!
@@ -629,13 +642,27 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3328435, 477, 652, "natori_misa", "mango pudding"),
     # IxSHE Tell
     (1189877, 9, 161, "yuuki_ayaka", None),
-    (1189877, 179, 394, "kosimizu_kasumi", None),
+    (1189877, 179, 394, "koshimizu_kasumi", None),
+    (1189877, 395, 592, "hanamori_shiori", None),
     (1263294, 3, 166, "yuuki_ayaka", None),
+    (1990347, 2, 198, "hanamori_shiori", None),
     (1990347, 417, 568, "yuuki_ayaka", None),
-    (1990347, 200, 415, "kosimizu_kasumi", None),
+    (1990347, 200, 415, "koshimizu_kasumi", None),
     (2566350, 7, 159, "yuuki_ayaka", None),
-    (2566350, 177, 392, "kosimizu_kasumi", None),
+    (2566350, 177, 392, "koshimizu_kasumi", None),
+    (2566350, 393, 590, "hanamori_shiori", None),
+    (2566350, 954, 1022, "yuuki_ayaka", None),
+    (2566350, 1031, 1109, "koshimizu_kasumi", None),
+    (2566350, 1110, 1171, "hanamori_shiori", None),
     # Houkago Cinderella
+    (1719085, 7, 170, "oujou_maria", "rinks"),
+    (1719085, 171, 313, "tayori_tanomi", "rinks"),
+
+    (2127509, 2, 31, "oujou_maria", "rinks"),
+    (2127509, 32, 73, "tayori_tanomi", "rinks"),
+
+    (2339211, 2, 163, "oze_hazuki", "rinks"),
+    (2595337, 2, 117, "oze_hazuki", "rinks"),
     # FLIP＊FLOP
     (2362035, 1, 2000, "io_(flip_flop)", None),
     # Pure x Connect
@@ -844,6 +871,22 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1921951, 8, 98, None, "fuyuichi monme"),
     (1921951, 99, 136, "iyori ao", "yuuki rika"),
     (1921951, 137, 166, None, "fuyuichi monme"),
+    # Suki to Suki to de Sankaku Renai
+    (998647, 3, 77, "komorie_nanaru", "fuyuichi monme"),
+    (998647, 80, 158, "komorie_suzu", "fuyuichi monme"),
+    (998647, 159, 264, "narutaki_maho", "yuuki rika"),
+    (998647, 265, 357, None, "yuunagi seshina"),
+
+    (1423851, 3, 78, "komorie_nanaru", "fuyuichi monme"),
+    (1423851, 81, 159, "komorie_suzu", "fuyuichi monme"),
+    (1423851, 160, 265, "narutaki_maho", "yuuki rika"),
+    (1423851, 266, 358, None, "yuunagi seshina"),
+    # Karigurashi Renai
+    (1205109, 3, 125, "sakuragibashi_rito", "yuuki rika"),
+    (1205109, 126, 240, "aranami_kyou", "fuyuichi monme"),
+    (1205109, 241, 420, "niizuma_hiyori", "fuyuichi monme"),
+    (1205109, 421, 580, "yohakari_ayaka", "yuuki rika"),
+    (1205109, 581, 658, None, "yuunagi seshina"),
     # Sorairo Innocent
     (882267, 3, 90, "tsukigase_mahiru", "unasaka"),
     (882267, 91, 157, "tsubaki_ami", "unasaka"),
@@ -2219,6 +2262,47 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1218763, 269, 522, "ashiya_suzuka", "asami asami"),
     (1218763, 523, 790, "kurashiki_azusa", "asami asami"),
     (1218763, 791, 1039, "hayase_chitose", "asami asami"),
+    # Hakuchuumu no Aojashin
+    (1740823, 10, 447, "yonagi_(hakuchuumu_no_aojashin)", None),
+    (1740823, 461, 720, "hatano_rin", None),
+    (1740823, 798, 1030, "olivia_berry", None),
+    (1740823, 1176, 1439, "momonouchi_sumomo", None),
+
+    (1741452, 692, 859, "yonagi_(hakuchuumu_no_aojashin)", None),
+    (1741452, 860, 1040, "hatano_rin", None),
+    (1741452, 1041, 1236, "olivia_berry", None),
+    (1741452, 1237, 1455, "momonouchi_sumomo", None),
+
+    (1743085, 1, 520, "yonagi_(hakuchuumu_no_aojashin)", None),
+    (1743085, 648, 1202, "hatano_rin", None),
+    (1743085, 1203, 2000, "olivia_berry", None),
+    (1743088, 1, 302, "momonouchi_sumomo", None),
+    # Kimi to Yumemishi
+    (960882, 3, 108, "hiiragi_marina", None),
+    # Newton to Ringo no Ki
+    (1067353, 2, 230, "alice_bedford", "bekotarou"),
+    (1067353, 231, 577, "utakane_yotsuko", "bekotarou"),
+    (1067353, 578, 765, "tsukumo_haru_(newton_to_ringo_no_ki)", "bekotarou"),
+    (1067353, 1006, 1068, "emmy_felton", "shimofuri"),
+
+    (1276802, 2, 234, "alice_bedford", "bekotarou"),
+    (1276802, 235, 479, "utakane_yotsuko", "bekotarou"),
+    (1276802, 480, 654, "tsukumo_haru_(newton_to_ringo_no_ki)", "bekotarou"),
+    (1276802, 851, 909, "emmy_felton", "shimofuri"),
+    # AstralAir no Shiroki Towa
+    # Yubisaki Connection
+    (1901135, 7, 342, "tachibana_iori", "ayase hazuki"),
+    (1901135, 343, 589, "akizuki_mikoto", "ayase hazuki"),
+    (1901135, 590, 908, "futaba_natsuho", "ayase hazuki"),
+    (1901135, 909, 1164, "sakurazaka_yuzuki", "ayase hazuki"),
+
+    (2152355, 4, 252, "akizuki_mikoto", "ayase hazuki"),
+    (2152355, 253, 483, "sakurazaka_yuzuki", "ayase hazuki"),
+
+    (2206764, 2, 247, "tachibana_iori", "ayase hazuki"),
+    (2206764, 248, 507, "futaba_natsuho", "ayase hazuki"),
+    (2206764, 508, 641, "tachibana_iori", "ayase hazuki"),
+    (2206764, 642, 774, "futaba_natsuho", "ayase hazuki"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp

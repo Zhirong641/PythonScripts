@@ -18,7 +18,6 @@ akagi_rio
 kakogawa_tarou
 himuro_shunsuke
 gustav
-yaegashi_nan
 nakayama_miyuki
 uni8
 goban
