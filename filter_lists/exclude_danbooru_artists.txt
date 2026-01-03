@@ -9,7 +9,6 @@ rim
 isao
 momi
 nini
-niki
 acorn
 asanagi
 aldehyde
@@ -46,7 +45,6 @@ uonuma_yuu
 cccpo
 ukyo_rst
 gijang
-niro
 popqn
 horosuke
 kinta
@@ -93,17 +91,14 @@ yoshiron
 hamashima_shigeo
 takeya_masami
 eitarou
-naruse_hirofumi
 kazami_haruki
 akabi
 shiratama_yomogi
 kawahara_makoto
-bekotarou
 higuchi_isami
 orinze
 aona_masao
 kunai_uri
-shiraichigo
 shinjou_satomi
 panta
 takahero
@@ -114,8 +109,6 @@ tonchan
 akinoko
 togami_masaki
 izumi_mahiru
-ichiyo_moka
-shuto_haruka
 nekomugi
 hanataka_retomo
 minatsuki_alumi
@@ -125,7 +118,6 @@ sumeragi_yuusuke
 mizutama
 kazunari
 senomoto_hisashi
-marui
 kado_tsukasa
 taira_tsukune
 hinooka_shuuji
@@ -144,7 +136,6 @@ aoi_yuuji
 char
 sapporo_momoko
 sikorsky
-sakana
 sagisawa_anzu
 tachibana_yuu
 yonekura_kihiro
@@ -159,7 +150,6 @@ chinjao_roosu
 kinosaki_reisui
 himukai_kyousuke
 sakura_mikan
-sakura_misaki
 fujiwara_warawara
 ozawa_akifumi
 izumi_makoto
@@ -170,7 +160,6 @@ yukiwo
 haga_yui
 aozora_remina
 unun
-muu
 ikuta_takanon
 goma_satoshi
 muku
@@ -304,7 +293,6 @@ kuon_itsuki
 suzume_miku
 mayachi
 tukinon
-inuzumi_masaki
 ohba_kagerou
 chitosezaka_suzu
 tokinon
