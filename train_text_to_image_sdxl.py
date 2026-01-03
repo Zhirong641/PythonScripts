@@ -305,7 +305,7 @@ def _load_and_filter_index_dataset(
 
     def _filter_index_entry(example):
         src_path = example.get("_image_path", "") or ""
-        type_ = example.get("type", "") 
+        type_ = example.get("type", "").lower()
         if not src_path or not os.path.isfile(src_path):
             return False
         valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tif", ".tiff", ".avif", ".heic"}
@@ -324,13 +324,12 @@ def _load_and_filter_index_dataset(
         artists = _split_clean_comma_list(artist)
         if any(word in general for word in exclude_word_list):
             return False
-        if ("danbooru" not in src_path
+        if (type_ == "game cg"
             and any(bg in general_tags for bg in ["transparent_background", "simple_background", "black_background", "white_background", "tachi-e"])
             and "dakimakura_(medium)" not in general_tags):
             group = example.get("group", "") or ""
             if ("dmm.com" not in group and 
                 not (include_source_id_set and any(part in include_source_id_set for part in path_parts)) and
-                type_.lower() == "game cg" and 
                 rng.random() < 0.66):
                 return False
         year = example.get("year", "") or ""
@@ -348,14 +347,17 @@ def _load_and_filter_index_dataset(
         meta = example.get("meta", "") or ""
         if "lowres" in meta and "highres" not in meta:
             return False
-
+        if "traditional_media" in meta:
+            return False
+        if type_ == "danbooru" and "photo_(medium)" in meta:
+            return False
         if exclude_artist_set and any(a in exclude_artist_set for a in artists):
             return False
         if total_exclude_set and artists and all(a in total_exclude_set for a in artists):
             return False
         if "mizunezumi" in artists and rng.random() < 0.9:
             return False
-        if ("danbooru" not in src_path and "ko-cha" in artists and rng.random() < 0.9):
+        if (type_ != "danbooru" and "ko-cha" in artists and rng.random() < 0.9):
             return False
         return True
 
