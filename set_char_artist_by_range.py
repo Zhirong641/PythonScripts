@@ -460,7 +460,33 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (799866, 24, 149, "urushino_himeko", "sukoyaka gyuunyuu"),
     (799866, 758, 933, "uwaba_shiera", "araiguma"),
     # Yuuwaku Scramble
-    (970288, 303, 593, "hoshimi yuki", "hinata nao"),
+    (970288, 3, 302, "hoshimi_asuka", "hinata nao"),
+    (970288, 303, 593, "hoshimi_yuki", "hinata nao"),
+    (970288, 594, 872, "hoshimi_miku", "hinata nao"),
+
+    (3588537, 3, 301, "hoshimi_asuka", "hinata nao"),
+    (3588537, 302, 592, "hoshimi_yuki", "hinata nao"),
+    (3588537, 593, 871, "hoshimi_miku", "hinata nao"),
+
+    (3467981, 1, 456, "hoshimi_asuka", "hinata nao"),
+    (3467981, 457, 888, "hoshimi_yuki", "hinata nao"),
+    (3467981, 889, 1448, "hoshimi_miku", "hinata nao"),
+    # Ojou-sama to Himitsu no Otome
+    (827748, 56, 244, "himekouji_haruka", "sakurazaka tsuchiyu"),
+    (827748, 245, 474, "kamimori_airi", "hinata nao"),
+    (827748, 475, 683, "shirayuki_yumina", "sakurazaka tsuchiyu"),
+    (827748, 684, 907, "saionji_saya", "hinata nao"),
+
+    (2263122, 2, 189, "himekouji_haruka", "sakurazaka tsuchiyu"),
+    (2263122, 190, 418, "kamimori_airi", "hinata nao"),
+    (2263122, 419, 626, "shirayuki_yumina", "sakurazaka tsuchiyu"),
+    (2263122, 627, 849, "saionji_saya", "hinata nao"),
+
+    (1578575, 1, 817, "himekouji_haruka", "sakurazaka tsuchiyu"),
+    (1578575, 818, 1513, "kamimori_airi", "hinata nao"),
+    (1578575, 1514, 2000, "shirayuki_yumina", "sakurazaka tsuchiyu"),
+    (1578589, 1, 350, "shirayuki_yumina", "sakurazaka tsuchiyu"),
+    (1578589, 351, 1070, "saionji_saya", "hinata nao"),
     # Imouto Paradise!
     (600053, 2, 200, "nanase momoka", "itou life"),
     (600053, 201, 360, "nanase ririna", "itou life"),
@@ -813,11 +839,19 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (743876, 515, 719, "naraoka_mitsuki", None),
     # Sorceress*Alive!
     (1354083, 3, 14, "akina_randal", "shona mitsuishi"),
-    (1354083, 44, 51, "azuria_newfield", "shona mitsuishi"),
     (1354083, 15, 32, "yuzuriha_serval", "hayakawa halui"),
+    (1354083, 33, 43, "mia_welch", "sakura misaki"),
+    (1354083, 44, 51, "azuria_newfield", "shona mitsuishi"),
     (1354083, 200, 282, "akina_randal", "shona mitsuishi"),
     (1354083, 283, 361, "azuria_newfield", "shona mitsuishi"),
+    (1354083, 362, 419, "mia_welch", "sakura misaki"),
     (1354083, 420, 479, "yuzuriha_serval", "hayakawa halui"),
+
+    (1444193, 1, 352, "akina_randal", "shona mitsuishi"),
+    (1444193, 353, 700, "azuria_newfield", "shona mitsuishi"),
+    (1444193, 810, 1289, "mia_welch", "sakura misaki"),
+    (1444193, 1888, 2000, "yuzuriha_serval", "hayakawa halui"),
+    (1444194, 1, 2000, "yuzuriha_serval", "hayakawa halui"),
     # Ren'ai, Hajimemashite
     (3255903, 1, 177, "tenshi-chan_(ren'ai_hajimemashite) ", "fuyuichi monme"),
     (3255903, 180, 306, "aizawa_yukari", "unasaka"),
@@ -1801,6 +1835,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1370031, 581, 893, "seguchi_yayoi", "sakura misaki"),
     (1370031, 894, 1170, "seguchi_saya", "sakura misaki"),
 
+    (1057065, 1, 2000, "seguchi_youkou", "sakura misaki"),
+
     # uso(campus)
     (878564, 1, 2000, "himeno_satsuki", "riichu"),
     (928204, 1, 2000, "izumi_aoi", "riichu"),
@@ -2312,7 +2348,10 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1964286, 448, 450, "kamiyugi_tama", None),
     # Rensou Relation
     (819614, 5, 72, "sengoku_ichika", "moekibara fumitake"),
+    (819614, 147, 206, None, "moekibara fumitake"),
+    (819614, 295, 319, None, "moekibara fumitake"),
     (819614, 320, 343, "sengoku_ichika", "moekibara fumitake"),
+    (819614, 370, 384, None, "moekibara fumitake"),
     (1124566, 372, 505, "sengoku_ichika", "moekibara fumitake"),
     # Sweet Homemade
     (2766424, 4, 7, "ezaki_iroha", None),
@@ -2339,8 +2378,12 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (918417, 95, 104, "ichinose_minato", "amakusa tobari"),
     (918417, 105, 118, "tachibana_gekka", "amakusa tobari"),
     # Unmei Senjou no Phi
+    (753603, 1, 40, None, "moekibara fumitake"),
     (753603, 41, 81, "kuon_nagisa", "nanaroba hana"),
+    (753603, 120, 168, None, "moekibara fumitake"),
+    (753603, 200, 283, None, "moekibara fumitake"),
     (753603, 284, 359, "kuon_nagisa", "nanaroba hana"),
+    (753603, 448, 515, None, "moekibara fumitake"),
     # mono no aware wa sai no koro
     (3534610, 35, 69, "nonomiya_kyouka", "nanaroba hana"),
     (3534610, 70, 120, "kinami_misaki", "nanaroba hana"),
@@ -2453,6 +2496,63 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (939660, 173, 310, "michimura_yuzuko", "takano yuki"),
     (939660, 311, 451, "ooyama_riri", "inuzumi masaki"),
     (939660, 452, 561, "thea_(tarareba)", "inuzumi masaki"),
+    # Ore no Kanojo no Uraomote
+    (1331513, 2, 101, "sakuragi_yui", "ariko youichi"),
+    (1331513, 102, 186, "tomiya_nazuki", "inuzumi masaki"),
+    (1331513, 188, 294, "uesugi_akeno", "inuzumi masaki"),
+    (1331513, 295, 372, "narugasaki_kanna", "tateha"),
+
+    (1105223, 1, 244, "sakuragi_yui", "ariko youichi"),
+    (1105223, 245, 425, "tomiya_nazuki", "inuzumi masaki"),
+    (1105223, 426, 647, "uesugi_akeno", "inuzumi masaki"),
+    (1105223, 648, 796, "narugasaki_kanna", "tateha"),
+    # RE:D Cherish
+    (2745978, 1, 216, "rouge_wentworth", "shuto haruka"),
+    (2745978, 348, 623, "rouge_wentworth", "shuto haruka"),
+    (2745978, 624, 625, "desperado", "saikirider"),
+    (2745980, 1, 207, "desperado", "saikirider"),
+
+    (2447977, 40, 267, "unica_rasperanza", "pero"),
+    (2447977, 268, 281, "rouge_wentworth", "shuto haruka"),
+    (2447977, 282, 292, "desperado", "saikirider"),
+
+    (2152721, 57, 189, "unica_rasperanza", "pero"),
+    (2152721, 190, 339, "rouge_wentworth", "shuto haruka"),
+    (2152721, 340, 442, "desperado", "saikirider"),
+
+    (2154979, 60, 192, "unica_rasperanza", "pero"),
+    (2154979, 193, 343, "rouge_wentworth", "shuto haruka"),
+    (2154979, 344, 446, "desperado", "saikirider"),
+
+    (2447968, 1, 249, "unica_rasperanza", "pero"),
+    (2447968, 250, 350, "rouge_wentworth", "shuto haruka"),
+    (2447968, 351, 480, "desperado", "saikirider"),
+    (2447968, 911, 1070, "unica_rasperanza", "pero"),
+    (2447968, 1071, 1091, "rouge_wentworth", "shuto haruka"),
+    (2447968, 1092, 1173, "desperado", "saikirider"),
+    # Neko-nin
+    (3659750, 1, 2000, None, "takano yuki"),
+    (3688156, 1, 2000, None, "takano yuki"),
+    # Koi ni, Kanmi o Soete
+    (1165254, 52, 116, "shionomiya_richer", "miyasaka miyu"),
+    (1165254, 117, 205, "niwasaka_rira", "miyasaka miyu"),
+
+    (1348014, 9, 93, "hoshigaoka_ciel", "miyasaka miyu"),
+    (1348014, 94, 154, "inae_koron", "miyasaka naco"),
+    # Hokenshitsu no Sensei to Koakuma na Kaichou
+    (2230669, 1, 134, "tsukimori_rin", "santa matsuri"),
+    (1785863, 12, 144, "shirobana", "santa matsuri"),
+    (2175994, 1, 73, "otohime_(santa_matsuri)", "santa matsuri"),
+    (2175994, 81, 129, "otohime_(santa_matsuri)", "santa matsuri"),
+    # Animal☆Panic
+    (1536541, 5, 34, "shirafuji_yuna", "miyasaka miyu"),
+    (1536541, 35, 64, "morino_hinata", "miyasaka miyu"),
+    (1536541, 65, 94, "kisaki_shiori", "miyasaka naco"),
+    (1536541, 95, 118, "minazuki_rune", "miyasaka miyu"),
+    (1536541, 119, 192, "shirafuji_yuna", "miyasaka miyu"),
+    (1536541, 193, 252, "morino_hinata", "miyasaka miyu"),
+    (1536541, 253, 311, "kisaki_shiori", "miyasaka naco"),
+    (1536541, 312, 378, "minazuki_rune", "miyasaka miyu"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp

@@ -105,7 +105,8 @@ def _normalize_artist_tags(artist_tags):
                   "moeki yuta": "moeki yuuta",
                   "shira ichigo": "shiraichigo",
                   "hinata momoko": "hinata momo",
-                  "yuunagi sesina": "yuunagi seshina",}
+                  "yuunagi sesina": "yuunagi seshina",
+                  "shuutou haruka": "shuto haruka",}
     normalized = []
     seen = set()
     for tag in artist_tags or []:
