@@ -56,20 +56,20 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1113361, 1004, 1206, "asaka ushio", "sasorigatame"),
     # Maho x Roba -Witches Spiritual Home- 
     (1146404, 12, 13, "kujou_shizuru", "shiramori yuse"),
+    (1146404, 14, 196, "konata_konatsu", "kimishima ao"),
+    (1146404, 197, 406, "yamabuki_kuon", "kimishima ao"),
     (1146404, 407, 582, "kujou_shizuru", "shiramori yuse"),
-    (1146404, 891, 1017, None, "shiramori yuse"),
-    (1146404, 583, 773, None, "nanaroba hana"),
-    (1146404, 774, 890, "ennis yutoria", "nanaroba hana"),
-    (1146404, 14, 196, "konata konatsu", "kimishima ao"),
-    (1146404, 197, 406, None, "kimishima ao"),
-    (1409248, 1, 2000, "konata konatsu", None),
-    # Maho x Roba -Witches Spiritual Home- 
-    (1340509, 1, 66, "konata konatsu", "kimishima ao"),
-    (1340509, 67, 174, None, "kimishima ao"),
+    (1146404, 891, 1017, "mikage_(maho_x_roba)", "shiramori yuse"),
+    (1146404, 583, 773, "hoshikawa_teru", "nanaroba hana"),
+    (1146404, 774, 890, "ennis_yutoria", "nanaroba hana"),
+    (1409248, 1, 2000, "konata_konatsu", None),
+
+    (1340509, 1, 66, "konata_konatsu", "kimishima ao"),
+    (1340509, 67, 174, "yamabuki_kuon", "kimishima ao"),
     (1340509, 175, 274, "kujou_shizuru", "shiramori yuse"),
-    (1340509, 275, 338, None, "nanaroba hana"),
-    (1340509, 339, 386, "ennis yutoria", "nanaroba hana"),
-    (1340509, 387, 434, None, "shiramori yuse"),
+    (1340509, 275, 338, "hoshikawa_teru", "nanaroba hana"),
+    (1340509, 339, 386, "ennis_yutoria", "nanaroba hana"),
+    (1340509, 387, 434, "mikage_(maho_x_roba)", "shiramori yuse"),
     # Koi Kakeru Shinai Kanojo
     (3000014, 35, 137, "himeno sena", "kimishima ao"),
     (3000014, 140, 219, "shindou_ayane", "kurasawa moko"),
@@ -1353,18 +1353,59 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1907517, 3, 164, None, "motoi ayumu"),
     (1907517, 328, 545, None, "motoi ayumu"),
     # Koikishi Purely ☆ Kiss
+    (875317, 3, 271, "kazama_akari", "yuuki hagure"),
     (875317, 320, 708, "shidou_mana", "yuuki hagure"),
+    (875317, 725, 805, "bernadette_villeburg", "yuuki hagure"),
+    (875317, 806, 880, "kuninaka_kaori", "yuuki hagure"),
     (875317, 881, 1273, "elcia_harvence", "yuuki hagure"),
     (875317, 1312, 1667, "fujimori_yuu", "yuuki hagure"),
-    (875317, 725, 805, "bernadette_villeburg", "yuuki hagure"),
 
     (1302133, 1, 558, "elcia_harvence", "yuuki hagure"),
     (1302133, 559, 936, "bernadette_villeburg", "yuuki hagure"),
+    (1302133, 937, 1368, "kuninaka_kaori", "yuuki hagure"),
     (1302133, 1417, 1936, "shidou_mana", "yuuki hagure"),
+    (1302133, 1937, 2000, "kazama_akari", "yuuki hagure"),
+    (1302134, 1, 429, "kazama_akari", "yuuki hagure"),
     (1302134, 430, 913, "fujimori_yuu", "yuuki hagure"),
     # Juukishi Cutie ☆ Bullet
     (840881, 163, 266, "reina_de_medishi", "yuuki hagure"),
     (1868156, 756, 1100, "reina_de_medishi", "yuuki hagure"),
+    # kimagure temptation 
+    (1477239, 1, 26, "anneliese ", "kimishima ao"),
+    (1491062, 1, 212, "anneliese ", "kimishima ao"),
+    (2065814, 1, 216, "anneliese ", "kimishima ao"),
+    (3139962, 1, 279, "anneliese ", "kimishima ao"),
+    # Koisuru Kimochi no Kasanekata
+    (877931, 2, 104, "tsukishima_saori", "kimishima ao"),
+    (877931, 105, 211, "hiiragi_mio", "kimishima ao"),
+    (877931, 212, 336, "narumi_akane", "kimishima ao"),
+    (877931, 337, 441, "kuonji_hiyori", "kimishima ao"),
+    (877931, 442, 627, "kaburagi_yukie", "kimishima ao"),
+    (877931, 628, 656, "ougi_ichika", "kimishima ao"),
+
+    (948403, 3, 86, "tsukishima_saori", "kimishima ao"),
+    (948403, 87, 151, "hiiragi_mio", "kimishima ao"),
+    (948403, 152, 231, "narumi_akane", "kimishima ao"),
+    (948403, 232, 303, "kuonji_hiyori", "kimishima ao"),
+    (948403, 304, 394, "kaburagi_yukie", "kimishima ao"),
+    (948403, 395, 472, "ougi_ichika", "kimishima ao"),
+
+    (902543, 1, 78, "hiiragi_mio", "kimishima ao"),
+    (902543, 79, 160, "kuonji_hiyori", "kimishima ao"),
+
+    (2843300, 1, 65, "kaburagi_yukie", "kimishima ao"),
+    (2843300, 66, 118, "ougi_ichika", "kimishima ao"),
+    # Otome ga Kanaderu Koi no Aria
+    (1003525, 843, 903, "jougasaki_kanade", "kimishima ao"),
+    (827706, 116, 157, "jougasaki_kanade", "kimishima ao"),
+    (827706, 623, 657, "jougasaki_kanade", "kimishima ao"),
+    (827706, 765, 799, "jougasaki_kanade", "kimishima ao"),
+    (827706, 907, 972, "jougasaki_kanade", "kimishima ao"),
+
+    # Haze Man
+    (1121739, 17, 94, "fara_perelreese", "kyou"),
+    (1121739, 110, 167, "fara_perelreese", "kyou"),
+    (1121739, 171, 173, "miyadera_renka", "kyou"),
 
     # D.S. -Dal Segno
     (1083084, 2, 135, "asamiya_himari", "tanihara natsuki"),
@@ -2585,13 +2626,30 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Osananajimi Ojou-sama to H de Himitsu na Dousei Seikatsu
     (2622654, 1, 1548, "minegishi_yuuma", "mitsuhamochi."),
     # Jewelry Hearts Academia
+    (2284346, 34, 79, "arianna_heartbell", "shiratama"),
+    (2284346, 80, 123, "berka_triad", "shiratama"),
+    (2284346, 124, 177, "mare_ashley-pecker", "shiratama"),
     (2284346, 178, 224, "ruby_(jewelry_hearts_academia)", "shiratama"),
+    (2284346, 532, 576, "arianna_heartbell", "shiratama"),
+    (2284346, 577, 623, "berka_triad", "shiratama"),
+    (2284346, 624, 664, "mare_ashley-pecker", "shiratama"),
     (2284346, 665, 714, "ruby_(jewelry_hearts_academia)", "shiratama"),
 
+    (2397624, 1, 282, "arianna_heartbell", "shiratama"),
+    (2397624, 283, 690, "berka_triad", "shiratama"),
+    (3115867, 1, 2000, "mare_ashley-pecker", "shiratama"),
     (2397624, 1204, 1342, "ruby_(jewelry_hearts_academia)", "shiratama"),
 
+    (3255696, 14, 21, "arianna_heartbell", "shiratama"),
+    (3255696, 22, 31, "berka_triad", "shiratama"),
+    (3255696, 32, 43, "mare_ashley-pecker", "shiratama"),
     (3255696, 44, 51, "ruby_(jewelry_hearts_academia)", "shiratama"),
+    (3255696, 219, 240, "arianna_heartbell", "shiratama"),
+    (3255696, 241, 269, "berka_triad", "shiratama"),
+    (3255696, 270, 293, "mare_ashley-pecker", "shiratama"),
     (3255696, 294, 316, "ruby_(jewelry_hearts_academia)", "shiratama"),
+    (3255696, 172, 185, "milia_ehlendorf", "shiratama"),
+    (3255696, 376, 417, "milia_ehlendorf", "shiratama"),
 
     # Secret Agent
     (1648992, 38, 133, "shirogane_kagura", "odawara hakone"),

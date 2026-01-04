@@ -42,7 +42,9 @@
 1441286
 # Osananajimi Ojou-sama to H de Himitsu na Dousei Seikatsu
 2622654
+# Jewelry Hearts
 2397624
+3115867
 # Kemonomichi
 2770792
 2740160
@@ -65,3 +67,6 @@
 1597545
 1375991
 1196589
+# kimagure temptation 
+1477239
+3139962
