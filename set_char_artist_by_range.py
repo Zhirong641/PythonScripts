@@ -1371,10 +1371,12 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (840881, 163, 266, "reina_de_medishi", "yuuki hagure"),
     (1868156, 756, 1100, "reina_de_medishi", "yuuki hagure"),
     # kimagure temptation 
-    (1477239, 1, 26, "anneliese ", "kimishima ao"),
-    (1491062, 1, 212, "anneliese ", "kimishima ao"),
-    (2065814, 1, 216, "anneliese ", "kimishima ao"),
-    (3139962, 1, 279, "anneliese ", "kimishima ao"),
+    (1477239, 1, 26, "anneliese", "kimishima ao"),
+    (1491062, 1, 212, "anneliese", "kimishima ao"),
+    (2065814, 1, 216, "anneliese", "kimishima ao"),
+    (3139962, 56, 133, "anneliese", "kimishima ao"),
+    (3139962, 136, 137, "anneliese", "kimishima ao"),
+    (3139962, 156, 279, "anneliese", "kimishima ao"),
     # Koisuru Kimochi no Kasanekata
     (877931, 2, 104, "tsukishima_saori", "kimishima ao"),
     (877931, 105, 211, "hiiragi_mio", "kimishima ao"),
@@ -1404,7 +1406,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
 
     # Haze Man
     (1121739, 17, 94, "fara_perelreese", "kyou"),
-    (1121739, 110, 167, "fara_perelreese", "kyou"),
+    (1121739, 110, 167, "miyadera_renka", "kyou"),
     (1121739, 171, 173, "miyadera_renka", "kyou"),
 
     # D.S. -Dal Segno
@@ -2565,15 +2567,41 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
 
     # hamidashi creative
     (1740846, 5, 13, "izumi_hiyori", "utsunomiya tsumire"),
+    (1740846, 110, 266, "nishiki_asumi", "utsunomiya tsumire"),
     (1740846, 267, 423, "izumi_hiyori", "utsunomiya tsumire"),
+    (1740846, 424, 559, "tokiwa_kano", "utsunomiya tsumire"),
     (1740846, 560, 677, "kamakura_shio", "utsunomiya tsumire"),
+
+    (1741935, 1, 170, "ryuukan_ameri", "utsunomiya tsumire"),
+    (1741935, 171, 751, "nishiki_asumi", "utsunomiya tsumire"),
     (1741935, 809, 1411, "izumi_hiyori", "utsunomiya tsumire"),
+    (1741935, 1412, 2000, "tokiwa_kano", "utsunomiya tsumire"),
+
+    (1741936, 1, 80, "tokiwa_kano", "utsunomiya tsumire"),
+    (1741936, 81, 278, "izumi_miri", "utsunomiya tsumire"),
+    (1741936, 279, 309, "hijiri_ririko", "utsunomiya tsumire"),
     (1741936, 310, 687, "kamakura_shio", "utsunomiya tsumire"),
+
     (1741935, 1, 2000, None, "utsunomiya tsumire"),
     (1741936, 1, 2000, None, "utsunomiya tsumire"),
 
+    (2384486, 5, 332, "ryuukan_ameri", "utsunomiya tsumire"),
+    (2384486, 333, 512, "nishiki_asumi", "utsunomiya tsumire"),
     (2384486, 527, 745, "izumi_hiyori", "utsunomiya tsumire"),
+    (2384486, 746, 896, "tokiwa_kano", "utsunomiya tsumire"),
     (2384486, 897, 1061, "kamakura_shio", "utsunomiya tsumire"),
+
+
+    (2390603, 1, 157, "nishiki_asumi", "utsunomiya tsumire"),
+    (2390603, 263, 419, "izumi_hiyori", "utsunomiya tsumire"),
+    (2390603, 420, 555, "tokiwa_kano", "utsunomiya tsumire"),
+    (2390603, 556, 673, "kamakura_shio", "utsunomiya tsumire"),
+    (2390603, 674, 759, "nishiki_asumi", "utsunomiya tsumire"),
+    (2390603, 814, 916, "izumi_hiyori", "utsunomiya tsumire"),
+    (2390603, 917, 982, "tokiwa_kano", "utsunomiya tsumire"),
+    (2390603, 983, 1043, "kamakura_shio", "utsunomiya tsumire"),
+
+    (3328453, 10, 356, "hijiri_ririko", "utsunomiya tsumire"),
     # Love Commu
     (1389165, 2, 287, "saionji_shouko", "naenae"),
     (1389165, 288, 609, "tsukimiya_rin", "naenae"),
@@ -2930,6 +2958,11 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1536541, 193, 252, "morino_hinata", "miyasaka miyu"),
     (1536541, 253, 311, "kisaki_shiori", "miyasaka naco"),
     (1536541, 312, 378, "minazuki_rune", "miyasaka miyu"),
+    # Kimi no Hitomi ni Hit Me
+    (1021932, 3, 108, "hinata_hitomi", "nekonyan"),
+    (1021932, 109, 199, "tsukahata_miko", "kurasawa moko"),
+    (1021932, 209, 323, "hataya_shiina", "hisama kumako"),
+    (1021932, 324, 440, "kurose_tsubasa", "nekonyan"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp

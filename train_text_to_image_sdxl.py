@@ -347,7 +347,7 @@ def _load_and_filter_index_dataset(
         meta = example.get("meta", "") or ""
         if "lowres" in meta and "highres" not in meta:
             return False
-        if "traditional_media" in meta:
+        if "traditional_media" in meta or "unfinished" in meta:
             return False
         if type_ == "danbooru" and "photo_(medium)" in meta:
             return False
