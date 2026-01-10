@@ -106,7 +106,10 @@ def _normalize_artist_tags(artist_tags):
                   "shira ichigo": "shiraichigo",
                   "hinata momoko": "hinata momo",
                   "yuunagi sesina": "yuunagi seshina",
-                  "shuutou haruka": "shuto haruka",}
+                  "shuutou haruka": "shuto haruka",
+                  "peko": "kani biimu",
+                  "tomo": "tomoo_(tomo)",
+                  "hadumi rio": "hazumi rio",}
     normalized = []
     seen = set()
     for tag in artist_tags or []:
@@ -330,7 +333,7 @@ def _load_and_filter_index_dataset(
             group = example.get("group", "") or ""
             if ("dmm.com" not in group and 
                 not (include_source_id_set and any(part in include_source_id_set for part in path_parts)) and
-                rng.random() < 0.66):
+                rng.random() < 0.75):
                 return False
         year = example.get("year", "") or ""
         years = []
@@ -347,7 +350,7 @@ def _load_and_filter_index_dataset(
         meta = example.get("meta", "") or ""
         if "lowres" in meta and "highres" not in meta:
             return False
-        if "traditional_media" in meta or "unfinished" in meta:
+        if "traditional_media" in meta or "unfinished" in meta or "concept_art" in meta:
             return False
         if type_ == "danbooru" and "photo_(medium)" in meta:
             return False

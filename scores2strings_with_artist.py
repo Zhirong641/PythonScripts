@@ -39,7 +39,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 # ====== 每类默认阈值（可被 --thresh 覆盖）======
 CATEGORY_DEFAULT_THRESH = {
     "rating": 0.65,
-    "character": 0.83,
+    "character": 0.86,
     "meta": 0.6,
     "year": 0.6,
 }
