@@ -6,7 +6,6 @@ from typing import List, Tuple, Optional
 
 # 需要修改的区间（目录ID, 起始序号, 结束序号，角色，画师，均闭区间）
 RANGES: List[Tuple[int, int, int, str, str]] = [
-    (3328374, 3, 2000, None, "utsunomiya tsumire"),
     (3417336, 1, 2000, None, "suzumori"),
     (3417337, 1, 2000, None, "suzumori"),
     (3417347, 1, 2000, None, "suzumori"),
@@ -241,18 +240,37 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1953903, 820, 862, "souma_ria", "hontani kanae"),
     (1953903, 907, 958, "souma_ria", "hontani kanae"),
     (1953903, 1005, 1120, "kuryuu_akane", "arisue tsukasa"),
+    (1953903, 1121, 1161, "caminal_le_pultaia_sortilege_sisua", "purin purin"),
+
     (1936004, 2, 117, "kuryuu_akane", "arisue tsukasa"),
     (1936004, 118, 347, "heroina_di_caballero_ista", "toranosuke"),
-    (1936004, 771, 1089, "sylvia_le_cruzcrown_sortilege_sisua", "hontani kanae"),
+    (1936004, 348, 388, "caminal_le_pultaia_sortilege_sisua", "purin purin"),
     (1936004, 391, 605, "kisaki_reina", "toranosuke"),
+    (1936004, 607, 673, "souma_ria", "hontani kanae"),
+    (1936004, 675, 724, "souma_ria", "hontani kanae"),
+    (1936004, 771, 1089, "sylvia_le_cruzcrown_sortilege_sisua", "hontani kanae"),
 
     (1157754, 2, 117, "kuryuu_akane", "arisue tsukasa"),
     (1157754, 118, 393, "heroina_di_caballero_ista", "toranosuke"),
-    (1157754, 844, 1161, "sylvia_le_cruzcrown_sortilege_sisua", "hontani kanae"),
+    (1157754, 394, 434, "caminal_le_pultaia_sortilege_sisua", "purin purin"),
     (1157754, 435, 653, "kisaki_reina", "toranosuke"),
+    (1157754, 655, 740, "souma_ria", "hontani kanae"),
+    (1157754, 742, 792, "souma_ria", "hontani kanae"),
+    (1157754, 844, 1161, "sylvia_le_cruzcrown_sortilege_sisua", "hontani kanae"),
 
+    (1369330, 6, 36, "kuryuu_akane", "arisue tsukasa"),
     (1369330, 37, 249, "jougasaki_ayaka", "arisue tsukasa"),
+    (1369330, 250, 298, "heroina_di_caballero_ista", "toranosuke"),
+    (1369330, 299, 453, "caminal_le_pultaia_sortilege_sisua", "purin purin"),
+    (1369330, 454, 476, "kisaki_reina", "toranosuke"),
+
+    (2274092, 3, 33, "kuryuu_akane", "arisue tsukasa"),
     (2274092, 34, 246, "jougasaki_ayaka", "arisue tsukasa"),
+    (2274092, 247, 295, "heroina_di_caballero_ista", "toranosuke"),
+    (2274092, 296, 450, "caminal_le_pultaia_sortilege_sisua", "purin purin"),
+    (2274092, 451, 473, "kisaki_reina", "toranosuke"),
+
+    (1497885, 1, 2000, "jougasaki_ayaka", None),
     # KisaragiGOLD★STAR~Moonlight serenade in autum
     (713608, 58, 61, "fujimaru_mikoto", "toranosuke"),
     (713608, 3, 109, "nitta_ichika", "chimaro"),
@@ -399,6 +417,46 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (970538, 125, 128, "miake hiyoko", None),
     (970538, 132, 145, "tsukimiya asuka", None),
     (970538, 146, 216, "miake hiyoko", None),
+    (970538, 217, 312, "misaka_sumire", None),
+    (970538, 313, 397, "maya_tsubura", None),
+    (970538, 398, 469, "serizawa_yukino", None),
+    # Ecchi de Hentai! Yakimochi Ojou-sama
+    (836073, 5, 182, "kurusugawa_alice", "goma satoshi"),
+    (836073, 183, 410, "kagami_hibiki_(ecchi_de_hentai!)", "satofuji masato"),
+    (836073, 411, 562, "shinomori_kazuha", "yoshi hyuuma"),
+    (836073, 563, 717, "shiratori_mayu", "satofuji masato"),
+    (836073, 718, 887, "orimiya_meru", "satofuji masato"),
+    # Ubu na Otome no Ecchi na Onegai
+    (1133866, 3, 116, "nanasato_nene", None),
+    (1133866, 117, 229, "momozono_hozumi", None),
+    (1133866, 230, 352, "hikami_ayame", None),
+    (1133866, 353, 507, "anesaki_mimari", None),
+    (1133866, 508, 654, "hoshimi_kano", None),
+
+    (1135068, 1, 70, "nanasato_nene", None),
+    (1135068, 71, 119, "momozono_hozumi", None),
+    (1135068, 120, 154, "hikami_ayame", None),
+    (1135068, 155, 189, "anesaki_mimari", None),
+    (1135068, 190, 217, "hoshimi_kano", None),
+
+    (1512874, 4, 291, "nanasato_nene", None),
+    (1512874, 292, 675, "momozono_hozumi", None),
+    (1512874, 676, 1011, "hikami_ayame", None),
+    (1512874, 1012, 1395, "anesaki_mimari", None),
+    (1512874, 1396, 1724, "hoshimi_kano", None),
+    # Otome Kishi Ima Sugu Watashi o Dakishimete
+    (1403922, 119, 312, "akatsuki_amane", "yashima takahiro"),
+    (1403922, 313, 501, "kuromine_misumi", "haruruyuco"),
+    (1403922, 502, 735, "yukishiro_chitome", "lucie"),
+    # Noble Butler
+    (3328263, 96, 172, "luna_fleur_renisphia", "natsuki marina"),
+    (3328263, 173, 257, "melty_fleur_renisphia", "mogupon"),
+    (3328263, 258, 338, "tina_fleur_renisphia", "shiwasu horio"),
+
+    (3328263, 401, 455, "luna_fleur_renisphia", "natsuki marina"),
+    (3328263, 456, 513, "melty_fleur_renisphia", "mogupon"),
+    (3328263, 514, 584, "tina_fleur_renisphia", "shiwasu horio"),
+
     # Pure Song Garden!
     (1081513, 2, 236, "shimokuni asuka", "bekotarou"),
     (1081513, 237, 578, "hoshino iroha", "motoi ayumu"),
@@ -1711,8 +1769,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2622635, 245, 359, "kurusu_hikaru", "ikegami akane"),
     (2622635, 360, 498, "itsukage_honoka", "ikegami akane"),
     (2622635, 499, 612, "eliska_fortinova", "ikegami akane"),
-    (2620635, 613, 643, "noumi_mizuha", "ikegami akane"),
-    (2620635, 644, 675, "tatsumiya_homura", "ikegami akane"),
+    (2622635, 613, 643, "noumi_mizuha", "ikegami akane"),
+    (2622635, 644, 675, "tatsumiya_homura", "ikegami akane"),
 
     (3590370, 1, 126, "lucie_stella_ecarlate", "ikegami akane"),
     (3590370, 127, 353, "yaezakura_koume", "ikegami akane"),
@@ -1727,8 +1785,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1596946, 315, 454, "yotsuba_kohaku", "ikegami akane"),
     (1596946, 455, 593, "ayame_nayuri", "ikegami akane"),
     (1596946, 594, 754, "takashiro_towa", "ikegami akane"),
-    (1597946, 755, 791, "matsuyuki_kiri", "ikegami akane"),
-    (1597946, 792, 804, "minazuki_shio", "ikegami akane"),
+    (1596946, 755, 791, "matsuyuki_kiri", "ikegami akane"),
+    (1596946, 792, 804, "minazuki_shio", "ikegami akane"),
 
     (1597545, 274, 493, "matsuyuki_ame", "ikegami akane"),
     (1597545, 1, 273, "kuzunoha_chitose", "ikegami akane"),
@@ -2545,8 +2603,13 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Lautes Alltags -Herrenlose Katze und Teehaus-
     (782112, 2, 276, "takanashi_nanase", "sorai shinya"),
     (782112, 277, 456, "kasahara_himari", "sorai shinya"),
+    (782112, 457, 683, "sakurai_sana", "sorai shinya"),
+    (782112, 684, 964, "hirasawa_kaede", "sorai shinya"),
     (782393, 127, 882, "takanashi_nanase", "sorai shinya"),
     (782393, 883, 1701, "kasahara_himari", "sorai shinya"),
+    (782393, 1702, 2000, "sakurai_sana", "sorai shinya"),
+    (782586, 1, 370, "sakurai_sana", "sorai shinya"),
+    (782586, 371, 1168, "hirasawa_kaede", "sorai shinya"),
     # Yomegami - My Sweet Goddess!
     (998648, 12, 101, "narukawa_iris", "hisama_kumako"),
     (998648, 139, 243, "hakari_mari", "mikeou"),
@@ -2718,6 +2781,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2390603, 983, 1043, "kamakura_shio", "utsunomiya tsumire"),
 
     (3328453, 10, 356, "hijiri_ririko", "utsunomiya tsumire"),
+    (3328374, 8, 354, "hijiri_ririko", "utsunomiya tsumire"),
+    (3328374, 3, 2000, None, "utsunomiya tsumire"),
     # Love Commu
     (1389165, 2, 287, "saionji_shouko", "naenae"),
     (1389165, 288, 609, "tsukimiya_rin", "naenae"),
@@ -3468,6 +3533,28 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (981370, 143, 267, "serizawa_kuon", None),
     (981370, 268, 394, "kisaragi_noe", None),
     (981370, 395, 517, "kano_shiina", None),
+    # Happy Weekend
+    (3415528, 2, 546, "izumi_akina", None),
+    (3415528, 547, 1588, "hanasaki_koharu", None),
+    (3415529, 2, 700, "shiina_yuki", None),
+    # Kanojo wa Ecchi de Midara na Hentai
+    (722918, 17, 179, "yamashina_kaori", "sorai shinya"),
+    (722918, 180, 346, "jinguuji_reika", "kaniya shiku"),
+    (722918, 347, 534, "katou_riko", "kannon ouji"),
+    (722918, 535, 691, "kinosaki_yoshino", "sorai shinya"),
+
+    (729988, 2, 49, "shijou_hinako", "kannon ouji"),
+
+    (730780, 2, 241, "yamashina_kaori", "sorai shinya"),
+    (730780, 242, 497, "shijou_hinako", "kannon ouji"),
+    (730780, 498, 752, "kinosaki_yoshino", "sorai shinya"),
+    (730780, 753, 1016, "katou_riko", "kannon ouji"),
+    (730780, 1017, 1344, "jinguuji_reika", "kaniya shiku"),
+    # Soshite Hatsukoi ga Imouto ni Nar
+    (939815, 166, 239, "kawatsu_tsubasa", "sorai shinya"),
+    (939815, 240, 304, "miyamoto_yuka", "sorai shinya"),
+    (939815, 305, 368, "tanaka_neneko", "sorai shinya"),
+    (939815, 369, 441, "tokitani_shinobu", "sorai shinya"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
