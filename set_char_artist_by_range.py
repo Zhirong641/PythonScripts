@@ -578,12 +578,14 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1481653, 352, 452, "kotone (zettai saikyou)", "annie"),
     # Amatarasu Riddle Star -
     (1033787, 2, 234, "ai_(amatarasu_riddle_star)", "syroh"),
+    (1033787, 272, 540, "kokoro_judit", "2-g"),
     (1033787, 541, 731, "hatta_madori", "syroh"),
     (1033787, 776, 1118, "yukishiro miu", "annie"),
     (1033787, 1119, 1202, "arisu_rina", "annie"),
     (1033787, 1203, 1422, "arisu_yua", "2-g"),
 
     (1499212, 3, 235, "ai_(amatarasu_riddle_star)", "syroh"),
+    (1499212, 273, 541, "kokoro_judit", "2-g"),
     (1499212, 542, 732, "hatta_madori", "syroh"),
     (1499212, 777, 1119, "yukishiro miu", "annie"),
     (1499212, 1120, 1202, "arisu_rina", "annie"),
@@ -594,6 +596,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1115664, 805, 1326, "yukishiro miu", "annie"),
     (1115664, 1744, 1775, "arisu_rina", "annie"),
     (1115664, 1, 543, "arisu_yua", "2-g"),
+    (1115664, 544, 804, "kokoro_judit", "2-g"),
     # Zettai Junshu New Kozukuri World
     (1008830, 361, 440, "tadokoro_minami", "2-g"),
     (1008830, 441, 530, "kasugai_noa", "2-g"),
@@ -2771,8 +2774,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1491074, 1, 2000, None, "kiba_satoshi"),
     (1491075, 1, 2000, None, "kiba_satoshi"),
     # Study § Steady 2
-    (2361534, 2, 806, "mamanoue_yuno", "emily"),
-    (2361534, 827, 1748, None, "emily"),
+    (2361534, 2, 806, "yaezawa_yae", "emily"),
+    (2361534, 827, 1748, "mamanoue_yuno", "emily"),
     (2361497, 1, 2000, None, "kiba_satoshi"),
     (2871902, 1, 693, "mamanoue_yuno", "emily"),
     # Golden Marriage
@@ -4070,6 +4073,33 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3426003, 232, 375, "miyazawa_midori", "kantoku"),
     (3426003, 376, 490, "itou_hinako", "kantoku"),
     (3426003, 491, 558, "shinooka_misa", "kanekiyo miwa"),
+    # Onaji Class no Idol-san
+    (1491228, 4, 158, "mishima_akari", "unasaka"),
+    (1491228, 159, 316, "yuuki_wako", "shona mitsuishi"),
+    (1491228, 318, 474, "takanashi_ei", "sawayaka samehada"),
+    (1491228, 475, 536, "naruse_kanae", "niro"),
+
+    (1498992, 1, 216, "mishima_akari", "unasaka"),
+    (1498992, 217, 432, "yuuki_wako", "shona mitsuishi"),
+    (1498992, 433, 640, "takanashi_ei", "sawayaka samehada"),
+    (1498992, 641, 730, "naruse_kanae", "niro"),
+    # Uchi wa Mou, Enki Dekinai.
+    (2070790, 5, 166, "miyamura_miku", "sawayaka samehada"),
+    (2070790, 167, 303, "miyamura_karin", "sawayaka samehada"),
+    (2070790, 304, 457, "suzumoto_chisa", "unasaka"),
+    (2070790, 458, 608, "sakakibara_ai", "sawayaka samehada"),
+    # Hibikino-san-chi wa Erogeya-san!
+    (1785639, 6, 163, "hibikino_tsumugi", "sawayaka samehada"),
+    (1785639, 164, 311, "hibikino_yukari", "sawayaka samehada"),
+    (1785639, 312, 467, "hibikino_yui", "sawayaka samehada"),
+    (1785639, 468, 647, "hayami_shizuno", "unasaka"),
+    (1785639, 648, 743, "honomi_youko", "mizuno sao"),
+
+    (1809787, 1, 10, "hibikino_tsumugi", "sawayaka samehada"),
+    (1809787, 11, 20, "hibikino_yukari", "sawayaka samehada"),
+    (1809787, 21, 29, "hibikino_yui", "sawayaka samehada"),
+    (1809787, 30, 39, "hayami_shizuno", "unasaka"),
+    (1809787, 40, 49, "honomi_youko", "mizuno sao"),
 
 ]
 
