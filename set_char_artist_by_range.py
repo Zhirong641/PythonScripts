@@ -13,8 +13,6 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3417365, 1, 2000, None, "suzumori"),
     (3101372, 1, 2000, None, "mutou kurihito"),
     (3101373, 1, 2000, None, "mutou kurihito"),
-    (1335358, 1, 2000, None, "kanekiyo miwa"),
-    (908928, 1, 2000, None, "kanekiyo miwa"),
     # clover day's
     (727768, 345, 461, "rindo_tsubame", "chikotam"),
     (727768, 630, 647, "rindo_tsubame", "chikotam"),
@@ -287,12 +285,12 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1243251, 1281, 2000, "oozono yuzuki", "fummy"),
     (1243267, 1, 560, "oozono yuzuki", "fummy"),
     (1243267, 561, 1840, "kagiyoshi fuuka", "komeshiro kasu"),
-    (1243267, 1841, 2000, "shirosaki mieru", "pero"),
-    (1243602, 1, 1120, "shirosaki mieru", "pero"),
+    (1243267, 1841, 2000, "shirosaki mieru", "fummy"),
+    (1243602, 1, 1120, "shirosaki mieru", "fummy"),
     (1067390, 23, 182, "tachibana nonoka", "komeshiro kasu"),
     (1067390, 183, 338, "oozono yuzuki", "fummy"),
     (1067390, 339, 498, "kagiyoshi fuuka", "komeshiro kasu"),
-    (1067390, 499, 706, "shirosaki mieru", "pero"),
+    (1067390, 499, 706, "shirosaki mieru", "fummy"),
     # Tsumi no Hikari Rendezvous Goukaban
     (913381, 1, 248, "tsubaki fuuka", "satasama"),
     (913368, 773, 1169, "tsubaki fuuka", "satasama"),
@@ -655,6 +653,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1043759, 23, 32, "sasha_mayakovskaya", "hitsuji takako"),
     (1043759, 88, 161, "hyuuga_natsu", "hisama kumako"),
     (1043759, 162, 230, "sasha_mayakovskaya", "hitsuji takako"),
+    (1043759, 231, 301, "suzakano_ryou", "hisama kumako"),
+    (1043759, 302, 380, "amakasu_amane", "hisama kumako"),
     # Shougun-sama wa Otoshigoro
     (1175803, 10, 121, "tokugawa_muneharu", "shona mitsuishi"),
     (1175803, 122, 223, "rin_(shougun-sama_wa_otoshigoro)", "kaniya shiku"),
@@ -2341,16 +2341,46 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3103887, 980, 1096, "osakabe_rei", None),
     (3103887, 1097, 1199, "yuzuriha_manaka", None),
     # Oniichan migite no shiyou wo kinshi shimasu!
-    (1179865, 13, 510, None, "k-ko"),
-    (1179865, 784, 804, None, "k-ko"),
-    (1179865, 511, 1025, None, "hisama kumako"),
-    (1429557, 1, 823, None, "k-ko"),
-    (1429557, 824, 1222, None, "hisama kumako"),
+    (1179865, 13, 250, "imoo_tsugumi", "k-ko"),
+    (1179865, 251, 262, "imoo_tsugumi, imoo_ayuka", "k-ko"),
+    (1179865, 263, 510, "imoo_ayuka", "k-ko"),
+    (1179865, 511, 543, "imoo_kaede, imoo_yuki", "hisama kumako"),
+    (1179865, 544, 766, "imoo_kaede", "hisama kumako"),
+    (1179865, 767, 783, "imoo_kaede, imoo_yuki", "hisama kumako"),
+    (1179865, 784, 804, "imoo_tsugumi, imoo_ayuka", "k-ko"),
+    (1179865, 805, 1018, "imoo_yuki", "hisama kumako"),
+    (1179865, 1019, 1054, "imoo_tsugumi, imoo_ayuka, imoo_kaede, imoo_yuki", "hisama kumako, k-ko"),
+
+    (1429557, 1, 823, "imoo_ayuka", "k-ko"),
+    (1429557, 824, 1222, "imoo_kaede", "hisama kumako"),
+    (1429564, 216, 830, "imoo_tsugumi", "k-ko"),
+    (1429564, 831, 1448, "imoo_yuki", "hisama kumako"),
+
+    (742906, 2, 230, "imoo_tsugumi", "k-ko"),
+    (742906, 231, 459, "imoo_ayuka", "k-ko"),
+    (742906, 460, 673, "imoo_kaede", "hisama kumako"),
+    (742906, 674, 868, "imoo_yuki", "hisama kumako"),
     # Onii-chan Sharing
-    (633556, 4, 263, None, "k-ko"),
-    (633556, 284, 532, None, "hisama kumako"),
+    (633556, 4, 121, "kurosu_seseri", "k-ko"),
+    (633556, 133, 263, "nadeshiko_futaba", "k-ko"),
+    (633556, 284, 394, "yotsunoha_chiko", "hisama kumako"),
+    (633556, 402, 532, "yotsunoha_yuu", "hisama kumako"),
     # Onii-chan Teacher ~Himitsu no Jugyou o Kibou Shimasu!!~
-    (887147, 29, 335, None, "k-ko"),
+    (887147, 29, 187, "kitami_kanae", "k-ko"),
+    (887147, 188, 335, "kitami_ruri", "k-ko"),
+    (887147, 336, 488, "kitami_ai", "pikazo"),
+    (887147, 489, 634, "kitami_tsubomi", "pikazo"),
+
+    (887147, 710, 951, "kitami_ai", "pikazo"),
+    (887147, 952, 1191, "kitami_kanae", "k-ko"),
+    (887147, 1192, 1443, "kitami_ruri", "k-ko"),
+    (887147, 1444, 1652, "kitami_tsubomi", "pikazo"),
+    # Chiccha na Hanayome 
+    (1068104, 2, 146, "sakihara_rin", "usume shirou"),
+    (1068104, 147, 276, "kounogi_risa", "usume shirou"),
+    (1068104, 277, 290, "sakihara_rin, kounogi_risa", "usume shirou"),
+    (1068104, 291, 394, "aoino_haru", "pikazo"),
+    (1068104, 395, 500, "akieda_mashiro", "pikazo"),
 
 
     # Haison Shoujo [Ni]
@@ -3430,7 +3460,6 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
 
     (2299688, 1, 2000, None, "mitha, nanao naru"),
     (2299695, 1, 2000, None, "mitha, nanao naru"),
-    (2307617, 1, 2000, None, "mitha, nanao naru"),
     # Haruoto Alice * Gram
     (1081868, 2, 179, "kanzaki_erisa", "mitha"),
     (1081868, 180, 355, "kuonji_kazuha_(harugura)", "mitha"),
@@ -3958,12 +3987,98 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3425997, 909, 962, "sophia_liddell-hart", "kantoku"),
     (3425997, 963, 1060, "kannazuki_airi", "kantoku"),
     (3425997, 1089, 1504, "sonomura_hazuki", "kantoku"),
+    # Mamiya-kun-chi no Itsutsugo Jijou
+    (908928, 3, 155, "mamiya_yakumo", "kanekiyo miwa"),
+    (908928, 156, 309, "mamiya_moeri", "kanekiyo miwa"),
+    (908928, 310, 477, "mamiya_tamane", "kanekiyo miwa"),
+    (908928, 478, 659, "mamiya_nekoto", "kanekiyo miwa"),
+    (908928, 660, 820, "shijouin_ririka", "kanekiyo miwa"),
+    (908928, 821, 859, "mamiya_kyouka", "kanekiyo miwa"),
+    (908928, 1, 2000, None, "kanekiyo miwa"),
+
+    (1408222, 1, 105, "mamiya_yakumo", "kanekiyo miwa"),
+    (1408222, 106, 210, "mamiya_moeri", "kanekiyo miwa"),
+    (1408222, 211, 329, "mamiya_tamane", "kanekiyo miwa"),
+    (1408222, 330, 449, "mamiya_nekoto", "kanekiyo miwa"),
+    (1408222, 450, 554, "shijouin_ririka", "kanekiyo miwa"),
+    (1408222, 555, 624, "mamiya_kyouka", "kanekiyo miwa"),
+
+    (3426048, 1, 105, "mamiya_yakumo", "kanekiyo miwa"),
+    (3426048, 106, 210, "mamiya_moeri", "kanekiyo miwa"),
+    (3426048, 211, 329, "mamiya_tamane", "kanekiyo miwa"),
+    (3426048, 330, 449, "mamiya_nekoto", "kanekiyo miwa"),
+    (3426048, 450, 554, "shijouin_ririka", "kanekiyo miwa"),
+    (3426048, 555, 624, "mamiya_kyouka", "kanekiyo miwa"),
+    # Kurano-kunchi no Futago Jijou
+    (1335358, 2, 231, "kurano_izumi", "kanekiyo miwa"),
+    (1335358, 232, 423, "kurano_mikoto", "kanekiyo miwa"),
+    (1335358, 424, 711, "kurano_tomoka", "kanekiyo miwa"),
+    (1335358, 712, 959, "kurano_yae", "kanekiyo miwa"),
+    (1335358, 960, 1229, "kurano_ema", "kanekiyo miwa"),
+    (1335358, 1388, 1398, "kurano_mikoto", "kanekiyo miwa"),
+    (1335358, 1, 2000, None, "kanekiyo miwa"),
+
+    (3425981, 1, 105, "kurano_izumi", "kanekiyo miwa"),
+    (3425981, 106, 240, "kurano_mikoto", "kanekiyo miwa"),
+    (3425981, 241, 375, "kurano_tomoka", "kanekiyo miwa"),
+    (3425981, 376, 480, "kurano_yae", "kanekiyo miwa"),
+    (3425981, 481, 585, "kurano_ema", "kanekiyo miwa"),
+    # Yurameku Kokoro ni Michita Sekai de, Kimi no Yume to Yokubou wa Kanau ka
+    (1146570, 4, 168, "amatori_sumire", "kakao"),
+    (1146570, 169, 313, "fushimi_tomoe", "kakao"),
+    (1146570, 314, 478, "mizusaki_tsukino", "kanekiyo miwa"),
+    (1146570, 479, 638, "yukishiro_himari", "kanekiyo miwa"),
+
+    (1405214, 1, 130, "amatori_sumire", "kakao"),
+    (1405214, 131, 260, "fushimi_tomoe", "kakao"),
+    (1405214, 261, 520, "mizusaki_tsukino", "kanekiyo miwa"),
+    (1405214, 521, 664, "yukishiro_himari", "kanekiyo miwa"),
+
+    (3426050, 1, 130, "amatori_sumire", "kakao"),
+    (3426050, 131, 260, "fushimi_tomoe", "kakao"),
+    (3426050, 261, 520, "mizusaki_tsukino", "kanekiyo miwa"),
+    (3426050, 521, 664, "yukishiro_himari", "kanekiyo miwa"),
+    # Umi to Yuki no Cyan Blue
+    (1900069, 5, 149, "aono_nana", "kanekiyo miwa"),
+    (1900069, 150, 306, "sumiki_kotoha", "kanekiyo miwa"),
+    (1900069, 307, 473, "nabatake_inaba", "kanekiyo miwa"),
+    (1900069, 474, 615, "hagino_yume", "kurasawa moko"),
+    (1900069, 616, 766, "matsuki_ira", "tsurukonnyaku"),
+    (1900069, 778, 785, "aono_nana", "kanekiyo miwa"),
+
+    (3426078, 1, 208, "aono_nana", "kanekiyo miwa"),
+    (3426078, 209, 416, "sumiki_kotoha", "kanekiyo miwa"),
+    (3426078, 417, 668, "nabatake_inaba", "kanekiyo miwa"),
+    (3426078, 669, 932, "hagino_yume", "kurasawa moko"),
+    (3426078, 933, 1244, "matsuki_ira", "tsurukonnyaku"),
+    (3426078, 1245, 1295, "utsuki_gunjou", "kanekiyo miwa"),
+    # Natsu no Owari
+    (2310933, 1, 379, "moi", "u35"),
+    (3425864, 1, 2000, "moi", "u35"),
+    # natsu no Ame
+    (636926, 3, 70, "segawa_rikako", "kanekiyo miwa"),
+    (636926, 71, 103, "miyazawa_midori", "kantoku"),
+    (636926, 104, 143, "itou_hinako", "kantoku"),
+    (636926, 144, 179, "shinooka_misa", "kanekiyo miwa"),
+
+    (465688, 1, 69, "segawa_rikako", "kanekiyo miwa"),
+    (465688, 70, 109, "miyazawa_midori", "kantoku"),
+    (465688, 110, 140, "itou_hinako", "kantoku"),
+    (465688, 141, 174, "shinooka_misa", "kanekiyo miwa"),
+
+    (3426003, 1, 231, "segawa_rikako", "kanekiyo miwa"),
+    (3426003, 232, 375, "miyazawa_midori", "kantoku"),
+    (3426003, 376, 490, "itou_hinako", "kantoku"),
+    (3426003, 491, 558, "shinooka_misa", "kanekiyo miwa"),
+
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
 PATH_RE = re.compile(r"/webp/(\d+)/image_(\d+)\.webp$")
 # 某些目录 id 不调整 type 字段
-SKIP_TYPE_UPDATE_IDS = {793088, 1537457, 1537567, 1537491, 1537715, 2313627, 1805418}
+SKIP_TYPE_UPDATE_IDS = {793088, 1537457, 1537567, 1537491,
+                        1537715, 2313627, 1805418, 2299688,
+                        2299695}
 
 def lookup_targets(dir_id: int, num: int) -> Optional[Tuple[str, str]]:
     for d, start, end, character, artist in RANGES:
