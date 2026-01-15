@@ -11,8 +11,6 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3417347, 1, 2000, None, "suzumori"),
     (3417364, 1, 2000, None, "suzumori"),
     (3417365, 1, 2000, None, "suzumori"),
-    (3101372, 1, 2000, None, "mutou kurihito"),
-    (3101373, 1, 2000, None, "mutou kurihito"),
     # clover day's
     (727768, 345, 461, "rindo_tsubame", "chikotam"),
     (727768, 630, 647, "rindo_tsubame", "chikotam"),
@@ -956,7 +954,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (820343, 548, 726, "makihara_shiho_(pure_x_connect)", None),
     # DRACU-RIOT!
     (875699, 1, 736, "yarai_miu", "muririn"),
-    (875699, 737, 1746, "mera_azusa ", "muririn"),
+    (875699, 737, 1746, "mera_azusa", "muririn"),
     (875699, 1747, 2000, "inamura_rio", "kobuichi"),
     (875672, 1, 295, "inamura_rio", "kobuichi"),
     (875672, 296, 1031, "elena_olegovna_owen", "kobuichi"),
@@ -2557,7 +2555,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (741954, 1, 141, "aoe", "kokusan moyashi"),
     # Tsukiyo no Mura
     (763324, 2, 58, "kawanaka_moeka, kamijou_shiori", "rozea"),
-    (763324, 59, 142, " kawanaka_moeka", "rozea"),
+    (763324, 59, 142, "kawanaka_moeka", "rozea"),
     (763324, 143, 331, "kamijou_shiori", "rozea"),
     # Koi iro Marriage
     (1182420, 5, 13, "morikawa_mihono", "sasorigatame"),
@@ -2614,7 +2612,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3284512, 291, 2000, "kifune_yuzu", "tatekawa mako"),
     (3284513, 1, 2000, None, "tatekawa mako"),
     # Yakimochi Stream
-    (742858, 2, 485, " kirishima_sana", "syroh"),
+    (742858, 2, 485, "kirishima_sana", "syroh"),
     (742858, 503, 979, "tania_helvellyn", "syroh"),
     (742858, 1006, 1456, "ibuki_kohane", "syroh"),
     (742858, 1472, 1898, "yukikura_mutsuki", "syroh"),
@@ -2674,11 +2672,11 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1972660, 1, 2000, "suzakuin_momiji", "pero"),
     (1976332, 1, 2000, "kuki_asahi", "usume shirou"),
     # Setsuna ni Kakeru Koi Hanabi
-    (2836561, 46, 141, " suzakuin_nadeshiko", "pero"),
+    (2836561, 46, 141, "suzakuin_nadeshiko", "pero"),
     (2836561, 142, 217, "takigawa_komari", "haiba"),
     (2836561, 218, 274, "hanabusa_palvi", "usume shirou"),
     (3042507, 1, 282, "takigawa_komari", "haiba"),
-    (3042508, 1, 274, " suzakuin_nadeshiko", "pero"),
+    (3042508, 1, 274, "suzakuin_nadeshiko", "pero"),
 
     # 9-nine-
     (3655617, 1, 256, "kujou_miyako", "izumi tsubasu"),
@@ -3549,8 +3547,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1942166, 1, 372, "ririum", "sesena yau"),
     (1942166, 406, 412, "ririum", "sesena yau"),
     # Sono Hana ga Saitara, Mata Boku wa Kimi ni Deau
-    (1294817, 1, 2000, "nagase_yuki ", "nagayama yuunon"),
-    (1056055, 49, 249, "lunalight_bake ", "nagayama yuunon"),
+    (1294817, 1, 2000, "nagase_yuki", "nagayama yuunon"),
+    (1056055, 49, 249, "lunalight_bake", "nagayama yuunon"),
     # SPIRAL!!
     (1375134, 2, 90, "kadomi_ibarako", "tanihara natsuki"),
     (1375134, 91, 146, "shirokane_mizuki", "nagayama yuunon"),
@@ -3665,11 +3663,11 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1579777, 340, 402, "marrow", "taniyama-san"),
     (1579777, 403, 462, "sophia", "taniyama-san"),
     (1579777, 463, 520, "charlone", "taniyama-san"),
-    (1579777, 521, 582, "hikari", "taniyama-san"),
+    (1579777, 521, 582, "hikari_(harem_kingdom)", "taniyama-san"),
 
     (1742694, 13, 46, "kiki", "taniyama-san"),
     (1742694, 47, 96, "sophia", "taniyama-san"),
-    (1742694, 97, 131, "hikari", "taniyama-san"),
+    (1742694, 97, 131, "hikari_(harem_kingdom)", "taniyama-san"),
 
     (1787981, 13, 62, "marrow", "taniyama-san"),
     (1787981, 63, 110, "charlone", "taniyama-san"),
@@ -3941,22 +3939,22 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1163452, 301, 412, "alice_third_macy", "kantoku"),
     (1163452, 413, 524, "chiyoda_momoka", "kantoku"),
     # your diary
-    (881468, 4, 168, " yua_(your_diary)", "kantoku"),
+    (881468, 4, 168, "yua_(your_diary)", "kantoku"),
     (881468, 169, 333, "ayase_sayuki", "kantoku"),
     (881468, 334, 488, "minagawa_yuuhi", "kantoku"),
     (881468, 489, 657, "hirosaki_kanade", "kantoku"),
 
-    (766621, 3, 179, " yua_(your_diary)", "kantoku"),
+    (766621, 3, 179, "yua_(your_diary)", "kantoku"),
     (766621, 180, 357, "ayase_sayuki", "kantoku"),
     (766621, 358, 523, "minagawa_yuuhi", "kantoku"),
     (766621, 524, 703, "hirosaki_kanade", "kantoku"),
 
-    (3425989, 1, 270, " yua_(your_diary)", "kantoku"),
+    (3425989, 1, 270, "yua_(your_diary)", "kantoku"),
     (3425989, 271, 495, "ayase_sayuki", "kantoku"),
     (3425989, 496, 817, "minagawa_yuuhi", "kantoku"),
     (3425989, 818, 1048, "hirosaki_kanade", "kantoku"),
 
-    (3425956, 1, 270, " yua_(your_diary)", "kantoku"),
+    (3425956, 1, 270, "yua_(your_diary)", "kantoku"),
     (3425956, 271, 495, "ayase_sayuki", "kantoku"),
     (3425956, 496, 863, "minagawa_yuuhi", "kantoku"),
     (3425956, 864, 1139, "hirosaki_kanade", "kantoku"),
@@ -4100,7 +4098,148 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1809787, 21, 29, "hibikino_yui", "sawayaka samehada"),
     (1809787, 30, 39, "hayami_shizuno", "unasaka"),
     (1809787, 40, 49, "honomi_youko", "mizuno sao"),
+    # Irotoridori no Sekai
+    (392833, 108, 253, "minami_kana_(irotoridori_no_sekai)", "shida kazuhiro"),
+    (392833, 254, 361, "shikishima_kyou", "natsume eri"),
+    (392833, 362, 515, "kisaragi_mio_(irotoridori_no_sekai)", "shida kazuhiro"),
+    (392833, 561, 690, "nikaidou_shinku", "shida kazuhiro"),
+    (392833, 691, 779, "toumine_tsukasa", "gt"),
 
+    (2342163, 114, 261, "minami_kana_(irotoridori_no_sekai)", "shida kazuhiro"),
+    (2342163, 262, 369, "shikishima_kyou", "natsume eri"),
+    (2342163, 370, 519, "kisaragi_mio_(irotoridori_no_sekai)", "shida kazuhiro"),
+    (2342163, 520, 649, "nikaidou_shinku", "shida kazuhiro"),
+    (2342163, 650, 738, "toumine_tsukasa", "gt"),
+
+    (2870141, 1, 58, "minami_kana_(irotoridori_no_sekai)", "shida kazuhiro"),
+    (2870141, 59, 115, "shikishima_kyou", "natsume eri"),
+    (2870141, 116, 185, "kisaragi_mio_(irotoridori_no_sekai)", "shida kazuhiro"),
+    (2870141, 186, 218, "nikaidou_shinku", "shida kazuhiro"),
+    (2870141, 219, 263, "toumine_tsukasa", "gt"),
+
+    (3362955, 112, 259, "minami_kana_(irotoridori_no_sekai)", "shida kazuhiro"),
+    (3362955, 260, 367, "shikishima_kyou", "natsume eri"),
+    (3362955, 368, 521, "kisaragi_mio_(irotoridori_no_sekai)", "shida kazuhiro"),
+    (3362955, 567, 696, "nikaidou_shinku", "shida kazuhiro"),
+    (3362955, 697, 785, "toumine_tsukasa", "gt"),
+
+    (522628, 124, 249, "minami_kana_(irotoridori_no_sekai)", "shida kazuhiro"),
+    (522628, 250, 352, "shikishima_kyou", "natsume eri"),
+    (522628, 353, 450, "kisaragi_mio_(irotoridori_no_sekai)", "shida kazuhiro"),
+    (522628, 487, 694, "nikaidou_shinku", "shida kazuhiro"),
+    (522628, 695, 794, "toumine_tsukasa", "gt"),
+
+    (2342188, 125, 250, "minami_kana_(irotoridori_no_sekai)", "shida kazuhiro"),
+    (2342188, 251, 353, "shikishima_kyou", "natsume eri"),
+    (2342188, 354, 451, "kisaragi_mio_(irotoridori_no_sekai)", "shida kazuhiro"),
+    (2342188, 457, 664, "nikaidou_shinku", "shida kazuhiro"),
+    (2342188, 665, 764, "toumine_tsukasa", "gt"),
+    
+    (836513, 1, 296, "nikaidou_shinku", "shida kazuhiro"),
+
+    (2342201, 1, 263, "nikaidou_shinku", "shida kazuhiro"),
+    # stralAir no Shiroki Towa
+    (722276, 2, 156, "yuunagi_ichika", "shida kazuhiro"),
+    (722276, 157, 275, "korona_(astralair)", "shida kazuhiro"),
+    (722276, 276, 415, "mizunose_kotori", "shida kazuhiro"),
+    (722276, 416, 563, "tachibana_ochiba", "shida kazuhiro"),
+    (722276, 572, 686, "hotaru_rinne", "shida kazuhiro"),
+    (722276, 687, 836, "yuuki_(astralair_no_shiroki_towa)", "shida kazuhiro"),
+
+    (3525339, 79, 234, "yuunagi_ichika", "shida kazuhiro"),
+    (3525339, 235, 353, "korona_(astralair)", "shida kazuhiro"),
+    (3525339, 354, 491, "mizunose_kotori", "shida kazuhiro"),
+    (3525339, 492, 638, "tachibana_ochiba", "shida kazuhiro"),
+    (3525339, 647, 761, "hotaru_rinne", "shida kazuhiro"),
+    (3525339, 762, 914, "yuuki_(astralair_no_shiroki_towa)", "shida kazuhiro"),
+    (3525339, 975, 1033, "yuunagi_ichika", "shida kazuhiro"),
+    (3525339, 1034, 1074, "korona_(astralair)", "shida kazuhiro"),
+    (3525339, 1075, 1126, "mizunose_kotori", "shida kazuhiro"),
+    (3525339, 1127, 1166, "tachibana_ochiba", "shida kazuhiro"),
+    (3525339, 1167, 1211, "hotaru_rinne", "shida kazuhiro"),
+    (3525339, 1212, 1334, "shiraha_yuki", "shida kazuhiro"),
+    (3525339, 1335, 1378, "yuuki_(astralair_no_shiroki_towa)", "shida kazuhiro"),
+
+    (759347, 150, 321, "tachibana_ochiba", "shida kazuhiro"),
+    (759347, 322, 439, "yuunagi_ichika", "shida kazuhiro"),
+    (759347, 537, 680, "hotaru_rinne", "shida kazuhiro"),
+    (759347, 861, 964, "mizunose_kotori", "shida kazuhiro"),
+    (759347, 965, 1106, "yuuki_(astralair_no_shiroki_towa)", "shida kazuhiro"),
+    (759347, 1131, 1237, "korona_(astralair)", "shida kazuhiro"),
+
+    (1023004, 91, 168, "yuunagi_ichika", "shida kazuhiro"),
+    (1023004, 169, 237, "korona_(astralair)", "shida kazuhiro"),
+    (1023004, 238, 324, "mizunose_kotori", "shida kazuhiro"),
+    (1023004, 325, 368, "tachibana_ochiba", "shida kazuhiro"),
+    (1023004, 378, 447, "hotaru_rinne", "shida kazuhiro"),
+    (1023004, 520, 678, "shiraha_yuki", "shida kazuhiro"),
+    (1023004, 679, 774, "yuuki_(astralair_no_shiroki_towa)", "shida kazuhiro"),
+
+    # Hoshizora no Memoria
+    (876019, 4, 119, "minahoshi_asuho", "shida kazuhiro"),
+    (876019, 134, 217, "isuzu_aoi", "shida kazuhiro"),
+    (876019, 218, 344, "hisakaki_komomo", "shida kazuhiro"),
+    (876019, 346, 413, "hisakaki_kosame", "shida kazuhiro"),
+    (876019, 414, 500, "mare_s._ephemeral", "shida kazuhiro"),
+    (876019, 501, 584, "kogasaka_chinami", "shida kazuhiro"),
+    (876019, 637, 658, "ototsu_yume", "shida kazuhiro"),
+
+    (1536534, 4, 119, "minahoshi_asuho", "shida kazuhiro"),
+    (1536534, 120, 203, "isuzu_aoi", "shida kazuhiro"),
+    (1536534, 204, 330, "hisakaki_komomo", "shida kazuhiro"),
+    (1536534, 332, 399, "hisakaki_kosame", "shida kazuhiro"),
+    (1536534, 400, 486, "mare_s._ephemeral", "shida kazuhiro"),
+    (1536534, 487, 570, "kogasaka_chinami", "shida kazuhiro"),
+    (1536534, 635, 646, "ototsu_yume", "shida kazuhiro"),
+
+    (878532, 5, 27, "minahoshi_asuho", "shida kazuhiro"),
+    (878532, 102, 114, "hisakaki_komomo", "shida kazuhiro"),
+    (878532, 115, 134, "hisakaki_kosame", "shida kazuhiro"),
+    (878532, 135, 253, "mare_s._ephemeral", "shida kazuhiro"),
+    (878532, 254, 270, "kogasaka_chinami", "shida kazuhiro"),
+    (878532, 271, 394, "ototsu_yume", "shida kazuhiro"),
+
+    (1536535, 4, 26, "minahoshi_asuho", "shida kazuhiro"),
+    (1536535, 27, 41, "isuzu_aoi", "shida kazuhiro"),
+    (1536535, 42, 74, "hisakaki_komomo", "shida kazuhiro"),
+    (1536535, 75, 94, "hisakaki_kosame", "shida kazuhiro"),
+    (1536535, 95, 213, "mare_s._ephemeral", "shida kazuhiro"),
+    (1536535, 214, 230, "kogasaka_chinami", "shida kazuhiro"),
+    (1536535, 231, 357, "ototsu_yume", "shida kazuhiro"),
+
+    # Sakura, Moyu
+    (1357385, 32, 185, "andou_chiwa", "natsume eri"),
+    (1357385, 186, 432, "hiiragi_haru", "natsume eri"),
+    (1357385, 433, 568, "yorutsuki_hiori", "natsume eri"),
+    (1357385, 569, 779, "kuro_(sakura_moyu)", "shida kazuhiro"),
+
+    (2693927, 29, 182, "andou_chiwa", "natsume eri"),
+    (2693927, 277, 523, "hiiragi_haru", "natsume eri"),
+    (2693927, 524, 659, "yorutsuki_hiori", "natsume eri"),
+    (2693927, 660, 870, "kuro_(sakura_moyu)", "shida kazuhiro"),
+
+    # Happy Live Show Up!
+    (1921952, 4, 323, "sophia_turina", "bekotarou"),
+    (1921952, 324, 526, "karentia_veribel", "bekotarou"),
+    (1921952, 527, 709, "ru_mao", "bekotarou"),
+    (1921952, 710, 867, "clarice_clawnya", "bekotarou"),
+    (1921952, 868, 1123, "pechka_monica", "bekotarou"),
+    (1921952, 1124, 1156, "miyabi_asahina", "bekotarou"),
+    (1921952, 1160, 1235, "miyabi_asahina", "bekotarou"),
+
+    (2595581, 2, 51, "clarice_clawnya", "bekotarou"),
+    (2595581, 66, 137, "karentia_veribel", "bekotarou"),
+    (2595581, 138, 198, "miyabi_asahina", "bekotarou"),
+    (2595581, 244, 258, "miyabi_asahina", "bekotarou"),
+    (2595581, 317, 427, "miyabi_asahina", "bekotarou"),
+    (2595581, 505, 552, "ru_mao", "bekotarou"),
+
+    (2595656, 5, 54, "clarice_clawnya", "bekotarou"),
+    (2595656, 69, 140, "karentia_veribel", "bekotarou"),
+    (2595656, 141, 203, "miyabi_asahina", "bekotarou"),
+    (2595656, 249, 263, "miyabi_asahina", "bekotarou"),
+    (2595656, 322, 432, "miyabi_asahina", "bekotarou"),
+    (2595656, 499, 558, "ru_mao", "bekotarou"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
@@ -4110,9 +4249,24 @@ SKIP_TYPE_UPDATE_IDS = {793088, 1537457, 1537567, 1537491,
                         1537715, 2313627, 1805418, 2299688,
                         2299695}
 
+# 构建优化的查找字典：目录ID -> 区间列表（保持原始顺序以维持优先级）
+RANGES_DICT = {}
+for d, start, end, character, artist in RANGES:
+    if d not in RANGES_DICT:
+        RANGES_DICT[d] = []
+    RANGES_DICT[d].append((start, end, character, artist))
+
 def lookup_targets(dir_id: int, num: int) -> Optional[Tuple[str, str]]:
-    for d, start, end, character, artist in RANGES:
-        if dir_id == d and start <= num <= end:
+    """优化后的查找函数，使用字典提高效率，保持原始列表的优先级顺序"""
+    if dir_id not in RANGES_DICT:
+        return None
+    
+    # 按RANGES原始顺序查找，前面的区间优先级更高
+    for start, end, character, artist in RANGES_DICT[dir_id]:
+        if end < start:
+            print(f"[WARN] Invalid range for dir_id {dir_id}: start {start} > end {end}")
+            continue
+        if start <= num <= end:
             return character, artist
     return None
 
