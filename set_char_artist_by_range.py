@@ -2101,7 +2101,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1009352, 2, 363, None, "chikotam"),
     (1009352, 364, 813, "hikami_yurino", "narumi yuu"),
     (1009352, 814, 1238, "emiliya_karimov", "narumi yuu"),
-    (1009352, 1239, 1920, None, "takashina at masato"),
+    (1009352, 1239, 1596, "yanagihara_sui", "takashina at masato"),
+    (1009352, 1598, 1919, "kushiro_himeka", "takashina at masato"),
     # Hakoniwa Logic
     (753681, 4, 103, "maezono_kirika", "yukie"),
     (753681, 106, 217, "iriya_koko", "yukie"),
@@ -2654,9 +2655,93 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Mayoeru Futari to Sekai no Subete Love Heaven 300%
     (821044, 21, 255, "mizunomiya_nana", "moriyama shijimi"),
     (821044, 256, 433, "saeki_touka", "youta"),
+    (821044, 434, 474, "fia", "youta"),
 
     (758201, 60, 135, "mizunomiya_nana", "moriyama shijimi"),
+    (758201, 136, 172, "hirohara_nayuta", "moriyama shijimi"),
+    (758201, 173, 226, "hasekura_otoha", "moriyama shijimi"),
+    (758201, 227, 273, "yuuki_suzuran", "youta"),
     (758201, 274, 342, "saeki_touka", "youta"),
+    (758201, 352, 420, "fia", "youta"),
+    # Midare Setsugetsuka
+    (877937, 58, 172, "sasanome_yukina", "minatsuki alumi"),
+    (877937, 173, 247, "nayotake_mitsuki", "moriyama shijimi"),
+    (877937, 248, 371, "sasanome_yukina", "minatsuki alumi"),
+    (877937, 396, 429, "nayotake_mitsuki", "moriyama shijimi"),
+
+    (969692, 4, 11, "sasanome_yukina", "minatsuki alumi"),
+    (969692, 28, 52, "mamiya_rurika", "moriyama shijimi"),
+    (969692, 53, 129, "nayotake_mitsuki", "moriyama shijimi"),
+    (969692, 130, 148, "sasanome_yukina", "minatsuki alumi"),
+    (969692, 149, 151, "mamiya_rurika", "moriyama shijimi"),
+    (969692, 162, 211, "nayotake_mitsuki", "moriyama shijimi"),
+    (969692, 212, 230, "sasanome_yukina", "minatsuki alumi"),
+    (969692, 231, 241, "nayotake_mitsuki", "moriyama shijimi"),
+    (969692, 250, 264, "sasanome_yukina", "minatsuki alumi"),
+    (969692, 265, 295, "umino_otome", "moriyama shijimi"),
+    (969692, 296, 319, "nayotake_mitsuki", "moriyama shijimi"),
+    (969692, 320, 352, "mamiya_rurika", "moriyama shijimi"),
+    (969692, 353, 379, "nayotake_mitsuki", "moriyama shijimi"),
+    (969692, 380, 407, "umino_otome", "moriyama shijimi"),
+    (969692, 408, 423, "mamiya_rurika", "moriyama shijimi"),
+    (969692, 424, 452, "sasanome_yukina", "minatsuki alumi"),
+    (969692, 453, 486, "mamiya_rurika", "moriyama shijimi"),
+    (969692, 487, 509, "sasanome_yukina", "minatsuki alumi"),
+    (969692, 527, 537, "sasanome_yukina", "minatsuki alumi"),
+    (969692, 538, 552, "umino_otome", "moriyama shijimi"),
+    (969692, 554, 591, "mamiya_rurika", "moriyama shijimi"),
+    (969692, 592, 605, "sasanome_yukina", "minatsuki alumi"),
+    (969692, 606, 632, "nayotake_mitsuki", "moriyama shijimi"),
+
+    (1397185, 1, 888, "nayotake_mitsuki", "moriyama shijimi"),
+    (1397185, 1687, 2000, "sasanome_yukina", "minatsuki alumi"),
+    (1397257, 1, 346, "sasanome_yukina", "minatsuki alumi"),
+    (1397257, 547, 622, "umino_otome", "moriyama shijimi"),
+    (1397257, 727, 1006, "mamiya_rurika", "moriyama shijimi"),
+    # Pure Marriage
+    (938497, 1, 180, "hoshigaoka_madoka", "furukawa remon"),
+    (938497, 215, 284, "hoshigaoka_madoka", "furukawa remon"),
+
+    (1133863, 1, 141, "hirohara_d_serika", "furukawa remon"),
+    (1133863, 142, 154, "qliphoth", "moriyama shijimi"),
+    (1133863, 155, 170, "hirohara_d_serika", "furukawa remon"),
+
+    (1158938, 56, 104, "hanasaki_sakura", "moriyama shijimi"),
+    (1158938, 193, 445, "hanasaki_sakura", "moriyama shijimi"),
+
+    (1205421, 25, 46, "hoshigaoka_madoka", "furukawa remon"),
+    (1205421, 47, 87, "hanasaki_sakura", "moriyama shijimi"),
+    (1205421, 110, 145, "hoshigaoka_madoka", "furukawa remon"),
+    (1205421, 156, 159, "hanasaki_sakura", "moriyama shijimi"),
+    (1205421, 160, 188, "hoshigaoka_madoka", "furukawa remon"),
+    (1205421, 189, 215, "hirohara_d_serika", "furukawa remon"),
+    (1205421, 216, 224, "hanasaki_sakura", "moriyama shijimi"),
+    (1205421, 225, 232, "qliphoth", "moriyama shijimi"),
+    (1205421, 302, 339, "qliphoth", "moriyama shijimi"),
+    (1205421, 340, 386, "hoshigaoka_madoka", "furukawa remon"),
+
+    (1135078, 1, 320, "hanasaki_sakura", "moriyama shijimi"),
+    (1135078, 321, 368, "hoshigaoka_madoka", "furukawa remon"),
+    (1135078, 378, 395, "qliphoth", "moriyama shijimi"),
+    (1135078, 396, 539, "hirohara_d_serika", "furukawa remon"),
+
+    (3243128, 1, 36, "qliphoth", "moriyama shijimi"),
+    # Liber_7 Eigou no Owari o Matsu Kimi e
+    (1008861, 7, 284, "ichijou_kurea", "moriyama shijimi"),
+    (1008861, 331, 528, "hirohara_mei", "youta"),
+    (1008861, 529, 702, "amatsuka_miku", "kawai maria"),
+    (1008861, 743, 892, "kusunose_saaya", "kawai maria"),
+    # Kakeochi
+    (1403993, 1, 96, "aizome_kaguya", "sasahiro"),
+    (1413731, 1, 561, "aizome_kaguya", "sasahiro"),
+    # Little Sick Girls
+    (1491186, 1, 192, "yoshino_eri", "moriyama shijimi"),
+    (1536973, 1, 129, "takaido_ruchie", "moriyama shijimi"),
+    (1689666, 1, 146, "aiba_momo", "moriyama shijimi"),
+
+    (1809449, 54, 209, "takaido_ruchie", "moriyama shijimi"),
+    (1809449, 210, 339, "yoshino_eri", "moriyama shijimi"),
+    (1809449, 340, 547, "aiba_momo", "moriyama shijimi"),
 
     # Konekone Koneko
     (1215915, 52, 186, "nekokawa_shirone", "noda shuha"),
@@ -4510,6 +4595,16 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1900094, 169, 269, "yaeneri_saki", "ichiri"),
     (1900095, 11, 164, "yaeneri_saki", "ichiri"),
     (1900095, 182, 285, "yaeneri_saki", "ichiri"),
+    # Ninja Girl and the Mysterious Army of Urban Legend Monsters!
+    (1437787, 1, 2000, "hattori_kiri", "matsumiya kiseri"),
+    (1437819, 1, 1894, "hattori_kiri", "matsumiya kiseri"),
+    (1437819, 1895, 2000, "lily_(ninja_girl)", "picpicgram"),
+    (1437820, 1, 2000, "lily_(ninja_girl)", "picpicgram"),
+    (1441286, 1, 160, "lily_(ninja_girl)", "picpicgram"),
+    (1441286, 161, 752, "mary_(ninja_girl)", "matsumiya kiseri"),
+    (1441286, 753, 1544, "hattori_kiri", "matsumiya kiseri"),
+    (1441286, 1545, 2000, "lily_(ninja_girl)", "picpicgram"),
+    (1441284, 1, 258, "lily_(ninja_girl)", "picpicgram"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
