@@ -3063,10 +3063,14 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # The Rising Sun Marriage
     (3042610, 1, 1, "alphine_midill", "hiiragi ringo, nanotaro, mizuki yuuma"),
     (3042610, 490, 690, "alphine_midill", "hiiragi ringo"),
-    (3042610, 2, 208, None, "nanotaro"),
-    (3042610, 209, 489, None, "mizuki yuuma"),
+    (3042610, 2, 208, "ria", "nanotaro"),
+    (3042610, 209, 489, "chloe_rouen", "mizuki yuuma"),
     (3042610, 691, 883, None, " "),
+    (3435331, 78, 362, "ria", "nanotaro"),
+    (3435331, 363, 562, "chloe_rouen", "mizuki yuuma"),
     (3435331, 563, 737, "alphine_midill", "hiiragi ringo"),
+    (3435332, 1, 285, "ria", "nanotaro"),
+    (3435332, 286, 485, "chloe_rouen", "mizuki yuuma"),
     (3435332, 486, 660, "alphine_midill", "hiiragi ringo"),
     # Bakappuru Supplement
     (3658306, 4, 641, "kurumi_akiha", "kiba_satoshi"),
@@ -3254,9 +3258,22 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1506539, 1, 2000, "anya_(amayakase_kanojo_no_iru_seikatsu)", "naenae"),
     (1503641, 1, 2000, "anya_(amayakase_kanojo_no_iru_seikatsu)", "naenae"),
     # Yadourishi Otome Na Chikai To Maho
+    (3454489, 2, 182, "mikuri_chami", "mizuki yuuma"),
     (3454489, 271, 275, "kokutan_mare", "hiiragi ringo"),
+    (3454489, 319, 496, "torineko_maho", "mizuki yuuma"),
     (3454489, 497, 751, "kokutan_mare", "hiiragi ringo"),
+    (3454489, 752, 877, "kashihara_yuyu", "mutou kurihito"),
+
+    (3455080, 154, 243, "kashihara_yuyu", "mutou kurihito"),
+    (3455080, 244, 360, "torineko_maho", "mizuki yuuma"),
+    (3455080, 361, 486, "mikuri_chami", "mizuki yuuma"),
     (3455080, 487, 585, "kokutan_mare", "hiiragi ringo"),
+    (3455080, 586, 603, None, "hiiragi ringo"),
+    (3455080, 826, 915, "kashihara_yuyu", "mutou kurihito"),
+    (3455080, 916, 1032, "torineko_maho", "mizuki yuuma"),
+    (3455080, 1033, 1158, "mikuri_chami", "mizuki yuuma"),
+    (3455080, 1159, 1257, "kokutan_mare", "hiiragi ringo"),
+    (3455080, 1258, 1275, None, "hiiragi ringo"),
     # iegami_nyoubou
     (1322348, 1, 2000, "nanashi_nekomata", None),
     (1381507, 1, 672, "nanashi_nekomata", None),
@@ -3406,6 +3423,15 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (819614, 320, 343, "sengoku_ichika", "moekibara fumitake"),
     (819614, 370, 384, None, "moekibara fumitake"),
     (1124566, 372, 505, "sengoku_ichika", "moekibara fumitake"),
+    # Kodomo no Asobi
+    (877935, 4, 87, "sera_(kodomo_no_asobi)", "moekibara fumitake"),
+    (877935, 88, 141, "tsurumaki_yuzuriha", "annie"),
+    (877935, 142, 207, "hinako_michiru", "nanaroba hana"),
+    (877935, 208, 246, "niu_katsumi_(kodomo_no_asobi)", "hatori piyoko"),
+    (877935, 247, 331, "sera_(kodomo_no_asobi)", "moekibara fumitake"),
+    (877935, 332, 435, "tsurumaki_yuzuriha", "annie"),
+    (877935, 436, 566, "hinako_michiru", "nanaroba hana"),
+    (877935, 567, 646, "niu_katsumi_(kodomo_no_asobi)", "hatori piyoko"),
     # Sweet Homemade
     (2766424, 4, 7, "ezaki_iroha", None),
     (2766424, 32, 66, "ezaki_iroha", None),
@@ -3492,7 +3518,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1413861, 440, 443, "aoi_sumire", "nanaroba hana"),
     (1413861, 452, 454, "natsuki_hikari", "nanaroba hana"),
     (1413861, 444, 448, "ayase_touka", "nanaroba hana"),
-    # PURELY x CATION 2
+    # PRETTY x CATION 2
     (1218763, 10, 268, "himekawa_honami", "asami asami"),
     (1218763, 269, 522, "ashiya_suzuka", "asami asami"),
     (1218763, 523, 790, "kurashiki_azusa", "asami asami"),
@@ -4130,7 +4156,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1204243, 188, 234, "konoe_rikka", "mutou kurihito"),
     # Kanojo wa Tenshi de Imouto de
     # Otome ga Musubu Tsukiyo no Kirameki
-    (1322644, 53, 100, "sakura_kokoro", "yuuma"),
+    (1322644, 53, 100, "sakura_kokoro", "mizuki yuuma"),
     (1322644, 127, 213, "fujisaki_nagisa", "kurasawa moko"),
     (1322644, 217, 286, "shijou_ran", "mutou kurihito"),
     (1322644, 308, 396, "reizei_shizune", "sesena yau"),
@@ -4138,18 +4164,18 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
 
     (1328171, 1, 144, "shinomori_suzuka", "kurasawa moko"),
     (1328171, 145, 296, "shijou_ran", "mutou kurihito"),
-    (1328171, 411, 464, "sakura_kokoro", "yuuma"),
+    (1328171, 411, 464, "sakura_kokoro", "mizuki yuuma"),
     (1328171, 519, 734, "reizei_shizune", "sesena yau"),
     (1328171, 863, 1006, "fujisaki_nagisa", "kurasawa moko"),
     (1328171, 1205, 1240, "shijou_ran", "mutou kurihito"),
 
-    (1438003, 42, 66, "sakura_kokoro", "yuuma"),
+    (1438003, 42, 66, "sakura_kokoro", "mizuki yuuma"),
     (1438003, 87, 149, "fujisaki_nagisa", "kurasawa moko"),
     (1438003, 151, 205, "shijou_ran", "mutou kurihito"),
     (1438003, 206, 257, "reizei_shizune", "sesena yau"),
     (1438003, 258, 315, "shinomori_suzuka", "kurasawa moko"),
 
-    (1438041, 39, 64, "sakura_kokoro", "yuuma"),
+    (1438041, 39, 64, "sakura_kokoro", "mizuki yuuma"),
     (1438041, 85, 146, "fujisaki_nagisa", "kurasawa moko"),
     (1438041, 147, 201, "shijou_ran", "mutou kurihito"),
     (1438041, 202, 253, "reizei_shizune", "sesena yau"),
@@ -4926,6 +4952,78 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2775456, 122, 208, "kuromine_ai", "hinata nao"),
     (2775456, 209, 324, "takatsuki_taeko", "hinata nao"),
     (2775456, 325, 504, "ooigawa_risa", "hinata nao"),
+    # Amaekata wa Kanojo nari ni.
+    (908674, 5, 77, "nagamine_kanae", "konomi"),
+    (908674, 78, 161, "kurisawa_miyuki", "konomi"),
+    (908674, 162, 163, "kurisawa_miyuki, shiga_nohana", "konomi"),
+    (908674, 164, 222, "shiga_nohana", "konomi"),
+    (908674, 223, 303, "niikura_tomomi", "konomi"),
+
+    (1189542, 1, 1083, "nagamine_kanae", "konomi"),
+    (1189542, 1423, 2000, "kurisawa_miyuki", "konomi"),
+    (1189565, 1, 308, "kurisawa_miyuki", "konomi"),
+    (1189565, 309, 1110, "shiga_nohana", "konomi"),
+    (1189565, 1543, 2000, "niikura_tomomi", "konomi"),
+    (1189576, 1, 201, "niikura_tomomi", "konomi"),
+    # Shirogane × Spirits!
+    (803571, 38, 95, "kiryuu_chikage", "konomi"),
+    (803571, 148, 225, "kamura_masaki", "konomi"),
+    (803571, 226, 312, "nakano_mei", "konomi"),
+    (803571, 313, 385, "shinonome_setsuna", "konomi"),
+    (803571, 386, 407, "kiryuu_chikage", "konomi"),
+    (803571, 416, 421, "kamura_masaki", "konomi"),
+    (803571, 422, 431, "nakano_mei", "konomi"),
+    (803571, 432, 438, "shinonome_setsuna", "konomi"),
+    # Natural Vacation
+    (1218921, 3, 243, "fujisaki_haruka", "asami asami"),
+    (1218921, 244, 446, "sarashina_yuzuki", "asami asami"),
+
+    (2261821, 2, 230, "fujisaki_haruka", "asami asami"),
+    (2261821, 231, 432, "sarashina_yuzuki", "asami asami"),
+    # Koi wa Sotto Saku Hana no You ni
+    (1245620, 19, 92, "kotoishi_iori", "gin"),
+    (1245620, 93, 185, "hayami_misato", "keisaka"),
+    (1245620, 186, 268, "miyane_saki", "sena chifuyu"),
+    (1245620, 269, 365, "kurumi_sanae", "gin"),
+    (1245620, 366, 462, "saionji_youko", "kotarou"),
+    (1245620, 463, 497, "toudou_nazuna", "keisaka"),
+
+    (1289430, 1, 240, "saionji_youko", "kotarou"),
+    (1289430, 265, 520, "hayami_misato", "keisaka"),
+    (1289430, 521, 760, "kotoishi_iori", "gin"),
+    (1289430, 761, 984, "kurumi_sanae", "gin"),
+    (1289430, 985, 1176, "miyane_saki", "sena chifuyu"),
+    (1289430, 1226, 1449, "toudou_nazuna", "keisaka"),
+
+    (1389151, 11, 62, "kotoishi_iori", "gin"),
+    (1389151, 63, 104, "hayami_misato", "keisaka"),
+    (1389151, 108, 160, "toudou_nazuna", "keisaka"),
+    (1389151, 161, 218, "miyane_saki", "sena chifuyu"),
+    (1389151, 219, 268, "kurumi_sanae", "gin"),
+    (1389151, 269, 328, "saionji_youko", "kotarou"),
+
+    (1443967, 1, 768, "saionji_youko", "kotarou"),
+    (1443967, 769, 1440, "kotoishi_iori", "gin"),
+    (1443967, 1441, 2000, "hayami_misato", "keisaka"),
+    (1443989, 1, 192, "hayami_misato", "keisaka"),
+    (1443989, 193, 752, "miyane_saki", "sena chifuyu"),
+    (1443989, 753, 1392, "kurumi_sanae", "gin"),
+    (1443989, 1393, 1840, "toudou_nazuna", "keisaka"),
+    # Hana wa Mijikashi, Odoreyo Otome
+    (2344212, 43, 263, "christina_white", "mizuki yuuma"),
+    (2344212, 264, 508, "melissa_leoni", "teeta.j"),
+    (2344212, 509, 726, "tsukubane_shinobu", "nanotaro"),
+    (2344212, 735, 909, "yuzuriha_koharu", "mizuki yuuma"),
+
+    (3457526, 216, 435, "christina_white", "mizuki yuuma"),
+    (3457526, 436, 645, "melissa_leoni", "teeta.j"),
+    (3457526, 646, 817, "tsukubane_shinobu", "nanotaro"),
+    (3457526, 818, 989, "yuzuriha_koharu", "mizuki yuuma"),
+
+    (3457527, 216, 435, "christina_white", "mizuki yuuma"),
+    (3457527, 436, 645, "melissa_leoni", "teeta.j"),
+    (3457527, 646, 817, "tsukubane_shinobu", "nanotaro"),
+    (3457527, 818, 989, "yuzuriha_koharu", "mizuki yuuma"),
 
 ]
 
