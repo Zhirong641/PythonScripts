@@ -2390,8 +2390,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1482351, 1, 2000, "yokura_kitaka", "azuki yui"),
 
     # Nagaruboshi
-    (3019741, 1, 2000, "mikoto", "nanaca mai"),
-    (3498433, 1, 77, "mikoto", "nanaca mai"),
+    (3019741, 1, 2000, "mikoto_(nagaruboshi)", "nanaca mai"),
+    (3498433, 1, 77, "mikoto_(nagaruboshi)", "nanaca mai"),
     # Loca Love
     (1741695, 1, 2000, "shizuki_yachiyo", "nanaca mai"),
     (1741050, 1, 2000, "aritagawa_nio", "nanaca mai"),
@@ -2870,7 +2870,18 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1182420, 384, 847, "morikawa_mihono", "sasorigatame"),
     (1182420, 1202, 1568, "luriastis_t_mikuriya", "chikotam"),
     # Mirai Kanojo
-    (807638, 591, 975, None, "annie"),
+    (807638, 123, 590, "touno_kanae", "oota yuuichi"),
+
+    (807638, 591, 642, "yuugiri_(mirai_kanojo)", "annie"),
+    (807638, 643, 695, "kakiya_koyuki", "annie"),
+    (807638, 696, 754, "yuugiri_(mirai_kanojo), kakiya_koyuki", "annie"),
+    (807638, 755, 767, "kakiya_koyuki", "annie"),
+    (807638, 768, 792, "yuugiri_(mirai_kanojo), kakiya_koyuki", "annie"),
+    (807638, 793, 817, "yuugiri_(mirai_kanojo)", "annie"),
+    (807638, 818, 975, "yuugiri_(mirai_kanojo), kakiya_koyuki", "annie"),
+
+    (807638, 976, 1468, "sena_nonoka", "yuki makoto"),
+    (807638, 1469, 1764, "toyota_yuzuki", "annie"),
     # Fureraba ~Friend to Lover~
     (607567, 2, 139, "minahara_himari", "ameto yuki"),
     (607567, 140, 321, "mochizuki_rina", "rei"),
@@ -3432,6 +3443,12 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (877935, 332, 435, "tsurumaki_yuzuriha", "annie"),
     (877935, 436, 566, "hinako_michiru", "nanaroba hana"),
     (877935, 567, 646, "niu_katsumi_(kodomo_no_asobi)", "hatori piyoko"),
+
+    (1124523, 45, 146, "hinako_michiru", "nanaroba hana"),
+    (1124523, 370, 590, "sera_(kodomo_no_asobi)", "moekibara fumitake"),
+    (1124523, 709, 842, "tsurumaki_yuzuriha", "annie"),
+    (1124523, 843, 882, "hinako_michiru", "nanaroba hana"),
+    (1124523, 883, 1091, "niu_katsumi_(kodomo_no_asobi)", "hatori piyoko"),
     # Sweet Homemade
     (2766424, 4, 7, "ezaki_iroha", None),
     (2766424, 32, 66, "ezaki_iroha", None),
@@ -5024,7 +5041,42 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3457527, 436, 645, "melissa_leoni", "teeta.j"),
     (3457527, 646, 817, "tsukubane_shinobu", "nanotaro"),
     (3457527, 818, 989, "yuzuriha_koharu", "mizuki yuuma"),
+    # Natsu no Majo no Parade
+    (981373, 57, 222, "alisa_crowley", "annie"),
+    (981373, 223, 348, "yugamo_azuki", "annie"),
+    (981373, 349, 498, "carol_mercurius", "annie"),
+    (981373, 499, 690, "amatsu_sasha", "annie"),
 
+    (1135217, 1, 196, "alisa_crowley", "annie"),
+    (1135217, 197, 518, "carol_mercurius", "annie"),
+    (1135217, 519, 753, "yugamo_azuki", "annie"),
+    (1135218, 1, 94, "yugamo_azuki", "annie"),
+    (1135218, 95, 571, "amatsu_sasha", "annie"),
+    # Fuun to Kouun to Koiuranai no Tarot
+    (1026937, 1, 2000, "hoshimi_akane", "annie"),
+    # Aikotoba -Silver Snow Sister
+    (2718658, 84, 470, "hoshitsugu_shirone", "annie"),
+    (2718658, 528, 766, "hoshitsugu_shirone", "annie"),
+    (3418294, 1, 2000, "hoshitsugu_shirone", "annie"),
+    (3418295, 1, 2000, "hoshitsugu_shirone", "annie"),
+    # Rhapsodic Holiday
+    (1246523, 11, 29, "hanyuuin_yuzuha", "annie"),
+    (1246523, 30, 53, "maha_d_bancroft", "hinata mutsuki"),
+    (1246523, 54, 72, "inaishi_arisa", "sasahiro"),
+    (1246523, 73, 88, "aeba_natsuki", "annie"),
+    (1246523, 95, 168, "hanyuuin_yuzuha", "annie"),
+    (1246523, 169, 243, "maha_d_bancroft", "hinata mutsuki"),
+    (1246523, 244, 318, "inaishi_arisa", "sasahiro"),
+    (1246523, 319, 393, "aeba_natsuki", "annie"),
+    # Makimura Hazuki no Koigatari
+    (2020008, 64, 400, "makimura_hazuki", "annie"),
+    (2020008, 426, 500, "makimura_hazuki", "annie"),
+
+    (3443492, 31, 630, "makimura_hazuki", "annie"),
+    (3443492, 669, 1519, "makimura_hazuki", "annie"),
+
+    (3443494, 31, 630, "makimura_hazuki", "annie"),
+    (3443494, 669, 1519, "makimura_hazuki", "annie"),
 ]
 
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
