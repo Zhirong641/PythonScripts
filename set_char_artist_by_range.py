@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import argparse, json, re, sys, tempfile, os, glob
+import argparse, json, re, sys, tempfile, os, glob, csv
 from typing import List, Tuple, Optional
 
 # 需要修改的区间（目录ID, 起始序号, 结束序号，角色，画师，均闭区间）
 RANGES: List[Tuple[int, int, int, str, str]] = [
+    # For filter only
+    (2883316, 711, 2000, None, "filter_invalid"),
     (3417336, 1, 2000, None, "suzumori"),
     (3417337, 1, 2000, None, "suzumori"),
     (3417347, 1, 2000, None, "suzumori"),
@@ -564,7 +566,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Pure Song Garden!
     (1081513, 2, 236, "shimokuni asuka", "bekotarou"),
     (1081513, 237, 578, "hoshino iroha", "motoi ayumu"),
-    (1081513, 579, 774, None, "marui"),
+    (1081513, 579, 774, "kawai_kuon", "marui"),
     (1081513, 775, 942, None, " "),
     (1081513, 943, 1129, "suzu_(pure_song_garden!)", "bekotarou"),
     # Tamayura Mirai
@@ -1303,6 +1305,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3255903, 308, 438, None, "yuunagi seshina"),
     (3255903, 439, 566, "inuya_komaru", "sacraneco"),
     (3255903, 567, 604, None, "unasaka"),
+    (3255903, 605, 633, None, "fuyuichi monme"),
     (3554542, 2, 63, "tenshi-chan_(ren'ai_hajimemashite) ", "fuyuichi monme"),
     (3554542, 64, 110, "aizawa_yukari", "unasaka"),
     (3554542, 111, 142, None, "yuunagi seshina"),
@@ -1313,22 +1316,22 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3554542, 275, 278, "inuya_komaru", "sacraneco"),
     # Koibana Ren'ai
     (2872360, 3, 40, "otome_kokoro", "yuuki rika"),
-    (2872360, 42, 80, "adachi_chii", "fuyuichi monme"),
-    (2872360, 81, 108, "harukaze_meguri", "yuuki rika"),
+    (2872360, 42, 80, "adachi_chii", "yuunagi seshina"),
+    (2872360, 81, 108, "harukaze_meguri", "fuyuichi monme"),
     (2872360, 109, 144, "yuugure_tokoyo", "fuyuichi monme"),
     (2872360, 145, 204, "koeda_fumi", "yuuki rika"),
     (2872360, 205, 259, "harukaze_inori", "yuuki rika"),
     (2872360, 260, 290, None, "yuunagi seshina"),
 
     (2692612, 2, 186, "otome_kokoro", "yuuki rika"),
-    (2692612, 187, 332, "adachi_chii", "fuyuichi monme"),
-    (2692612, 333, 459, "harukaze_meguri", "yuuki rika"),
+    (2692612, 187, 332, "adachi_chii", "yuunagi seshina"),
+    (2692612, 333, 459, "harukaze_meguri", "fuyuichi monme"),
     (2692612, 462, 575, "yuugure_tokoyo", "fuyuichi monme"),
     (2692612, 577, 621, None, "yuuki rika"),
     (2692612, 622, 637, None, "yuunagi seshina"),
 
-    (2893453, 1, 2000, "adachi_chii", "fuyuichi monme"),
-    (2893246, 1, 2000, "harukaze_meguri", "yuuki rika"),
+    (2893453, 1, 2000, "adachi_chii", "yuunagi seshina"),
+    (2893246, 1, 2000, "harukaze_meguri", "fuyuichi monme"),
     (2893243, 1, 2000, "otome_kokoro", "yuuki rika"),
     (2893244, 1, 792, "otome_kokoro", "yuuki rika"),
     (2893244, 793, 1656, "koeda_fumi", "yuuki rika"),
@@ -1726,8 +1729,19 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (990151, 1, 2000, "kitasono_chika", "ayuma sayu"),
     # Abnormal Lovers
     (1149861, 2, 227, "asahina_seri", "ayuma sayu"),
+    (1149861, 228, 424, "onodera_akeno", "mayusaki yuu"),
+    (1149861, 425, 612, "shimamiya_mimi", "ayuma sayu"),
+    (1149861, 613, 767, "kaburagi_yukana", "mayusaki yuu"),
     (1149861, 768, 873, "asahina_seri", "ayuma sayu"),
+    (1149861, 874, 966, "onodera_akeno", "mayusaki yuu"),
+    (1149861, 967, 1059, "shimamiya_mimi", "ayuma sayu"),
+    (1149861, 1060, 1138, "kaburagi_yukana", "mayusaki yuu"),
+
     (1150058, 1, 552, "asahina_seri", "ayuma sayu"),
+    (1150058, 553, 1225, "kaburagi_yukana", "mayusaki yuu"),
+    (1150060, 1, 671, "onodera_akeno", "mayusaki yuu"),
+    (1150060, 672, 1185, "shimamiya_mimi", "ayuma sayu"),
+    (1150060, 1186, 1917, "asahina_seri", "ayuma sayu"),
     # Love of Renai Koutei of LOVE!
     (598819, 199, 558, "ootori_erika", "ozora ituki"),
     (2188762, 200, 559, "ootori_erika", "ozora ituki"),
@@ -3167,6 +3181,14 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (866422, 413, 449, "kawachino_yuumi", "inugami kira"),
     (866422, 450, 632, "toritani_makoto", "kagome"),
     (866422, 633, 751, "natsume_ai", "kagome"),
+
+    (3747631, 2, 34, "natsume_ai", "kagome"),
+    (3747631, 118, 195, "misakura_rin", "inugami kira"),
+    (3747631, 418, 470, "misakura_rin", "inugami kira"),
+    (3747631, 835, 937, "toritani_makoto", "kagome"),
+    (3747631, 938, 1001, "misakura_rin", "inugami kira"),
+    (3747631, 1021, 1076, "hikawa_rina", "inugami kira"),
+    (3747631, 1077, 1158, "natsume_shizuku", "inugami kira"),
     # NEKO-MIMI SWEET HOUSEMATES
     (2191267, 2, 83, "mint_(uchi_no_pet_jijou)", "yano mitsuki"),
     (2191267, 101, 130, "mint_(uchi_no_pet_jijou), lily_(uchi_no_pet_jijou)", "yano mitsuki"),
@@ -4742,10 +4764,10 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3704896, 528, 549, "miseki_soubi", "maumen"),
     (3704896, 551, 614, "miseki_soubi", "maumen"),
     # Kirakira Stars
-    (1572826, 2, 95, "amane_ai", None),
-    (1678132, 1, 84, "yukishiro_nagisa", None),
-    (1678132, 87, 180, "yukishiro_nagisa", None),
-    (1766085, 1, 267, "aiba_reika", None),
+    # (1572826, 2, 95, "amane_ai", None),
+    # (1678132, 1, 84, "yukishiro_nagisa", None),
+    # (1678132, 87, 180, "yukishiro_nagisa", None),
+    # (1766085, 1, 267, "aiba_reika", None),
     # Kanzume Shoujo no Shuumatsu Sekai
     (1403984, 120, 206, "sarasa_sari", "ichiri"),
     (1403984, 207, 241, "yaotome_hanae", "ichiri"),
@@ -5344,6 +5366,56 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2366290, 1, 2000, "chie_(hankou_imouto)", "k-ko"),
     (2392608, 1, 2000, "chie_(hankou_imouto)", "k-ko"),
     (2419989, 1, 161, "chie_(hankou_imouto)", "k-ko"),
+    # Goshujin-sama, Maidfuku o Nugasanaide.
+    (981306, 3, 356, "zaizen_chinatsu", "kakao"),
+    (981306, 357, 706, "kurosaki_rika", "kakao"),
+    (981306, 707, 1027, "naruse_koko", "kakao"),
+    (981306, 1028, 1277, "ikuyama_karen", "olive"),
+    # Koiyasumi 
+    (1994830, 1, 371, "inaba_usaki", "mayusaki yuu"),
+    (2095144, 1, 399, "inaba_usaki", "mayusaki yuu"),
+    (2439947, 1, 207, "inaba_usaki", "mayusaki yuu"),
+    # aotsu karin
+    (1696991, 1, 2000, "uesaka_shiori", "aotsu karin"),
+    (2267021, 1, 56, "mazaki_chisa", "aotsu karin"),
+    (2267021, 112, 219, "mazaki_chisa", "aotsu karin"),
+    # LOVE MAJYO
+    (651542, 2, 356, "mikado_ichika", "kiduki erika"),
+    (651542, 405, 468, "yawata_hinano", "kiduki erika"),
+    (651542, 499, 585, "shinomiya_ririne", "yadapot"),
+    (651542, 586, 634, "kannozaki_nagi", "kiduki erika"),
+    (651542, 642, 670, "kannozaki_nagi", "kiduki erika"),
+    # Yuyukana
+    (3677117, 2, 82, "yuyuzuki_ako", "mitha"),
+    (3677117, 83, 214, "takasaki_honoka", "mitha"),
+    (3677117, 215, 304, "kusunoki_kukune", "mitha"),
+    (3677117, 305, 370, "himezono_risa", "mitha"),
+
+    (414131, 2, 80, "yuyuzuki_ako", "mitha"),
+    (414131, 81, 172, "takasaki_honoka", "mitha"),
+    (414131, 173, 260, "kusunoki_kukune", "mitha"),
+    (414131, 261, 323, "himezono_risa", "mitha"),
+
+    (3677354, 1, 402, "yuyuzuki_ako", "mitha"),
+    (3677354, 790, 1022, "kusunoki_kukune", "mitha"),
+    (3677354, 1023, 1299, "takasaki_honoka", "mitha"),
+    (3677354, 1377, 1609, "kusunoki_kukune", "mitha"),
+    (3677355, 33, 322, "himezono_risa", "mitha"),
+    (3677354, 1, 2000, None, "mitha"),
+    (3677355, 1, 2000, None, "mitha"),
+    # Hanagane Kanade * Gram - Chapter:4 Ayase Kanade
+    (3762625, 3, 309, "ayase_kanade", "ayuma sayu"),
+    (3763168, 1, 165, "ayase_kanade", "ayuma sayu"),
+    # Daunya-san to Kainushi-kun
+    (3763239, 1, 454, "minamiya_ria", "unasaka"),
+    (3763278, 1, 288, "minamiya_ria", "unasaka"),
+    # Koakuma-chan no Yuuwaku!
+    (2773875, 1, 483, "suzumori_mei", "kanekiyo miwa"),
+    (3424878, 1, 288, "suzumori_mei", "kanekiyo miwa"),
+    # Maid-chan wa Meido Chuu
+    (3380909, 1, 193, "yuki_nana_(maid-chan_wa_meido_chuu)", "kanekiyo miwa"),
+    (3393590, 1, 395, "yuki_nana_(maid-chan_wa_meido_chuu)", "kanekiyo miwa"),
+    (3424877, 1, 325, "yuki_nana_(maid-chan_wa_meido_chuu)", "kanekiyo miwa"),
 ]
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
 PATH_RE = re.compile(r"/webp/(\d+)/image_(\d+)\.webp$")
@@ -5372,6 +5444,106 @@ def lookup_targets(dir_id: int, num: int) -> Optional[Tuple[str, str]]:
         if start <= num <= end:
             return character, artist
     return None
+
+
+def export_ranges_to_csv(out_path: str, fallback_artists: Optional[dict] = None, fallback_counts: Optional[dict] = None) -> int:
+    """将 RANGES 中的角色-画师对应关系导出为 CSV（artist 可为空），并统计次数。
+
+    规则：
+    - 角色必须存在；artist 允许为空。
+    - 若角色或画师字段包含多个值（用逗号分隔）则跳过。
+    - artist 为空时，若提供 fallback_artists 并能匹配到该角色的 artist，则使用该 artist。
+    - 替换名称中的空格为下划线。
+    - 去重并统计 count（角色、画师一致时计数累加）。
+    返回写入的条目数量。
+    """
+    rows = {}
+    for _, _, _, character, artist in RANGES:
+        if not character:
+            continue
+        if "," in character or (artist and "," in artist):
+            continue
+        if (not artist) and fallback_artists:
+            artist = fallback_artists.get(character)
+            if artist and "," in artist:
+                artist = None  # 避免多值
+
+        character_clean = character.replace(" ", "_")
+        artist_clean = (artist or "").replace(" ", "_")
+        key = (character_clean, artist_clean)
+        if key in rows:
+            continue  # 避免重复，计数来自 fallback，不叠加
+
+        if fallback_counts:
+            cnt = fallback_counts.get(key, 1)
+        else:
+            cnt = 1
+        rows[key] = cnt
+
+    with open(out_path, "w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["character", "artist", "count"])
+        writer.writerows((ch, ar, cnt) for (ch, ar), cnt in rows.items())
+    return len(rows)
+
+
+def export_jsonl_to_csv(input_paths: List[str], out_path: str) -> int:
+    """从给定 JSONL 文件集合中提取 (character, artist) 去重导出，并统计出现次数。
+
+    规则：
+    - character 为空则跳过；artist 允许为空。
+    - 若 character 或 artist 含逗号（表示多值）则跳过。
+    - 名称中的空格替换为下划线。
+    - 去重后写出表头 character, artist, count。
+    返回写入的条目数量（行数，不是累计次数）。
+    """
+    counts = {}
+    for path in input_paths:
+        try:
+            with open(path, "r", encoding="utf-8") as fin:
+                for lineno, line in enumerate(fin, 1):
+                    s = line.strip()
+                    if not s:
+                        continue
+                    try:
+                        obj = json.loads(s)
+                    except json.JSONDecodeError as e:
+                        sys.stderr.write(f"[WARN] {path}:{lineno}: JSON decode error: {e}\\n")
+                        continue
+
+                    character = obj.get("character")
+                    artist = obj.get("artist")
+
+                    if not character:
+                        continue
+                    if isinstance(character, str) is False:
+                        character = str(character)
+                    if artist is not None and isinstance(artist, str) is False:
+                        artist = str(artist)
+
+                    character = character.strip()
+                    artist = artist.strip() if artist is not None else artist
+
+                    # 角色单值、画师多值时，将 artist 视为空再计数
+                    if "," in character:
+                        continue
+                    if artist and "," in artist:
+                        artist = ""
+
+                    character_clean = character.replace(" ", "_")
+                    artist_clean = (artist or "").replace(" ", "_")
+                    key = (character_clean, artist_clean)
+                    # 计数并保持插入顺序（Python3.8+ dict 有序）
+                    counts[key] = counts.get(key, 0) + 1
+        except FileNotFoundError:
+            sys.stderr.write(f"[WARN] 输入文件 {path} 不存在，已跳过。\n")
+            continue
+
+    with open(out_path, "w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["character", "artist", "count"])
+        writer.writerows((ch, ar, cnt) for (ch, ar), cnt in counts.items())
+    return len(counts)
 
 def process_file(in_path: str, out_path: str) -> int:
     modified = 0
@@ -5423,7 +5595,80 @@ def main():
     ap = argparse.ArgumentParser(description="Set character/artist for specific image ranges in JSONL.")
     ap.add_argument("inputs", nargs="+", help="input JSONL path pattern(s), supports * wildcard; add final path as OUTPUT when not using --inplace")
     ap.add_argument("--inplace", action="store_true", help="overwrite the input file in place")
+    ap.add_argument("--export-ranges", metavar="CSV", help="export unique (character, artist) pairs from RANGES to CSV then exit")
+    ap.add_argument("--ranges-fallback-csv", metavar="CSV", help="character/artist CSV used as fallback when exporting ranges and artist is empty")
+    ap.add_argument("--export-jsonl", metavar="CSV", help="export unique (character, artist) pairs from JSONL inputs to CSV then exit (artist 可为空)")
     args = ap.parse_args()
+
+    if args.export_ranges and args.export_jsonl:
+        ap.error("--export-ranges 与 --export-jsonl 不能同时使用。")
+
+    # 若仅导出范围映射或 JSONL，则不需要处理输入文件写回
+    if args.export_ranges:
+        fallback_artists = None
+        fallback_counts = None
+        if args.ranges_fallback_csv:
+            fallback_artists = {}
+            fallback_counts = {}
+            try:
+                with open(args.ranges_fallback_csv, newline="", encoding="utf-8") as fcsv:
+                    reader = csv.DictReader(fcsv)
+                    for row in reader:
+                        ch = row.get("character")
+                        ar = row.get("artist")
+                        cnt = row.get("count")
+                        if not ch:
+                            continue
+                        ch = ch.strip()
+                        ar = ar.strip() if ar is not None else ""
+                        if "," in ch or (ar and "," in ar):
+                            continue
+                        try:
+                            cnt_val = int(cnt) if cnt is not None else 1
+                        except ValueError:
+                            cnt_val = 1
+                        # 只保留第一个出现的 artist 作为回落（若存在），同时记录计数
+                        if ar:
+                            fallback_artists.setdefault(ch, ar)
+                            ch_space = ch.replace("_", " ")
+                            fallback_artists.setdefault(ch_space, ar)
+                        else:
+                            ch_space = ch.replace("_", " ")
+
+                        key = (ch.replace(" ", "_"), ar.replace(" ", "_"))
+                        fallback_counts.setdefault(key, cnt_val)
+                        # 兼容下划线写法的查找（RANGES 中多为空格）
+                        key_space = (ch_space.replace(" ", "_"), ar.replace(" ", "_"))
+                        fallback_counts.setdefault(key_space, cnt_val)
+            except FileNotFoundError:
+                ap.error(f"回落 CSV 文件 {args.ranges_fallback_csv} 不存在。")
+
+        written = export_ranges_to_csv(args.export_ranges, fallback_artists, fallback_counts)
+        print(f"Exported {written} unique rows to {args.export_ranges}")
+        return
+
+    # 先展开输入模式（导出 JSONL 也复用）
+    def expand_patterns(patterns: List[str]) -> List[str]:
+        expanded: List[str] = []
+        for pattern in patterns:
+            if glob.has_magic(pattern):
+                matches = sorted(glob.glob(pattern))
+                if not matches:
+                    ap.error(f"模式 {pattern} 未匹配到任何文件。")
+                expanded.extend(matches)
+            else:
+                if not os.path.exists(pattern):
+                    ap.error(f"输入文件 {pattern} 不存在。")
+                expanded.append(pattern)
+        return expanded
+
+    if args.export_jsonl:
+        expanded_inputs = expand_patterns(args.inputs)
+        if not expanded_inputs:
+            ap.error("未提供有效的输入文件。")
+        written = export_jsonl_to_csv(expanded_inputs, args.export_jsonl)
+        print(f"Exported {written} unique rows to {args.export_jsonl}")
+        return
 
     patterns: List[str]
     output_path: Optional[str] = None
@@ -5434,17 +5679,7 @@ def main():
             ap.error("非 --inplace 模式下请提供输入和输出文件，如: script in.jsonl out.jsonl")
         *patterns, output_path = args.inputs
 
-    expanded_inputs: List[str] = []
-    for pattern in patterns:
-        if glob.has_magic(pattern):
-            matches = sorted(glob.glob(pattern))
-            if not matches:
-                ap.error(f"模式 {pattern} 未匹配到任何文件。")
-            expanded_inputs.extend(matches)
-        else:
-            if not os.path.exists(pattern):
-                ap.error(f"输入文件 {pattern} 不存在。")
-            expanded_inputs.append(pattern)
+    expanded_inputs: List[str] = expand_patterns(patterns)
 
     if not expanded_inputs:
         ap.error("未提供有效的输入文件。")

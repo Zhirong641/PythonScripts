@@ -162,5 +162,10 @@
     "label": "danbooru_16_9",
     "resolution": "1280x720",
     "index_file": "/mnt/shared/data/danbooru/buckets/ratio_16_9.jsonl"
+  },
+  {
+    "label": "danbooru_3_10",
+    "resolution": "480x1600",
+    "index_file": "/mnt/shared/data/danbooru/buckets/ratio_3_10.jsonl"
   }
 ]

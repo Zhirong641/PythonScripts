@@ -311,6 +311,8 @@ _BACKGROUND_PATTERN = re.compile(
 _LOW_DROPOUT_EXACT = {
     "dakimakura (medium)",
     "tachi-e",
+    "multiple views",
+    "close-up"
 }
 
 
