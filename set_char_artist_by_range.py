@@ -8,6 +8,9 @@ from typing import List, Tuple, Optional
 RANGES: List[Tuple[int, int, int, str, str]] = [
     # For filter only
     (2883316, 711, 2000, None, "filter_invalid"),
+    (885663, 2, 11, None, "filter_invalid"),
+    (3457657, 1733, 1820, None, "filter_invalid"),
+    (3457658, 1460, 1547, None, "filter_invalid"),
     (3417336, 1, 2000, None, "suzumori"),
     (3417337, 1, 2000, None, "suzumori"),
     (3417347, 1, 2000, None, "suzumori"),
@@ -5416,6 +5419,155 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3380909, 1, 193, "yuki_nana_(maid-chan_wa_meido_chuu)", "kanekiyo miwa"),
     (3393590, 1, 395, "yuki_nana_(maid-chan_wa_meido_chuu)", "kanekiyo miwa"),
     (3424877, 1, 325, "yuki_nana_(maid-chan_wa_meido_chuu)", "kanekiyo miwa"),
+    # sorakoi
+    (885663, 12, 160, "hikari_(sorakoi)", "miyasaka miyu"),
+    (885663, 168, 174, "hikari_(sorakoi), sora_(sorakoi)", "miyasaka miyu"),
+    (885663, 175, 314, "sora_(sorakoi)", "miyasaka miyu"),
+    (885663, 323, 463, "airi_(sorakoi)", "miyasaka naco"),
+    (885663, 464, 562, "nami_(sorakoi)", "olive"),
+    # Koi ni wa Amae ga Hitsuyou Desu
+    (2509733, 4, 363, "amaeda_chiwa", "go-1"),
+    (2509733, 364, 626, "karakuchi_hibana", "go-1"),
+    (2509733, 627, 968, "aijou_michiru", "go-1"),
+    (2509733, 969, 1351, "shishikura_ouga", "go-1"),
+
+    (2509764, 2, 247, "amaeda_chiwa", "go-1"),
+    (2509764, 248, 461, "karakuchi_hibana", "go-1"),
+    (2509764, 462, 654, "aijou_michiru", "go-1"),
+    (2509764, 655, 885, "shishikura_ouga", "go-1"),
+
+    (2838251, 1, 110, "shishikura_ouga", "go-1"),
+    (2838251, 111, 199, "amaeda_chiwa", "go-1"),
+    (2838251, 200, 302, "karakuchi_hibana", "go-1"),
+    (2838251, 303, 405, "aijou_michiru", "go-1"),
+    (2838251, 406, 491, "shishikura_ouga", "go-1"),
+    (2838251, 492, 601, "amaeda_chiwa", "go-1"),
+    (2838251, 602, 707, "karakuchi_hibana", "go-1"),
+    (2838251, 708, 796, "aijou_michiru", "go-1"),
+
+    (2888964, 1, 64, "amaeda_chiwa", "go-1"),
+    (2888964, 65, 145, "karakuchi_hibana", "go-1"),
+    (2888964, 146, 238, "aijou_michiru", "go-1"),
+    (2888964, 239, 307, "shishikura_ouga", "go-1"),
+
+    (3408388, 2, 606, "amaeda_chiwa", "go-1"),
+    (3408388, 607, 1202, "karakuchi_hibana", "go-1"),
+    (3408388, 1203, 1793, "aijou_michiru", "go-1"),
+    (3408388, 1794, 2000, "shishikura_ouga", "go-1"),
+    (3408406, 2, 408, "shishikura_ouga", "go-1"),
+
+    (3425227, 2, 64, "amaeda_chiwa", "go-1"),
+    (3425227, 65, 131, "karakuchi_hibana", "go-1"),
+    (3425227, 132, 208, "aijou_michiru", "go-1"),
+    (3425227, 209, 293, "shishikura_ouga", "go-1"),
+
+    (3425231, 2, 75, "amaeda_chiwa", "go-1"),
+    (3425231, 76, 148, "karakuchi_hibana", "go-1"),
+    (3425231, 149, 233, "aijou_michiru", "go-1"),
+    (3425231, 234, 291, "shishikura_ouga", "go-1"),
+    # LOVEPICAL-POPPY!
+    (2899735, 1, 2000, None, "hanamaru"),
+    # Kohinata Yuzuki to Shoya Shitai
+    (3422304, 1, 278, "kohinata_yuzuki", "go-1"),
+    # Koi to H Shika Shiteinai!
+    (2697069, 3, 713, "kuranosono_iwai", "go-1"),
+    (2697069, 714, 1419, "kousaki_ririka", "go-1"),
+    # Hoshi no Otome to Rikka no Shimai
+    (2073139, 2, 73, "yamabuki_alice", "mizuki yuuma"),
+    (2073139, 101, 112, "matsurika_karen", "nanotaro"),
+    (2073139, 120, 174, "matsurika_karen", "nanotaro"),
+    (2073139, 175, 269, "kuchinashi_nerine", "mizuki yuuma"),
+    (2073139, 270, 360, "kokonoe_sumire", "mutou kurihito"),
+
+    (2073373, 2, 73, "yamabuki_alice", "mizuki yuuma"),
+    (2073373, 100, 111, "matsurika_karen", "nanotaro"),
+    (2073373, 119, 173, "matsurika_karen", "nanotaro"),
+    (2073373, 174, 268, "kuchinashi_nerine", "mizuki yuuma"),
+    (2073373, 269, 358, "kokonoe_sumire", "mutou kurihito"),
+
+    (2073318, 3, 95, "yamabuki_alice", "mizuki yuuma"),
+    (2073318, 132, 149, "matsurika_karen", "nanotaro"),
+    (2073318, 157, 223, "matsurika_karen", "nanotaro"),
+    (2073318, 224, 350, "kuchinashi_nerine", "mizuki yuuma"),
+    (2073318, 351, 455, "kokonoe_sumire", "mutou kurihito"),
+
+    (3457657, 295, 672, "yamabuki_alice", "mizuki yuuma"),
+    (3457657, 673, 882, "matsurika_karen", "nanotaro"),
+    (3457657, 883, 1134, "kuchinashi_nerine", "mizuki yuuma"),
+    (3457657, 1135, 1302, "kokonoe_sumire", "mutou kurihito"),
+
+    (3457658, 295, 420, "yamabuki_alice", "mizuki yuuma"),
+    (3457658, 421, 630, "matsurika_karen", "nanotaro"),
+    (3457658, 631, 882, "kuchinashi_nerine", "mizuki yuuma"),
+    (3457658, 883, 1050, "kokonoe_sumire", "mutou kurihito"),
+    # Otome no Ken to Himegoto Concerto
+    (2622816, 2, 218, "koshiba_anna", "mutou kurihito"),
+    (2622816, 219, 247, "claire_merle", "ayase hazuki"),
+    (2622816, 256, 299, "claire_merle", "ayase hazuki"),
+    (2622816, 301, 410, "claire_merle", "ayase hazuki"),
+    (2622816, 597, 813, "amami_iyo", "teeta.j"),
+    (2622816, 814, 1064, "mukunori_riri", "eitarou"),
+
+    (2622888, 5, 125, "koshiba_anna", "mutou kurihito"),
+    (2622888, 126, 225, "claire_merle", "ayase hazuki"),
+    (2622888, 327, 440, "amami_iyo", "teeta.j"),
+    (2622888, 441, 578, "mukunori_riri", "eitarou"),
+    (2622888, 579, 675, "koshiba_anna", "mutou kurihito"),
+    (2622888, 676, 766, "claire_merle", "ayase hazuki"),
+    (2622888, 852, 964, "amami_iyo", "teeta.j"),
+    (2622888, 965, 1068, "mukunori_riri", "eitarou"),
+
+    (2704363, 2, 219, "koshiba_anna", "mutou kurihito"),
+    (2704363, 220, 410, "claire_merle", "ayase hazuki"),
+    (2704363, 649, 837, "amami_iyo", "teeta.j"),
+    (2704363, 838, 1065, "mukunori_riri", "eitarou"),
+
+    (2628232, 4, 903, None, "mutou kurihito"),
+    (2628232, 1054, 2000, "koshiba_anna", "mutou kurihito"),
+    (2628229, 1, 900, "amami_iyo", "teeta.j"),
+    (2628229, 901, 2000, "claire_merle", "ayase hazuki"),
+    (2628215, 1, 972, "mukunori_riri", "eitarou"),
+    
+    (3457318, 1, 75, None, "mutou kurihito"),
+    (3457318, 76, 300, "koshiba_anna", "mutou kurihito"),
+    (3457318, 301, 750, "amami_iyo", "teeta.j"),
+    (3457318, 751, 975, "claire_merle", "ayase hazuki"),
+    (3457318, 976, 1461, "mukunori_riri", "eitarou"),
+    (3457318, 1462, 2000, None, "eitarou"),
+
+    (3457319, 1, 75, None, "mutou kurihito"),
+    (3457319, 76, 300, "koshiba_anna", "mutou kurihito"),
+    (3457319, 301, 750, "amami_iyo", "teeta.j"),
+    (3457319, 751, 975, "claire_merle", "ayase hazuki"),
+    (3457319, 976, 1461, "mukunori_riri", "eitarou"),
+    (3457319, 1462, 2000, None, "eitarou"),
+    # Onii-chan ni wa Zettai Ienai Taisetsu na Koto
+    (557801, 1, 44, "kashiwabara_asuna", "teeta.j"),
+    (557801, 53, 112, "kashiwabara_asuna", "teeta.j"),
+    (557801, 139, 161, "kashiwabara_asuna", "teeta.j"),
+
+    (1162649, 1, 350, "kashiwabara_asuna", "teeta.j"),
+    # Imouto da kara Dekiru Koto, Imouto ja Nai to Dame na Koto.
+    (606624, 14, 82, "takatou_iori", "teeta.j"),
+    (606624, 89, 141, "takatou_iori", "teeta.j"),
+    (606624, 236, 269, "takatou_iori", "teeta.j"),
+    # Tenmondokei no Aria
+    (887169, 3, 95, "tsukigami_aria", "izumi mahiru"),
+    (887169, 100, 126, "tsukigami_aria", "izumi mahiru"),
+    (887169, 135, 251, "tsukigami_aria", "izumi mahiru"),
+    # Triangle Love -Apricot Fizz-
+    (969657, 3, 100, "onose_ayame", "izumi mahiru"),
+    (969657, 114, 196, "onose_ayame", "izumi mahiru"),
+    # Koioto Se Piace
+    (1407224, 1, 291, "kurumi_hana", "tonchan"),
+    # Boukyaku Shitsuji to Koisuru Ojou-sama no Memoir
+    (1456388, 1, 165, "chidori_hinano", "rubi-sama"),
+    # Kimi to Hajimeru Dasanteki na Love Come
+    (1230954, 3, 64, "sakura_nono", "sousouman"),
+    (1230954, 65, 117, "teidou_shirayuki", "sousouman"),
+    (1230954, 118, 177, "sakura_nono, teidou_shirayuki", "sousouman"),
+
+
 ]
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
 PATH_RE = re.compile(r"/webp/(\d+)/image_(\d+)\.webp$")
