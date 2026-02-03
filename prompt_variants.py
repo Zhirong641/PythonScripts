@@ -337,7 +337,7 @@ def _artist_phrase(artists: List[str], p: float = 2.0, include_all: bool = False
     """
     if random.random() < 0.15:
         return ""  # 15% 概率不加画师标签
-    if not artists or len(artists) > 10:
+    if not artists or len(artists) > 8:
         return ""
 
     n = len(artists)

@@ -3105,8 +3105,16 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1669463, 177, 203, "fujimura_hinata", "maccha reika"),
 
     # Traveling Stars
-    (1001634, 1, 147, "zirconia", "matsushita makako"),
-    (847945, 206, 381, "zirconia", "matsushita makako"),
+    (1001634, 1, 147, "zirconia_salvatore", "matsushita makako"),
+
+    (847945, 2, 58, "eliza_roses_crawford", "uonuma yuu"),
+    (847945, 59, 205, "finn_sheard", "takayaki"),
+    (847945, 206, 381, "zirconia_salvatore", "matsushita makako"),
+    (847945, 382, 538, "eliza_roses_crawford", "uonuma yuu"),
+    (847945, 539, 774, "chloe_de_prelune", "suzuhira hiro"),
+    (847945, 775, 830, "roco_misha", "naenae"),
+    (847945, 831, 955, "lea_schelling_von_wolfsburg", "naenae"),
+    (847945, 995, 1191, "oumi_saaya", "matsushita makako"),
     # Koi Suru Amairo Homestay -Ryuugakusei wa Wanko-kei Osananajimi
     (2254599, 1, 155, "mary_mea_heart", "hiiragi ringo"),
     # Namaiki Yume-chan wa Onii to Mechakucha H Shitai
@@ -3495,7 +3503,10 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (819614, 295, 319, None, "moekibara fumitake"),
     (819614, 320, 343, "sengoku_ichika", "moekibara fumitake"),
     (819614, 370, 384, None, "moekibara fumitake"),
+    (819614, 1, 2000, None, "nanaroba hana"),
+    (1124566, 67, 126, None, "moekibara fumitake"),
     (1124566, 372, 505, "sengoku_ichika", "moekibara fumitake"),
+    (1124566, 1, 2000, None, "nanaroba hana"),
     # Kodomo no Asobi
     (877935, 4, 87, "sera_(kodomo_no_asobi)", "moekibara fumitake"),
     (877935, 88, 141, "tsurumaki_yuzuriha", "annie"),
@@ -5566,8 +5577,123 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1230954, 3, 64, "sakura_nono", "sousouman"),
     (1230954, 65, 117, "teidou_shirayuki", "sousouman"),
     (1230954, 118, 177, "sakura_nono, teidou_shirayuki", "sousouman"),
+    # Koiken Otome
+    (549923, 49, 283, "yasukuni_akane", "tateha"),
+    (549923, 301, 536, "eve_elain_austin", "tateha"),
+    (549923, 537, 788, "kamishiro_touko", "tateha"),
+    (549923, 789, 1022, "someya_yuzu", "tateha"),
 
+    (699367, 2, 235, "yasukuni_akane", "tateha"),
+    (699367, 253, 488, "eve_elain_austin", "tateha"),
+    (699367, 489, 740, "kamishiro_touko", "tateha"),
+    (699367, 741, 974, "someya_yuzu", "tateha"),
 
+    (699458, 2, 84, "eve_elain_austin", "tateha"),
+    (699458, 128, 227, "ichikura_chiharu", "tateha"),
+    (699458, 228, 276, "minato_shiho", "tateha"),
+    (699458, 277, 351, "someya_yuzu", "tateha"),
+    (699458, 352, 417, "yasukuni_akane", "tateha"),
+    (699458, 418, 499, "kamishiro_touko", "tateha"),
+    (699458, 500, 540, "chiyoda_mari", "tateha"),
+    (699458, 541, 551, "yasukuni_akane", "tateha"),
+    (699458, 556, 565, "eve_elain_austin", "tateha"),
+    (699458, 566, 574, "kamishiro_touko", "tateha"),
+    (699458, 575, 583, "someya_yuzu", "tateha"),
+    # Nyan Cafe Macchiato ~Neko ga Iru Cafe no Ecchi Jijou~
+    (625211, 2, 139, "nekomori_mike", "yukie"),
+    (625211, 140, 312, "nekoyashiki_perusha", "wori"),
+    (625211, 313, 408, "nekokawa_ameri", "rubi-sama"),
+    (625211, 642, 657, "nekomori_mike", "yukie"),
+    (625211, 658, 694, "nekoyashiki_perusha", "wori"),
+    (625211, 695, 708, "nekokawa_ameri", "rubi-sama"),
+    # ichizu na (shojo)
+    (1832451, 1, 865, "wataribe_kyouka", "tsukimori hiro"),
+    (2232786, 1, 1334, "hirohashi_runa", "tsukimori hiro"),
+    # PriministAr
+    (625156, 2, 130, "aki_kanoko", "matsushita makako"),
+    (625156, 131, 137, "koma_koito", "motomiya mitsuki"),
+    (625156, 138, 356, "tsugihana_misumi", "matsushita makako"),
+    (625156, 357, 547, "enamori_senri", "motomiya mitsuki"),
+    (625156, 548, 729, "kikura_shioji", "motomiya mitsuki"),
+    (625156, 730, 886, "touri_tsubasa", "hatori piyoko"),
+
+    (878230, 3, 48, "koma_kayano", "motomiya mitsuki"),
+    (878230, 49, 151, "enamori_senri", "motomiya mitsuki"),
+
+    (2566446, 2, 179, "aki_kanoko", "matsushita makako"),
+    (2566446, 180, 186, "koma_koito", "motomiya mitsuki"),
+    (2566446, 187, 227, "hikosaki_karen", "mitsu king"),
+    (2566446, 228, 273, "koma_kayano", "motomiya mitsuki"),
+    (2566446, 274, 487, "tsugihana_misumi", "matsushita makako"),
+    (2566446, 571, 624, "tsugihana_ruruko", "motomiya mitsuki"),
+    (2566446, 625, 959, "enamori_senri", "motomiya mitsuki"),
+    (2566446, 960, 1155, "kikura_shioji", "motomiya mitsuki"),
+    (2566446, 1156, 1321, "touri_tsubasa", "hatori piyoko"),
+    # SuGirly Wish
+    (656929, 2, 136, "kamira_akane", "sakura hanpen"),
+    (656929, 137, 278, "tsukigase_anna", "rakko"),
+    (656929, 279, 400, "shirosaki_hina", "sakura hanpen"),
+    (656929, 401, 558, "yusa_kurumi", "rakko"),
+    (656929, 559, 698, "himeyuri_megumi", "rakko"),
+    # Melty Moment
+    (670793, 2, 161, "ichijou_aoi", "takayaki"),
+    (670793, 162, 180, None, "odawara hakone"),
+    (670793, 181, 384, "fujibayashi_misao", "takayaki"),
+    (670793, 385, 548, "amane_natsuki", "rakko"),
+    (670793, 549, 726, "ayazaki_sumire", "odawara hakone"),
+    (670793, 727, 750, "hiiragi_chiemi", "odawara hakone"),
+    (670793, 751, 775, None, "takayaki"),
+    (670793, 776, 968, "orie_yuuka", "rakko"),
+
+    (734121, 1, 61, "ichijou_aoi", "takayaki"),
+    (734121, 62, 87, None, "odawara hakone"),
+
+    (743522, 2, 65, "ayazaki_sumire", "odawara hakone"),
+    (743522, 66, 107, "hiiragi_chiemi", "odawara hakone"),
+    # Lovely Quest
+    (735369, 2, 131, "aino_thea_couvreur", "sakura hanpen"),
+    (735369, 132, 252, "nishina_ayaka", "rakko"),
+    (735369, 253, 373, "konose_hami", "sakura hanpen"),
+    (735369, 374, 519, "yaotome_iroha", "rakko"),
+    (735369, 520, 647, "sakuraba_minaho", "rakko"),
+    # Strawberry Nauts 
+    (899905, 60, 247, "suzunae_houmi", "motomiya mitsuki"),
+    (899905, 248, 487, "yatsuka_itsuki", "hatori piyoko"),
+    (899905, 488, 729, "aoto_mikamo", "motomiya mitsuki"),
+    (899905, 805, 1000, "hiwa_touko", "matsushita makako"),
+    (899905, 1001, 1211, "kusunoki_yao", "hatori piyoko"),
+
+    (1321476, 59, 245, "suzunae_houmi", "motomiya mitsuki"),
+    (1321476, 246, 476, "yatsuka_itsuki", "hatori piyoko"),
+    (1321476, 477, 717, "aoto_mikamo", "motomiya mitsuki"),
+    (1321476, 757, 949, "hiwa_touko", "matsushita makako"),
+    (1321476, 950, 1159, "kusunoki_yao", "hatori piyoko"),
+
+    (3172654, 80, 389, "suzunae_houmi", "motomiya mitsuki"),
+    (3172654, 390, 717, "yatsuka_itsuki", "hatori piyoko"),
+    (3172654, 718, 1076, "aoto_mikamo", "motomiya mitsuki"),
+    (3172654, 1161, 1439, "hiwa_touko", "matsushita makako"),
+    (3172654, 1440, 1749, "kusunoki_yao", "hatori piyoko"),
+    # Kimi no Tonari de Koishiteru!
+    (845981, 2, 129, "hoshino_nagisa", "motomiya mitsuki"),
+    (845981, 170, 270, "chibana_ryoka", "motomiya mitsuki"),
+    (845981, 271, 385, "komatsu_rina", "motomiya mitsuki"),
+
+    (878445, 108, 372, "hoshino_nagisa", "motomiya mitsuki"),
+    (878445, 373, 552, "komatsu_rina", "motomiya mitsuki"),
+    (878445, 553, 852, "chibana_ryoka", "motomiya mitsuki"),
+
+    (1432761, 2, 257, "hoshino_nagisa", "motomiya mitsuki"),
+    (1432761, 337, 508, "chibana_ryoka", "motomiya mitsuki"),
+    (1432761, 509, 736, "komatsu_rina", "motomiya mitsuki"),
+    # Zutto Mae kara Joshi Deshita
+    (1204241, 1, 166, "kazama_sena", "tsurusaki takahiro"),
+    # Chiisana Kanojo no Serenade
+    (640954, 2, 95, "shirasato_kaede", "asaba yuu"),
+    (640954, 96, 219, "shirasato_karin", "herurun"),
+    (640954, 220, 339, "motosuwa_matsuri", "tsurusaki takahiro"),
+    (640954, 340, 452, "moriya_mizuka", "herurun"),
+    (640954, 453, 572, "katagai_shione", "tsurusaki takahiro"),
 ]
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
 PATH_RE = re.compile(r"/webp/(\d+)/image_(\d+)\.webp$")
