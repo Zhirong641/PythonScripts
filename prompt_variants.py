@@ -337,7 +337,7 @@ def _artist_phrase(artists: List[str], p: float = 2.0, include_all: bool = False
     """
     if random.random() < 0.15:
         return ""  # 15% 概率不加画师标签
-    if not artists or len(artists) > 8:
+    if not artists or len(artists) > 7:
         return ""
 
     n = len(artists)
@@ -386,7 +386,7 @@ def _character_phrase(characters: List[str], max_chars: int = 6, joiner: str = "
     """
     将 Camie/booru 风格的角色标签转成自然短语。
     - 默认只取前 6 个（`max_chars=6`）
-    - 规则：下划线->空格，去空格；不强制加前缀（如 'character '），更贴近常见提示。
+    - 规则：下划线->空格，去空格；添加 'character:' 前缀以保持与其他元数据标签的一致性
     """
     if not characters:
         return ""
@@ -405,7 +405,8 @@ def _character_phrase(characters: List[str], max_chars: int = 6, joiner: str = "
         return ""
     # 随机打乱顺序
     norm = random.sample(norm, len(norm))
-    return joiner.join(norm[:max_chars])
+    char_list = joiner.join(norm[:max_chars])
+    return f"character:{char_list}"
 
 
 def _era_tag(year_tags: List[str]) -> str:

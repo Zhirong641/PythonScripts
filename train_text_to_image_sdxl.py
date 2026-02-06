@@ -110,7 +110,9 @@ def _normalize_artist_tags(artist_tags):
                   "peko": "kani biimu",
                   "tomo": "tomoo_(tomo)",
                   "hadumi rio": "hazumi rio",
-                  "yuuma": "mizuki yuuma"}
+                  "yuuma": "mizuki yuuma",
+                  "ohara_tometa": "qp:flapper",
+                  "sakura_koharu": "qp:flapper",}
     normalized = []
     seen = set()
     for tag in artist_tags or []:
