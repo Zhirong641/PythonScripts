@@ -3360,9 +3360,6 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1404973, 1945, 2000, "yakumo_naru", "kiduki erika"),
     (1404977, 1, 184, "yakumo_naru", "kiduki erika"),
     (1404977, 185, 2000, None, "naenae"),
-    # LOVE MAJYO
-    (651542, 499, 585, "shinomiya_ririne", "kiduki erika"),
-    (651542, 586, 670, "kannonzaki_nagi", "kiduki erika"),
     # Kimi to Boku to no Kishi no Hibi -Rakuen no Chevalier-
     (992571, 44, 141, "saionji_kei", "ozawa akifumi"),
     (992571, 340, 358, None, "pero"),
@@ -5441,8 +5438,9 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (651542, 2, 356, "mikado_ichika", "kiduki erika"),
     (651542, 405, 468, "yawata_hinano", "kiduki erika"),
     (651542, 499, 585, "shinomiya_ririne", "yadapot"),
-    (651542, 586, 634, "kannozaki_nagi", "kiduki erika"),
-    (651542, 642, 670, "kannozaki_nagi", "kiduki erika"),
+    (651542, 586, 634, "kannonzaki_nagi", "kiduki erika"),
+    (651542, 635, 641, "mikado_ichika", "kiduki erika"),
+    (651542, 642, 670, "kannonzaki_nagi", "kiduki erika"),
     # Yuyukana
     (3677117, 2, 82, "yuyuzuki_ako", "mitha"),
     (3677117, 83, 214, "takasaki_honoka", "mitha"),
@@ -5837,7 +5835,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1625298, 392, 512, "tsukumo_yuki_(yuki_koi_melt)", "nanaca mai"),
     (1625298, 513, 2000, None, "filter_invalid"),
     # Pure Girl
-    (999062, 41, 91346, "kanadome_miyako", "nanaca mai"),
+    (999062, 41, 134, "kanadome_miyako", "nanaca mai"),
+    (999062, 135, 144, "kanadome_miyako, hoshizuki_sora, mekami_suzu, kuchifusa_yogiri", "nanaca mai"),
     (999062, 145, 254, "hoshizuki_sora", "nanaca mai"),
     (999062, 255, 344, "mekami_suzu", "nanaca mai"),
     (999062, 345, 449, "kuchifusa_yogiri", "nanaca mai"),
@@ -6088,6 +6087,10 @@ def export_ranges_to_csv(out_path: str, fallback_artists: Optional[dict] = None,
     """
     rows = {}
     for _, _, _, character, artist in RANGES:
+        if not character:
+            continue
+        character = character.strip()
+        artist = artist.strip() if artist else artist
         if not character:
             continue
         if "," in character or (artist and "," in artist):
