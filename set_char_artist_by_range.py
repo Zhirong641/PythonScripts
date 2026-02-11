@@ -698,6 +698,9 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1183141, 1099, 1125, "komagata yuzuki", "ashisyun"),
 
     (868964, 612, 2000, "kuragano sara", "sasorigatame"),
+    (868964, 16, 161, "kuragano sara", "sasorigatame"),
+    (868964, 450, 524, "morikawa_mihono", "sasorigatame"),
+    (868964, 525, 611, "akiyoshi_nekoko", "sasorigatame"),
     # Zettai Saikyou ☆ Oppai Sensou!!
     (536888, 348, 448, "kotone (zettai saikyou)", "annie"),
     (1481653, 352, 452, "kotone (zettai saikyou)", "annie"),
@@ -1354,7 +1357,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2893244, 1, 792, "otome_kokoro", "yuuki rika"),
     (2893244, 793, 1656, "koeda_fumi", "yuuki rika"),
     (2893247, 1, 1242, "yuugure_tokoyo", "fuyuichi monme"),
-    (2893247, 1243, 1536, None, "fuyuichi monme"),
+    (2893247, 1243, 1536, None, "yuunagi seshina"),
     (2893247, 1537, 1704, None, "yuunagi seshina"),
     (2893249, 1, 930, "koigawara_mia", "yuunagi seshina"),
     (2891513, 1, 290, None, "yuuki rika"),
@@ -2933,9 +2936,14 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (763324, 2, 58, "kawanaka_moeka, kamijou_shiori", "rozea"),
     (763324, 59, 142, "kawanaka_moeka", "rozea"),
     (763324, 143, 331, "kamijou_shiori", "rozea"),
+
+    (1119923, 1, 156, "kawanaka_moeka", "rozea"),
+    (1119923, 157, 268, "kamijou_shiori", "rozea"),
     # Koi iro Marriage
     (1182420, 5, 13, "morikawa_mihono", "sasorigatame"),
+    (1182420, 19, 381, "takamiya_kuon", "murakami suigun"),
     (1182420, 384, 847, "morikawa_mihono", "sasorigatame"),
+    (1182420, 848, 1200, "akiyoshi_nekoko", "sasorigatame"),
     (1182420, 1202, 1568, "luriastis_t_mikuriya", "chikotam"),
     # Mirai Kanojo
     (807638, 123, 590, "touno_kanae", "oota yuuichi"),
@@ -2986,7 +2994,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1461004, 89, 105, "hiiragi_yuzuyu", "hinata momo"),
     (1461004, 28, 56, "sawatari_misaki", "ameto yuki"),
     # Otome * Domain
-    (948037, 11, 55, "saionji_kazari", "tatekawa mako"),
+    (948037, 6, 55, "saionji_kazari", "tatekawa mako"),
     (948037, 56, 119, "kifune_yuzu", "tatekawa mako"),
     (948037, 120, 173, "oogaki_hinata", "tatekawa mako"),
     (948037, 185, 256, "saionji_kazari", "tatekawa mako"),
@@ -5839,7 +5847,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (999062, 135, 144, "kanadome_miyako, hoshizuki_sora, mekami_suzu, kuchifusa_yogiri", "nanaca mai"),
     (999062, 145, 254, "hoshizuki_sora", "nanaca mai"),
     (999062, 255, 344, "mekami_suzu", "nanaca mai"),
-    (999062, 345, 449, "kuchifusa_yogiri", "nanaca mai"),
+    (999062, 345, 448, "kuchifusa_yogiri", "nanaca mai"),
     # Kotonoha Maichiru Natsu no Koe
     (1332042, 22, 100, "nobara_yuu", "hinata momo"),
     (1332042, 101, 176, "rinden_aoko", "hinata momo"),
@@ -6043,6 +6051,72 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1740852, 822, 852, "aobazuku_mion", "yukie"),
     (1740852, 853, 875, "tsubamesawa_yoru", "yukie"),
     (1740852, 876, 897, "mizuha_iduru", "yukie"),
+    # Tonari ni Kanojo no Iru Shiawase
+    (1105821, 1, 106, "serizawa_chisa", "nekonyan"),
+    (1188937, 1, 2000, "yukimura_shiho", "nekonyan"),
+    (1403998, 1, 2000, "uryuu_koume", "nekonyan"),
+    (1545838, 1, 363, "yukimura_shiho", "nekonyan"),
+    (1649004, 1, 2000, "kyouno_hana", "nekonyan"),
+
+    (1743226, 2, 151, "uryuu_koume", "nekonyan"),
+    (1743226, 152, 267, "kyouno_hana", "nekonyan"),
+    (1743226, 268, 413, "serizawa_chisa", "nekonyan"),
+    (1743226, 414, 554, "yukimura_shiho", "nekonyan"),
+
+    (1744527, 1, 139, "uryuu_koume", "nekonyan"),
+    (1744527, 140, 255, "kyouno_hana", "nekonyan"),
+    (1744527, 256, 401, "serizawa_chisa", "nekonyan"),
+    (1744527, 402, 536, "yukimura_shiho", "nekonyan"),
+    # Himemiya-san wa Kamaitai
+    (2189428, 1, 99, "himemiya_tsubaki", "nekonyan"),
+    # Kiss Kara Hajimaru Gyaru no Koi
+    (2204798, 1, 2000, "hiiragi_kurumi", None),
+    (2204836, 1, 2000, "hiiragi_kurumi", None),
+    (2204837, 1, 2000, "hiiragi_kurumi", None),
+    # Boku to Nurse no Kenshuu Nisshi
+    (1204853, 1, 2000, "akagi_mio", None),
+    (1389134, 1, 82, "amagi_ryou", None),
+    (1389134, 83, 85, "akagi_mio", None),
+    (1389134, 86, 161, "amagi_ryou", None),
+    (1389134, 162, 193, "akagi_mio", None),
+    # Ama Mane
+    (1374097, 1, 2000, "suzumori_satsuki", "masuishi kinoto"),
+    (1741737, 1, 76, "nanami_yuri", "masuishi kinoto"),
+    (1741737, 77, 417, "suzumori_satsuki", "masuishi kinoto"),
+    (1741737, 418, 637, "nanami_yuri", "masuishi kinoto"),
+    # ChuSingura 46+1 Wacchi to Onii-chan no Love Love Nagaya Seikatsu
+    (1531704, 1, 104, "yamayoshi_shinpachirou", "nui"),
+    (1531704, 105, 2000, None, "filter_invalid"),
+    # Keiken Zero na Classmate π
+    (2047881, 1, 8, "hoshina_risa", "re"),
+    (2047881, 9, 14, "miyazono_mikumo", "re"),
+    (2047881, 15, 48, "hoshina_risa, miyazono_mikumo", "re"),
+    (2047881, 49, 259, "hoshina_risa", "re"),
+    (2047881, 260, 297, "miyazono_mikumo", "re"),
+    (2047881, 620, 979, "tachibana_saki", "re"),
+    # Genpei Ryouran Emaki
+    (1876063, 96, 165, "kanou_roko", "hissatsukun"),
+    (1876063, 168, 236, "mihishiro_shizuka", "hissatsukun"),
+    (1876063, 237, 281, "kanou_roko, mihishiro_shizuka", "hissatsukun"),
+    (1876063, 283, 287, "kanou_roko, mihishiro_shizuka", "hissatsukun"),
+    # Sakura Mau Otome no Rondo
+    (651830, 40, 168, "komine_manami", "kimishima ao"),
+    (651830, 169, 332, "erihara_mitsuki", "kaniya shiku"),
+    (651830, 333, 451, "amatsuka_ryouka", "nemaki"),
+    (651830, 452, 635, "kadowaki_sakura", "nemaki"),
+    (651830, 636, 806, "aragaki_wakana", "kaniya shiku"),
+
+    (692291, 3, 4, "mahara_yuri", "kimishima ao"),
+    (692291, 5, 28, "kadowaki_sakura", "nemaki"),
+    (692291, 29, 57, "mahara_yuri", "kimishima ao"),
+    (730773, 1, 82, "mahara_yuri", "kimishima ao"),
+
+    (2277946, 1, 257, "komine_manami", "kimishima ao"),
+    (2277946, 258, 449, "kadowaki_sakura", "nemaki"),
+    (2277946, 450, 585, "amatsuka_ryouka", "nemaki"),
+    (2277946, 586, 876, "erihara_mitsuki", "kaniya shiku"),
+    (2277946, 877, 1197, "aragaki_wakana", "kaniya shiku"),
+    (2277946, 1198, 1461, "mahara_yuri", "kimishima ao"),
 
 ]
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp

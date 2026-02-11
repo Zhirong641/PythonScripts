@@ -357,8 +357,11 @@ def _artist_phrase(artists: List[str], p: float = 2.0, include_all: bool = False
         picked = random.sample(artists, k)
         names = [_normalize_artist(a) for a in picked]
 
-    # 每个画师独立带前缀，避免连在一起混淆
-    return ", ".join(f"by {n}" for n in names)
+    # 格式化输出
+    if random.random() < 0.5:
+        return "artist:" + ", ".join(names)
+    else:
+        return ", ".join(f"by {n}" for n in names)
 
 def _rating_phrase(ratings: List[str], max_ratings: int = 1) -> str:
     if not ratings:
