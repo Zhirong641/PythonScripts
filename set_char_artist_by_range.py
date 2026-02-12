@@ -1587,15 +1587,30 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (839209, 3, 213, "marigold_bruette_erland", "rubi-sama"),
     (839209, 214, 233, "marigold_bruette_erland,  anastasia_imperator_erland", "wori, rubi-sama"),
     (839209, 234, 432, "anastasia_imperator_erland", "wori"),
-    (839209, 433, 592, "tsukimori_mio_erland", "wori"),
+    (839209, 433, 592, "tsukimori_mio_erland", "rubi-sama"),
+    (839209, 593, 736, "fione_riese_erland", "rokudou itsuki"),
+    (839209, 737, 885, "cecilia_highland", "rubi-sama"),
+    (839209, 886, 991, "paruru_pururu_erland", "wori"),
+    (839209, 992, 1070, "angelica_kamira_erland", "rubi-sama"),
+    (839209, 1071, 1158, "hinoshita_sakura", "rokudou itsuki"),
 
     (839731, 3, 407, "marigold_bruette_erland", "rubi-sama"),
     (839731, 408, 719, "anastasia_imperator_erland", "wori"),
-    (839731, 720, 989, "tsukimori_mio_erland", "wori"),
+    (839731, 720, 989, "tsukimori_mio_erland", "rubi-sama"),
+    (839731, 990, 1257, "fione_riese_erland", "rokudou itsuki"),
+    (839731, 1258, 1529, "cecilia_highland", "rubi-sama"),
+    (839731, 1530, 1879, "paruru_pururu_erland", "wori"),
+
+    (839732, 2, 393, "angelica_kamira_erland", "rubi-sama"),
+    (839732, 394, 597, "hinoshita_sakura", "rokudou itsuki"),
     # Love Love Life
     (688579, 2, 124, "akemiya_sakura", "rubi-sama"),
     (688579, 125, 240, "kuroba_kasumi", "wori"),
     (688579, 843, 859, "kuroba_kasumi", "wori"),
+    (688579, 241, 376, "leone_goldbach", "wori"),
+    (688579, 377, 479, None, "tadima yoshikadu"),
+    (688579, 480, 598, "moegino_sachi, moegino_chisa", "wori"),
+    (688579, 599, 740, "shizaki_yukari", "rubi-sama"),
     # shona mitsuishi
     (2216911, 2, 10, None, "shona mitsuishi"),
     # Gensou no Idea
@@ -6144,7 +6159,53 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2470120, 866, 1057, "yamanashi_mizuki", "gyokuto_b"),
     # World's Horniest Housewife
     (1870983, 12, 476, "kouguchi_rinko", "gyokuto_b"),
+    # Gohoushi Akuma to Oshioki Tenshi
+    (1838940, 5, 95, "matty_(gohoushi_akuma_to_oshioki_tenshi)", "rubi-sama"),
+    (1838940, 96, 204, "luciela_valheim_melvella", "rubi-sama"),
+    (1838940, 205, 295, "cial_harrell", "momoirone"),
+    (1838940, 296, 381, "kohanai_touka", "maroya kayo"),
+    (1838940, 382, 421, None, "maroya kayo"),
+    (1838940, 422, 550, "matty_(gohoushi_akuma_to_oshioki_tenshi)", "rubi-sama"),
+    (1838940, 551, 714, "luciela_valheim_melvella", "rubi-sama"),
+    (1838940, 715, 906, "cial_harrell", "momoirone"),
+    (1838940, 907, 1104, "kohanai_touka", "maroya kayo"),
+    # Love Love Sisters ~Hanayome & Shimai-tachi to no Dokidoki Harem Seikatsu~
+    (1021926, 4, 194, "nekogusa_kisara", "naenae"),
+    (1021926, 195, 206, "nekogusa_kisara, sarusuberi_misatoko", "naenae"),
+    (1021926, 207, 330, "sarusuberi_misatoko", "naenae"),
+    (1021926, 331, 369, "nekogusa_kisara, sarusuberi_misatoko", "naenae"),
+    (1021926, 370, 390, "sarusuberi_misatoko", "naenae"),
+    (1021926, 391, 398, "nekogusa_kisara, sarusuberi_misatoko", "naenae"),
+    (1021926, 399, 565, "pnina_maluna_ferkel", "midoriha mint"),
+    (1021926, 566, 810, None, "rokudou itsuki"),
+    (1021926, 811, 962, "tsurumatsu_mizuho", "ibu moina"),
+    (1021926, 963, 1024, "tsukitoji_hana", "wori"),
+    (1021926, 1032, 1037, None, "noda shuha"),
 
+    (1021926, 1085, 1125, "nekogusa_kisara", "naenae"),
+    (1021926, 1126, 1162, "sarusuberi_misatoko", "naenae"),
+    (1021926, 1163, 1199, "pnina_maluna_ferkel", "midoriha mint"),
+    (1021926, 1200, 1241, None, "rokudou itsuki"),
+    (1021926, 1242, 1252, "tsurumatsu_mizuho", "ibu moina"),
+    (1021926, 1253, 1253, "tsukitoji_hana", "wori"),
+    # Blade x Bullet Kinrin no Soleil
+    (1106239, 7, 231, None, "rubi-sama"),
+    (1106239, 232, 292, None, "rokudou itsuki"),
+    (1106239, 293, 364, None, "wori"),
+    (1106239, 365, 419, None, "rubi-sama"),
+    (1106239, 420, 534, None, "rubi-sama"),
+    (1106239, 535, 594, "schwertileite_kyouka", "naenae"),
+    (1106239, 595, 678, "brynhildr_arlesgrat", "naenae"),
+
+    (1106239, 720, 752, None, "rubi-sama"),
+    (1106239, 753, 778, None, "rokudou itsuki"),
+    (1106239, 779, 787, None, "wori"),
+    (1106239, 788, 816, None, "rubi-sama"),
+    (1106239, 817, 819, "schwertileite_kyouka", "naenae"),
+    (1106239, 820, 842, "brynhildr_arlesgrat", "naenae"),
+    # Mousou Speaker
+    (1491067, 4, 142, None, "chize"),
+    (1491067, 143, 205, None, "naenae"),
 ]
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
 PATH_RE = re.compile(r"/webp/(\d+)/image_(\d+)\.webp$")
