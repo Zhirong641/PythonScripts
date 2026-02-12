@@ -3127,8 +3127,28 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1134330, 41, 332, "tamaki_yuuka", "usume shirou"),
     # Chiccha Love Apart
     (714476, 4, 11, "komori_hinata", "usume shirou"),
+    (714476, 12, 56, "kuramoto_mutsumi", "pikazo"),
+    (714476, 57, 69, "torikai_nina", "pikazo"),
+    (714476, 70, 79, "sakurabashi_takano", "usume shirou"),
+    (714476, 80, 259, "hayami_ayaka", "massan"),
     (714476, 260, 559, "komori_hinata", "usume shirou"),
+    (714476, 560, 832, "kuramoto_mutsumi", "pikazo"),
+    (714476, 833, 1090, "torikai_nina", "pikazo"),
+    (714476, 1091, 1370, "sakurabashi_takano", "usume shirou"),
+
+    (1116650, 1, 120, None, "pikazo"),
+    (1116650, 121, 856, "hayami_ayaka", "massan"),
+    (1116650, 1049, 2000, "komori_hinata", "usume shirou"),
+
     (1116649, 1, 677, "komori_hinata", "usume shirou"),
+    (1116649, 678, 869, None, "usume shirou"),
+    (1116649, 870, 2000, "kuramoto_mutsumi", "pikazo"),
+
+    (1116648, 1, 238, "kuramoto_mutsumi", "pikazo"),
+    (1116648, 239, 1774, "torikai_nina", "pikazo"),
+    (1116648, 1829, 2000, "sakurabashi_takano", "usume shirou"),
+
+    (1116647, 1, 1530, "sakurabashi_takano", "usume shirou"),
     # Lautes Alltags -Herrenlose Katze und Teehaus-
     (782112, 2, 276, "takanashi_nanase", "sorai shinya"),
     (782112, 277, 456, "kasahara_himari", "sorai shinya"),
@@ -6206,6 +6226,32 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Mousou Speaker
     (1491067, 4, 142, None, "chize"),
     (1491067, 143, 205, None, "naenae"),
+    # Santaful☆Summer
+    (607170, 10, 180, "kirigaya_hatsuka", "noritama"),
+    (607170, 181, 349, "niieda_miyu", "usume shirou"),
+    (607170, 350, 537, "nicole_(santaful_summer)", "pikazo"),
+    (607170, 538, 619, "enomoto_yuri", "noritama"),
+    (607170, 620, 719, "lily_abel", "pikazo"),
+    (607170, 720, 849, "kleinia_burnett", " "),
+
+    (611946, 1, 9, "kirigaya_hatsuka", "noritama"),
+    (611946, 10, 35, "niieda_miyu", "usume shirou"),
+    (611946, 37, 57, "nicole_(santaful_summer)", "pikazo"),
+
+    (980642, 54, 216, "kirigaya_hatsuka", "noritama"),
+    (980642, 217, 324, "kleinia_burnett", " "),
+    (980642, 325, 419, "lily_abel", "pikazo"),
+    (980642, 420, 579, "niieda_miyu", "usume shirou"),
+    (980642, 580, 764, "nicole_(santaful_summer)", "pikazo"),
+    (980642, 765, 841, "enomoto_yuri", "noritama"),
+    (980642, 842, 2000, None, "filter_invalid"),
+
+    (1114624, 1, 278, "kirigaya_hatsuka", "noritama"),
+    (1114624, 279, 463, "kleinia_burnett", " "),
+    (1114624, 464, 662, "lily_abel", "pikazo"),
+    (1114624, 663, 798, "niieda_miyu", "usume shirou"),
+    (1114624, 849, 1120, "nicole_(santaful_summer)", "pikazo"),
+    (1114624, 1121, 1334, "enomoto_yuri", "noritama"),
 ]
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
 PATH_RE = re.compile(r"/webp/(\d+)/image_(\d+)\.webp$")
