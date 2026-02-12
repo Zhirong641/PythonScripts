@@ -2513,6 +2513,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (868699, 551, 630, "mirina_liliano", "miyasu risa"),
     (868699, 631, 697, "aria_celestia", "nanase meruchi"),
     (868699, 698, 879, "lisley_mcdowell", "miyasu risa"),
+    (868699, 891, 898, "lisley_mcdowell", "miyasu risa"),
 
     (868699, 880, 1848, "eris_elenoare", "nanase meruchi"),
     (868699, 1849, 2000, "mirina_liliano", "miyasu risa"),
@@ -3657,20 +3658,20 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1218763, 523, 790, "kurashiki_azusa", "asami asami"),
     (1218763, 791, 1039, "hayase_chitose", "asami asami"),
     # Hakuchuumu no Aojashin
-    (1740823, 10, 447, "yonagi_(hakuchuumu_no_aojashin)", None),
-    (1740823, 461, 720, "hatano_rin", None),
-    (1740823, 798, 1030, "olivia_berry", None),
-    (1740823, 1176, 1439, "momonouchi_sumomo", None),
+    (1740823, 10, 447, "yonagi_(hakuchuumu_no_aojashin)", "shimofuri"),
+    (1740823, 461, 720, "hatano_rin", "gyokuto_b"),
+    (1740823, 798, 1030, "olivia_berry", "gyokuto_b"),
+    (1740823, 1176, 1439, "momonouchi_sumomo", "shimofuri"),
 
-    (1741452, 692, 859, "yonagi_(hakuchuumu_no_aojashin)", None),
-    (1741452, 860, 1040, "hatano_rin", None),
-    (1741452, 1041, 1236, "olivia_berry", None),
-    (1741452, 1237, 1455, "momonouchi_sumomo", None),
+    (1741452, 692, 859, "yonagi_(hakuchuumu_no_aojashin)", "shimofuri"),
+    (1741452, 860, 1040, "hatano_rin", "gyokuto_b"),
+    (1741452, 1041, 1236, "olivia_berry", "gyokuto_b"),
+    (1741452, 1237, 1455, "momonouchi_sumomo", "shimofuri"),
 
-    (1743085, 1, 520, "yonagi_(hakuchuumu_no_aojashin)", None),
-    (1743085, 648, 1202, "hatano_rin", None),
-    (1743085, 1203, 2000, "olivia_berry", None),
-    (1743088, 1, 302, "momonouchi_sumomo", None),
+    (1743085, 1, 520, "yonagi_(hakuchuumu_no_aojashin)", "shimofuri"),
+    (1743085, 648, 1202, "hatano_rin", "gyokuto_b"),
+    (1743085, 1203, 2000, "olivia_berry", "gyokuto_b"),
+    (1743088, 1, 302, "momonouchi_sumomo", "shimofuri"),
     # Kimi to Yumemishi
     (960882, 3, 108, "hiiragi_marina", None),
     # Newton to Ringo no Ki
@@ -6117,6 +6118,32 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2277946, 586, 876, "erihara_mitsuki", "kaniya shiku"),
     (2277946, 877, 1197, "aragaki_wakana", "kaniya shiku"),
     (2277946, 1198, 1461, "mahara_yuri", "kimishima ao"),
+    # Yume to Iro de Dekiteiru
+    (1371164, 3, 119, "asukai_hiiro", "karory"),
+    (1371164, 120, 236, "kurobane_kamome", "karory"),
+    (1371164, 237, 348, "onbara_ren", "karory"),
+    (1371164, 349, 451, "tokino_kumo", "karory"),
+    (1371164, 452, 565, "tanabata_shiori", "karory"),
+    # Mirai Radio to Jinkou Bato
+    (1278685, 8, 30, "haduki_kaguya", "shimofuri"),
+    (1278685, 34, 36, "haduki_kaguya", "shimofuri"),
+    (1278685, 39, 418, "haduki_kaguya", "shimofuri"),
+    (1278685, 419, 427, "azamino_tsubaki", "shimofuri"),
+    (1278685, 430, 454, "azamino_tsubaki", "shimofuri"),
+    (1278685, 457, 678, "azamino_tsubaki", "shimofuri"),
+    (1278685, 679, 867, "kosumo_akina", "gyokuto_b"),
+    (1278685, 868, 1059, "yamanashi_mizuki", "gyokuto_b"),
+
+    (2470120, 6, 28, "haduki_kaguya", "shimofuri"),
+    (2470120, 32, 34, "haduki_kaguya", "shimofuri"),
+    (2470120, 37, 418, "haduki_kaguya", "shimofuri"),
+    (2470120, 419, 427, "azamino_tsubaki", "shimofuri"),
+    (2470120, 430, 454, "azamino_tsubaki", "shimofuri"),
+    (2470120, 457, 678, "azamino_tsubaki", "shimofuri"),
+    (2470120, 679, 865, "kosumo_akina", "gyokuto_b"),
+    (2470120, 866, 1057, "yamanashi_mizuki", "gyokuto_b"),
+    # World's Horniest Housewife
+    (1870983, 12, 476, "kouguchi_rinko", "gyokuto_b"),
 
 ]
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
