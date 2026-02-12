@@ -3136,6 +3136,12 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (714476, 833, 1090, "torikai_nina", "pikazo"),
     (714476, 1091, 1370, "sakurabashi_takano", "usume shirou"),
 
+    (1197067, 86, 265, "hayami_ayaka", "massan"),
+    (1197067, 266, 565, "komori_hinata", "usume shirou"),
+    (1197067, 566, 873, "kuramoto_mutsumi", "pikazo"),
+    (1197067, 874, 1172, "torikai_nina", "pikazo"),
+    (1197067, 1173, 1452, "sakurabashi_takano", "usume shirou"),
+
     (1116650, 1, 120, None, "pikazo"),
     (1116650, 121, 856, "hayami_ayaka", "massan"),
     (1116650, 1049, 2000, "komori_hinata", "usume shirou"),
