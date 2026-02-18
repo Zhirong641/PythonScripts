@@ -219,6 +219,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (979189, 54, 111, "saijou hifumi", None),
     (979189, 228, 250, "mito kohaku", None),
     (979189, 251, 271, "saijou hifumi", None),
+    (979189, 322, 2000, None, "filter_invalid"),
 
     (1056434, 22, 32, "mito kohaku", None),
     (1056434, 33, 43, "saijou hifumi", None),
@@ -234,6 +235,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1993857, 143, 193, "mito kohaku", None),
     (1993857, 194, 251, "saijou hifumi", None),
     (1993857, 312, 367, "yunohana nano", None),
+    (1993857, 2, 38, None, "filter_invalid"),
 
     # Magical Marriage Lunatics!!
     (633524, 2, 141, "luce yami asutarite", "yamakaze ran"),
@@ -841,9 +843,12 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Amanatsu Adolescence
     (1043759, 2, 22, "hyuuga_natsu", "hisama kumako"),
     (1043759, 23, 32, "sasha_mayakovskaya", "hitsuji takako"),
+    (1043759, 33, 58, "suzakano_ryou", "hitsuji takako"),
+    (1043759, 59, 75, "amakasu_amane", "hisama kumako"),
+    (1043759, 76, 87, None, "hisama kumako, hitsuji takako"),
     (1043759, 88, 161, "hyuuga_natsu", "hisama kumako"),
     (1043759, 162, 230, "sasha_mayakovskaya", "hitsuji takako"),
-    (1043759, 231, 301, "suzakano_ryou", "hisama kumako"),
+    (1043759, 231, 301, "suzakano_ryou", "hitsuji takako"),
     (1043759, 302, 380, "amakasu_amane", "hisama kumako"),
     # Shougun-sama wa Otoshigoro
     (1175803, 10, 121, "tokugawa_muneharu", "shona mitsuishi"),
@@ -5578,6 +5583,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2899735, 1, 2000, None, "hanamaru"),
     # Kohinata Yuzuki to Shoya Shitai
     (3422304, 1, 278, "kohinata_yuzuki", "go-1"),
+    (3423065, 1, 140, "kohinata_yuzuki", "go-1"),
     # Koi to H Shika Shiteinai!
     (2697069, 3, 713, "kuranosono_iwai", "go-1"),
     (2697069, 714, 1419, "kousaki_ririka", "go-1"),
