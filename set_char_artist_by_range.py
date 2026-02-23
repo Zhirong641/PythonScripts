@@ -1047,12 +1047,24 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3553799, 175, 189, "koishikawa_miku", "kobuichi"),
     (3553799, 190, 208, "saen_nayuka", "hadumi rio"),
 
-    (3638988, 3, 1008, "harumi_ena", "muririn"),
+    (3638988, 3, 20, "harumi_ena", "muririn"),
+    (3638988, 21, 50, "nabari_anju", "kobuichi"),
+    (3638988, 63, 1008, "harumi_ena", "muririn"),
     (3638988, 1009, 1466, "nabari_anju", "kobuichi"),
-    (3590156, 2, 604, "shimakoshi_tsukimi", "hokkana"),
+    (3638988, 1467, 1890, "saen_nayuka", "hadumi rio"),
+    (3590156, 3, 604, "shimakoshi_tsukimi", "hokkana"),
     (3590156, 605, 1321, "futamihara_ririko", "muririn"),
     (3590156, 1322, 1581, "koishikawa_miku", "kobuichi"),
-    (3638988, 1467, 1890, "saen_nayuka", "hadumi rio"),
+
+    (3554798, 3, 18, "harumi_ena", "muririn"),
+    (3554798, 19, 48, "nabari_anju", "kobuichi"),
+    (3554798, 61, 1005, "harumi_ena", "muririn"),
+    (3554798, 1006, 1463, "nabari_anju", "kobuichi"),
+    (3554798, 1464, 1887, "saen_nayuka", "hadumi rio"),
+    (3554799, 3, 604, "shimakoshi_tsukimi", "hokkana"),
+    (3554799, 605, 1321, "futamihara_ririko", "muririn"),
+    (3554799, 1322, 1581, "koishikawa_miku", "kobuichi"),
+    
 
     # cafe stella to shinigami no chou
     (1538399, 1, 2000, "akizuki_kanna", "kobuichi"),
@@ -5292,7 +5304,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
 
     (3428368, 1, 296, "aikawa_arisa", "mikoto akemi"),
     (3428368, 297, 568, "natsume_azusa", "hitsuji takako"),
-    (3428368, 681, 1010, "minase_yuka", "takei ooki"),
+    (3428368, 659, 1010, "minase_yuka", "takei ooki"),
     (3428368, 1011, 1696, "hoshimi_tsukuyo", "mikoto akemi"),
     # Ai Kiss
     (1508822, 77, 204, "saegusa_ayame", "kirisawa saki"),
@@ -5585,8 +5597,15 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3422304, 1, 278, "kohinata_yuzuki", "go-1"),
     (3423065, 1, 140, "kohinata_yuzuki", "go-1"),
     # Koi to H Shika Shiteinai!
-    (2697069, 3, 713, "kuranosono_iwai", "go-1"),
-    (2697069, 714, 1419, "kousaki_ririka", "go-1"),
+    (2697069, 3, 73, "kuranosono_iwai", "go-1"),
+    (2697069, 74, 103, "kousaki_ririka", "go-1"),
+    (2697069, 104, 713, "kuranosono_iwai", "go-1"),
+    (2697069, 714, 1421, "kousaki_ririka", "go-1"),
+
+    (3556148, 1, 70, "kuranosono_iwai", "go-1"),
+    (3556148, 71, 101, "kousaki_ririka", "go-1"),
+    (3556148, 102, 711, "kuranosono_iwai", "go-1"),
+    (3556148, 712, 1417, "kousaki_ririka", "go-1"),
     # Hoshi no Otome to Rikka no Shimai
     (2073139, 2, 73, "yamabuki_alice", "mizuki yuuma"),
     (2073139, 101, 112, "matsurika_karen", "nanotaro"),
