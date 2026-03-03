@@ -6,6 +6,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import os
 import re
@@ -14,45 +16,12 @@ from datetime import datetime
 from CSVProcessor import CSVProcessor
 # base_url = "https://hitomi.la/group/unisonshift-all.html"
 base_urls = [
-    # "https://hitomi.la/artist/hiiragi%20ringo-all.html",
-    # "https://hitomi.la/artist/kimishima%20ao-all.html",
-    # "https://hitomi.la/artist/koku-all.html",
-    # "https://hitomi.la/artist/mikagami%20mamizu-all.html",
-    # "https://hitomi.la/artist/mutou%20kurihito-all.html",
-    # "https://hitomi.la/artist/nanaca%20mai-all.html",
-    "https://hitomi.la/artist/shiratama-all.html",
-    # "https://hitomi.la/group/akabei%20soft3-all.html",
-    # "https://hitomi.la/group/alcot-all.html",
-    # "https://hitomi.la/group/applique-all.html",
-    # "https://hitomi.la/group/asa%20project-all.html",
-    # "https://hitomi.la/group/astronauts-all.html",
-    # "https://hitomi.la/group/campus-all.html",
-    # "https://hitomi.la/group/crystalia-all.html",
-    # "https://hitomi.la/group/cube-all.html",
-    # "https://hitomi.la/group/escude-all.html",
-    # "https://hitomi.la/group/favorite-all.html",
-    # "https://hitomi.la/group/feng-all.html",
-    # "https://hitomi.la/group/galette-all.html",
-    # "https://hitomi.la/group/giga-all.html",
-    # "https://hitomi.la/group/hook-all.html",
-    # "https://hitomi.la/group/hulotte-all.html",
-    # "https://hitomi.la/group/lass-all.html",
-    # "https://hitomi.la/group/lose-all.html",
-    # "https://hitomi.la/group/marmalade-all.html",
-    # "https://hitomi.la/group/minori-all.html",
-    # "https://hitomi.la/group/mirai-all.html",
-    # "https://hitomi.la/group/palette-all.html",
-    # "https://hitomi.la/group/parasol-all.html",
-    # "https://hitomi.la/group/saga%20planets-all.html",
-    # "https://hitomi.la/group/smee-all.html",
-    # "https://hitomi.la/group/tinkle%20position-all.html",
-    # "https://hitomi.la/group/unisonshift-all.html",
-    # "https://hitomi.la/group/windmill-all.html",
-    # "https://hitomi.la/group/yuzu%20soft-all.html",
-    # "https://hitomi.la/search.html?artist%3Aoryou%20type%3Agamecg",
-    # "https://hitomi.la/search.html?laplacian",
-    # "https://hitomi.la/search.html?moonstone",
-    # "https://hitomi.la/search.html?pulltop",
+    "https://hitomi.la/search.html?jewel%20princess%20reincarnation",
+    "https://hitomi.la/search.html?angelic%20link",
+    "https://hitomi.la/search.html?girls%20creation",
+    "https://hitomi.la/search.html?muv-luv%20girls",
+    "https://hitomi.la/search.html?fruits%20fulcute",
+    "https://hitomi.la/search.html?twinkle%20star%20knights"
 ]
 
 allowded_type_list = ["Game CG", "Image Set", "Artist CG"]
@@ -81,6 +50,7 @@ chrome_options = Options()
 chrome_options.add_argument("--headless") # Run in headless mode (no GUI)
 chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument('--disable-dev-shm-usage')
+chrome_options.add_argument('--window-size=1920,3000')
 
 # Path to the ChromeDriver
 chrome_driver_path = "./chromedriver-linux64/chromedriver"  # Update this path
@@ -89,6 +59,40 @@ chrome_driver_path = "./chromedriver-linux64/chromedriver"  # Update this path
 # service = Service(executable_path=chrome_driver_path)
 service = Service(ChromeDriverManager().install())  # Automatically manage ChromeDriver
 drive = webdriver.Chrome(service=service, options=chrome_options)
+
+def get_text(el):
+    if el is None:
+        return ""
+    # Prefer rendered text (keeps original case), fallback to raw textContent
+    text = (el.text or "").strip()
+    # if not text:
+    #     text = (el.get_attribute("innerText") or "").strip()
+    if not text:
+        text = (el.get_attribute("textContent") or "").strip()
+    # Normalize whitespace
+    return " ".join(text.split())
+
+def wait_for_page_ready(driver, timeout=20):
+    WebDriverWait(driver, timeout).until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+
+def load_list_page(driver, url, timeout=20):
+    driver.get(url)
+    wait_for_page_ready(driver, timeout)
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(0.5)
+    driver.execute_script("window.scrollTo(0, 0);")
+    WebDriverWait(driver, timeout).until(
+        EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.gallery-content h1.lillie a"))
+    )
+    def titles_loaded(d):
+        items = d.find_elements(By.CSS_SELECTOR, "div.gallery-content h1.lillie a")
+        if not items:
+            return False
+        non_empty = sum(1 for it in items if get_text(it))
+        return non_empty >= min(3, len(items))
+    WebDriverWait(driver, timeout).until(titles_loaded)
 
 # 伪装请求头
 headers = {
@@ -103,13 +107,11 @@ for base_url in base_urls:
     for i in range(10):
         try:
             print(f"Loading base URL: {base_url}, attempt {i+1}")
-            drive.get(base_url)
-            # 等待页面加载完成
-            time.sleep(5)
+            load_list_page(drive, base_url)
             next_page = drive.find_elements(By.CSS_SELECTOR, "div.page-container.page-top a")
             items = drive.find_elements(By.CSS_SELECTOR, "div.gallery-content h1.lillie a")
             artist_lists = drive.find_elements(By.CSS_SELECTOR, "div.gallery-content div.artist-list")
-            if not items or items[0].text == "" or not artist_lists or len(items) != len(artist_lists):
+            if not items or get_text(items[0]) == "" or not artist_lists or len(items) != len(artist_lists):
                 print(f"No items found on base URL: {base_url}, retrying...")
                 log.write(f"[ERR] No items found on base URL: {base_url}, retrying...\n")
                 log.flush()
@@ -139,12 +141,10 @@ for base_url in base_urls:
             for i in range(100):
                 try:
                     print(f"Loading Page {page_number} for {i}st times. url: {url}")
-                    drive.get(url)
-                    # 等待页面加载完成
-                    time.sleep(5)
+                    load_list_page(drive, url)
                     items = drive.find_elements(By.CSS_SELECTOR, "div.gallery-content h1.lillie a")
                     artist_lists = drive.find_elements(By.CSS_SELECTOR, "div.gallery-content div.artist-list")
-                    if not items or items[0].text == "" or not artist_lists or len(items) != len(artist_lists):
+                    if not items or get_text(items[0]) == "" or not artist_lists or len(items) != len(artist_lists):
                         print(f"No items found on page {page_number}, retrying...")
                         continue
                     print(f"Found {len(items)} items on page {page_number}")
@@ -157,6 +157,7 @@ for base_url in base_urls:
             descs = drive.find_elements(By.CSS_SELECTOR, "div.gallery-content table.dj-desc")
         except Exception as e:
             print(f"Error finding descriptions on page {page_number}: {e}")
+            descs = []
         for i in range(len(items)):
             item = items[i]
             artist_list = artist_lists[i]
@@ -167,20 +168,32 @@ for base_url in base_urls:
             artist_names = ""
             if artists:
                 for artist in artists:
-                    name = artist.get_attribute("textContent").strip()
+                    name = get_text(artist)
                     if name != "...":
                         artist_names += name + ", "
             artist_names = artist_names.strip(", ")
-            title = item.text  # 获取项目标题
+            title = get_text(item)  # 获取项目标题
+            if not title:
+                title = (item.get_attribute("title") or item.get_attribute("data-title") or "").strip()
             link = item.get_attribute("href")    # 获取项目链接
             type = ''
-            if i < len(descs):
-                desc = descs[i]
-                tds = desc.find_elements(By.TAG_NAME, "td")
+            # Try to find desc table within the same gallery card as the item
+            try:
+                card = drive.execute_script("return arguments[0].closest('div.gallery')", item)
+                if card:
+                    desc = card.find_element(By.CSS_SELECTOR, "table.dj-desc")
+                    tds = desc.find_elements(By.TAG_NAME, "td")
+                    if len(tds) > 3:
+                        type = get_text(tds[3])
+            except Exception:
+                pass
+            # Fallback to index-based mapping if needed
+            if not type and i < len(descs):
+                tds = descs[i].find_elements(By.TAG_NAME, "td")
                 if len(tds) > 3:
-                    type = tds[3].text
+                    type = get_text(tds[3])
             # print(f"Title: {title}, Link: {link}, Type: {type}")
-            if not type in allowded_type_list:
+            if (not type) or (type not in allowded_type_list):
                 continue
             match = re.search(r'-(\d+)\.html', link)
             if match:
@@ -209,4 +222,3 @@ drive.quit()
 print("All done.")
 log.close()
 exit()
-

@@ -192,6 +192,9 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (868607, 641, 855, "shindou_ayane", "kurasawa moko"),
     (868607, 856, 1090, "komari yui", "shiratama"),
     (868607, 1091, 1326, "shijou_rinka", "kurasawa moko"),
+    (868607, 1327, 1405, None, "shiratama"),
+    (868607, 1566, 1582, None, "kimishima ao"),
+    (868607, 1595, 1614, None, "kimishima ao"),
     # miagete goran yoru no hoshi o
     (1245707, 13, 23, "amanogawa_saya", "motoi ayumu"),
     (1245707, 48, 72, "amanogawa_saya", "motoi ayumu"),
@@ -3700,7 +3703,13 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1434600, 1, 1261, "hoshiyomi_mashiro", "shiromochi sakura"),
     # Panical Confusion
     (1576268, 11, 131, "hanabishi_honoka", "shiromochi sakura"),
+    (1576268, 132, 230, "kuroki_ayame", "minatsuki alumi"),
+    (1576268, 231, 329, "kisaragi_clementes_nanaho", "shiwasu horio"),
+    (1576268, 330, 400, None, "agekichi"),
     (800033, 12, 62, "hanabishi_honoka", "shiromochi sakura"),
+    (800033, 63, 116, "kuroki_ayame", "minatsuki alumi"),
+    (800033, 117, 188, "kisaragi_clementes_nanaho", "shiwasu horio"),
+    (800033, 189, 259, None, "agekichi"),
     # PURELY x CATION
     (929041, 7, 395, "minami_mai", "nanaroba hana"),
     (929041, 396, 714, "aoi_sumire", "nanaroba hana"),
@@ -4251,6 +4260,10 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (939815, 240, 304, "miyamoto_yuka", "sorai shinya"),
     (939815, 305, 368, "tanaka_neneko", "sorai shinya"),
     (939815, 369, 441, "tokitani_shinobu", "sorai shinya"),
+    # Akaneiro no Kyoukaisen
+    (1081597, 13, 109, "amagasaki_kasumi", "masaki kei"),
+    (1081597, 132, 208, "himeji_shion", "sorai shinya"),
+    (1081597, 209, 286, "tomoe_(akaneiro_no_kyoukaisen)", "sorai shinya"),
     # Shunki Gentei Poco a Poco!
     (436844, 59, 136, "ninomae_sakura", "kazami haruki"),
     (436844, 138, 225, "nonomiya_ai", "takoyaki"),
@@ -6377,6 +6390,18 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1408992, 859, 1298, "nanasaka_sakura", "usume shirou"),
     (1408992, 1299, 1474, "shijou_satsuki", "usume shirou"),
     (1408992, 1475, 1694, "shijou_sumire", "usume shirou"),
+
+    (2169749, 2, 120, None, "filter_invalid"),
+    # Osakoi
+    (930390, 2, 126, "haruna_sayaka", "minatsuki alumi"),
+    (930390, 127, 250, "souma_mayu", "minatsuki alumi"),
+    (930390, 251, 270, "uekura_akane", "minatsuki alumi"),
+
+    (930459, 1, 588, "haruna_sayaka", "minatsuki alumi"),
+    (930459, 589, 1134, "souma_mayu", "minatsuki alumi"),
+    (930459, 1135, 1620, "uekura_akane", "minatsuki alumi"),
+    # Momonoko Sweepers!
+    (775824, 7, 74, "suzumura_ema", "minatsuki alumi"),
 
 ]
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp

@@ -44,15 +44,11 @@ sakurazawa_izumi
 uonuma_yuu
 cccpo
 ukyo_rst
-gijang
 popqn
 horosuke
-kinta
 sameda_koban
 monikano
-zunta
 akechi_shizuku
-nylon
 nanahara_fuyuki
 q-gaku
 komowata_haruka
@@ -74,7 +70,6 @@ kibii_mocha
 mame_denkyuu
 nishiki_yoshimune
 onigirikun
-pikazo
 saeki_hokuto
 sin-go
 taicho
@@ -90,7 +85,6 @@ wazakita
 yoshiron
 hamashima_shigeo
 takeya_masami
-eitarou
 kazami_haruki
 akabi
 shiratama_yomogi
@@ -105,12 +99,10 @@ takahero
 tozakura_nagomi
 asa
 sansan
-tonchan
 akinoko
 togami_masaki
 nekomugi
 hanataka_retomo
-minatsuki_alumi
 umetori_uriri
 kusakami_akira
 sumeragi_yuusuke
@@ -189,7 +181,6 @@ takayama_chihiro
 yukiusagi
 fumizuki_misoka
 shindou_mikeko
-araiguma
 miyai_sen
 syokuyou-mogura
 hiyori_mizuki
@@ -205,7 +196,6 @@ igarashi_yuuya
 johnny
 nauribon
 kazuki_hiyori
-nemaki
 haoto_luna
 yunagi_amane
 sakai_minato
@@ -265,7 +255,6 @@ kanopan
 kimura_neito
 kinosaki_yuki
 maihara_matsuge
-maumen
 miyashiro_sousuke
 monety
 nagioka
