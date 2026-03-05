@@ -76,9 +76,8 @@ TAG_TYPE_TO_BUCKET = {
     2: "general",
     3: "copyright",
     4: "character",
-    # yande.re 的 type 编号与 danbooru 并非完全一致；未知类型先回落到 general，
-    # 避免把普通语义标签误写进 meta。
-    5: "general",
+    # 保留 meta 分类；其余未知类型仍回落到 general。
+    5: "meta",
     6: "general",
 }
 
@@ -378,6 +377,31 @@ def compose_all_tags(tags_by_category: Dict[str, List[str]]) -> List[str]:
     for key in ("general", "character", "copyright", "artist", "meta"):
         merged.extend(tags_by_category.get(key, []))
     return _dedupe_preserve(merged)
+
+
+def apply_artist_fallback(
+    tags_by_category: Dict[str, List[str]],
+    artist_canonical: Optional[str] = None,
+    artist_input: Optional[str] = None,
+):
+    """
+    当 yande.re 返回里缺少 artist 分类时，用下载上下文兜底填充 tags_artist。
+    优先 canonical；若 general 里包含该 artist，则从 general 挪到 artist。
+    """
+    artist_now = _dedupe_preserve(tags_by_category.get("artist", []))
+    if artist_now:
+        tags_by_category["artist"] = artist_now
+        return
+
+    candidate = (artist_canonical or "").strip() or (artist_input or "").strip()
+    if not candidate:
+        return
+
+    general = _dedupe_preserve(tags_by_category.get("general", []))
+    if candidate in general:
+        general = [t for t in general if t != candidate]
+    tags_by_category["general"] = general
+    tags_by_category["artist"] = [candidate]
 
 
 def _normalize_tag_type_value(v) -> Optional[int]:
@@ -717,6 +741,11 @@ def write_json_sidecar(
 ):
     js_path = os.path.splitext(image_path)[0] + ".json"
     tags_by_category = extract_tags_by_category(post)
+    apply_artist_fallback(
+        tags_by_category,
+        artist_canonical=artist_canonical,
+        artist_input=artist_input,
+    )
     if general_tags_override is not None:
         tags_by_category["general"] = _dedupe_preserve(general_tags_override)
     tags = compose_all_tags(tags_by_category)
@@ -766,6 +795,11 @@ def append_manifest_row(
 
         exists = os.path.exists(manifest_path)
         tags_by_category = extract_tags_by_category(post)
+        apply_artist_fallback(
+            tags_by_category,
+            artist_canonical=artist_canonical,
+            artist_input=artist_input,
+        )
         if general_tags_override is not None:
             tags_by_category["general"] = _dedupe_preserve(general_tags_override)
         tags_all = " ".join(compose_all_tags(tags_by_category))
