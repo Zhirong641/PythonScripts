@@ -70,15 +70,14 @@ SUPPORTED_IMAGE_EXTENSIONS = {
     "tiff",
     "jfif",
 }
+# 修正后的标签映射
 TAG_TYPE_TO_BUCKET = {
-    0: "general",
-    1: "artist",
-    2: "general",
-    3: "copyright",
-    4: "character",
-    # 保留 meta 分类；其余未知类型仍回落到 general。
-    5: "meta",
-    6: "general",
+    0: "general",    # 常规标签
+    1: "artist",     # 绘师
+    3: "copyright",  # 原作/版权
+    4: "character",  # 角色
+    5: "copyright",  # 社团 (Circle)，通常并入版权类，也可改为 "meta"
+    6: "meta",       # 缺陷 (Faults)，如 bad_id 等
 }
 
 WD_TAG_GENERAL = 0
