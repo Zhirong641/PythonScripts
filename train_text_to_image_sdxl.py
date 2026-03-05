@@ -113,7 +113,10 @@ def _normalize_artist_tags(artist_tags):
                   "yuuma": "mizuki yuuma",
                   "ohara_tometa": "qp:flapper",
                   "sakura_koharu": "qp:flapper",
-                  "hijiri": "akatsuki hiziri",}
+                  "hijiri": "akatsuki hiziri",
+                  "twinbox": "sousouman",
+                  "buuta": "booota",
+                  "fuzichoko": "fuzichoco",}
     normalized = []
     seen = set()
     for tag in artist_tags or []:
@@ -354,9 +357,9 @@ def _load_and_filter_index_dataset(
         meta = example.get("meta", "") or ""
         if "lowres" in meta and "highres" not in meta:
             return False
-        if "traditional_media" in meta or "unfinished" in meta or "concept_art" in meta:
+        if "traditional_media" in meta or "unfinished" in meta or "concept_art" in meta or "paper_texture" in meta:
             return False
-        if type_ == "danbooru" and "photo_(medium)" in meta:
+        if type_ == "danbooru" and ("photo_(medium)" in meta):
             return False
         if exclude_artist_set and any(a in exclude_artist_set for a in artists):
             return False
