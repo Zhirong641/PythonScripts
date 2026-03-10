@@ -113,7 +113,6 @@ def _normalize_artist_tags(artist_tags):
                   "yuuma": "mizuki yuuma",
                   "ohara_tometa": "qp:flapper",
                   "sakura_koharu": "qp:flapper",
-                  "hijiri": "akatsuki hiziri",
                   "twinbox": "sousouman",
                   "buuta": "booota",
                   "fuzichoko": "fuzichoco",}
@@ -426,7 +425,7 @@ class LatentDataset(torch.utils.data.Dataset):
             exclude_word_list = [
                 "no_humans", "chibi", "character_profile", "lineart", "sketch",
                 "monochrome", "comic", "text_focus", "1990s", "1980s",
-                "retro_artstyle", "abstract"
+                "retro_artstyle", "abstract", "reference_sheet"
             ]
             for line in f:
                 try:

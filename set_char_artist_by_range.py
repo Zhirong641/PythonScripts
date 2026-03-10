@@ -1204,6 +1204,24 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (875672, 1, 295, "inamura_rio", "kobuichi"),
     (875672, 296, 1031, "elena_olegovna_owen", "kobuichi"),
     (875672, 1032, 1335, "nicola_cepheus", "muririn"),
+
+    (3824891, 2, 356, "yarai_miu", "muririn"),
+    (3824891, 357, 804, "mera_azusa", "muririn"),
+    (3824891, 805, 1133, "inamura_rio", "kobuichi"),
+    (3824891, 1134, 1485, "elena_olegovna_owen", "kobuichi"),
+    (3824891, 1486, 1643, "nicola_cepheus", "muririn"),
+    (3824891, 1689, 2000, None, "filter_invalid"),
+
+    (3824622, 1, 768, "elena_olegovna_owen", "kobuichi"),
+    (3824622, 769, 1728, "yarai_miu", "muririn"),
+    (3824623, 1, 1075, "mera_azusa", "muririn"),
+    (3824623, 1076, 1627, "inamura_rio", "kobuichi"),
+    (3824624, 354, 794, "nicola_cepheus", "muririn"),
+    (3824625, 1, 498, "elena_olegovna_owen", "kobuichi"),
+    (3824625, 499, 1250, "yarai_miu", "muririn"),
+    (3824626, 1, 739, "mera_azusa", "muririn"),
+    (3824626, 740, 1171, "inamura_rio", "kobuichi"),
+    (3824627, 348, 788, "nicola_cepheus", "muririn"),
     # Senren*banka
     (3442432, 1, 2000, "tomotake_yoshino", "kobuichi"),
     (1890822, 1, 994, "tomotake_yoshino", "kobuichi"),
@@ -5500,6 +5518,10 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3316550, 1, 2000, "mirai_asumi", "k-ko"),
     (3316538, 1, 2000, "mirai_asumi", "k-ko"),
     (3299012, 1, 2000, "mirai_asumi", "k-ko"),
+    (3817002, 1, 2000, "mirai_asumi", "k-ko"),
+    (3823538, 1, 2000, "mirai_asumi", "k-ko"),
+    (3823539, 1, 2000, "mirai_asumi", "k-ko"),
+    (3823540, 1, 2000, "mirai_asumi", "k-ko"),
     # Gaman ga Dekinai Doutei Aniki to Sunao ni Narenai Hankou Imouto
     (2281479, 2, 951, "chie_(hankou_imouto)", "k-ko"),
     (2315112, 1, 2000, "chie_(hankou_imouto)", "k-ko"),
@@ -6402,6 +6424,9 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (930459, 1135, 1620, "uekura_akane", "minatsuki alumi"),
     # Momonoko Sweepers!
     (775824, 7, 74, "suzumura_ema", "minatsuki alumi"),
+
+    (3185950, 28, 1000, None, "filter_invalid"),
+    (2737261, 28, 1000, None, "filter_invalid"),
 
 ]
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
