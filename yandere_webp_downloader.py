@@ -33,6 +33,7 @@ import re
 import sys
 import threading
 import time
+import warnings
 from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Optional, Set, Tuple
@@ -59,6 +60,7 @@ YANDE_POST_URL = "https://yande.re/post/show/{post_id}"
 WD_REPO_DEFAULT = "SmilingWolf/wd-eva02-large-tagger-v3"
 LOCK = threading.Lock()
 MAX_IMAGE_PIXELS = 10_000_000
+MAX_DECODE_PIXELS = 80_000_000
 SUPPORTED_IMAGE_EXTENSIONS = {
     "jpg",
     "jpeg",
@@ -265,6 +267,20 @@ def _safe_int(v) -> Optional[int]:
         return int(v)
     except Exception:
         return None
+
+
+def get_post_pixel_count(post: Dict) -> Optional[int]:
+    w = _safe_int(post.get("width"))
+    h = _safe_int(post.get("height"))
+    if w is None or h is None or w <= 0 or h <= 0:
+        return None
+    return w * h
+
+
+def is_pixel_count_over_limit(pixels: Optional[int], limit: Optional[int]) -> bool:
+    if pixels is None or not limit or limit <= 0:
+        return False
+    return pixels > limit
 
 
 def _parse_tag_type_map(raw) -> Dict[str, int]:
@@ -1189,6 +1205,7 @@ def collect_download_tasks(
     tag_type_cache: Optional[Dict[str, Optional[int]]] = None,
     enable_tag_type_lookup: bool = True,
     general_tagger: Optional[WdEva02GeneralTagger] = None,
+    max_decode_pixels: Optional[int] = MAX_DECODE_PIXELS,
 ) -> Tuple[List[Tuple[Dict, str, str]], int]:
     ensure_dir(out_dir)
 
@@ -1238,7 +1255,14 @@ def collect_download_tasks(
                     print(f"[DEBUG] 跳过非图片 post {pid} (ext={file_ext})")
                 continue
 
-            final_ext = "webp" if convert_to_webp_flag else None
+            post_pixels = get_post_pixel_count(post)
+            can_convert = convert_to_webp_flag and not is_pixel_count_over_limit(post_pixels, max_decode_pixels)
+            if convert_to_webp_flag and not can_convert and debug:
+                print(
+                    f"[DEBUG] post {pid} 像素 {post_pixels} 超过 max_decode_pixels={max_decode_pixels}，"
+                    "跳过 webp 转码，保留原格式"
+                )
+            final_ext = "webp" if can_convert else None
             filename = build_filename(post, url, force_ext=final_ext)
             dst = os.path.join(out_dir, filename)
 
@@ -1302,8 +1326,12 @@ def execute_downloads(
     download_timeout: int = 45,
     download_retries: int = 2,
     general_tagger: Optional[WdEva02GeneralTagger] = None,
+    max_image_pixels: Optional[int] = MAX_IMAGE_PIXELS,
+    max_decode_pixels: Optional[int] = MAX_DECODE_PIXELS,
+    convert_workers: int = 1,
 ) -> int:
     s = build_session()
+    convert_slots = threading.Semaphore(max(1, convert_workers))
 
     def after_success(
         post: Dict,
@@ -1335,6 +1363,9 @@ def execute_downloads(
     def worker(item: Tuple[Dict, str, str]) -> Tuple[bool, Optional[str], int]:
         post, url, dst = item
         post_id = int(post.get("id", -1))
+        post_pixels = get_post_pixel_count(post)
+        safe_for_decode = not is_pixel_count_over_limit(post_pixels, max_decode_pixels)
+        should_convert = convert_to_webp_flag and dst.lower().endswith(".webp")
 
         def infer_general(saved_path: str) -> Tuple[Optional[List[str]], Optional[str]]:
             if general_tagger is None:
@@ -1344,7 +1375,7 @@ def execute_downloads(
             except Exception as e:
                 return None, f"WD general 推理失败: {_fmt_err(e)}"
 
-        if convert_to_webp_flag:
+        if should_convert:
             tmp_src = dst + ".orig"
             tmp_src_part = tmp_src + ".part"
             if not os.path.exists(tmp_src):
@@ -1359,14 +1390,16 @@ def execute_downloads(
                     _safe_remove(tmp_src_part)
                     return False, f"下载失败: {err}", post_id
 
-            if convert_to_webp(tmp_src, dst, quality=quality, max_pixels=MAX_IMAGE_PIXELS):
-                _safe_remove(tmp_src)
-                _safe_remove(tmp_src_part)
-                gen_tags, wd_warn = infer_general(dst)
-                after_success(post, dst, "webp", general_tags_override=gen_tags)
-                return True, wd_warn, post_id
+            with convert_slots:
+                if convert_to_webp(tmp_src, dst, quality=quality, max_pixels=max_image_pixels):
+                    _safe_remove(tmp_src)
+                    _safe_remove(tmp_src_part)
+                    gen_tags, wd_warn = infer_general(dst)
+                    after_success(post, dst, "webp", general_tags_override=gen_tags)
+                    return True, wd_warn, post_id
 
-            limit_image_pixels_inplace(tmp_src, MAX_IMAGE_PIXELS)
+            if safe_for_decode:
+                limit_image_pixels_inplace(tmp_src, max_image_pixels)
             ext = ext_from_url(url)
             fallback = dst.rsplit(".", 1)[0] + "." + ext
             try:
@@ -1390,7 +1423,8 @@ def execute_downloads(
             retries=download_retries,
         )
         if ok:
-            limit_image_pixels_inplace(dst, MAX_IMAGE_PIXELS)
+            if safe_for_decode:
+                limit_image_pixels_inplace(dst, max_image_pixels)
             gen_tags, wd_warn = infer_general(dst)
             after_success(post, dst, ext_from_url(url), general_tags_override=gen_tags)
             return True, wd_warn, post_id
@@ -1443,8 +1477,11 @@ def main():
     parser.add_argument("--only-webp", action="store_true", help="仅下载源文件为 webp 的图片")
     parser.add_argument("--convert-to-webp", action="store_true", help="将下载结果统一转成 webp")
     parser.add_argument("--quality", type=int, default=85, help="webp 质量（转码时生效）")
+    parser.add_argument("--max-image-pixels", type=int, default=MAX_IMAGE_PIXELS, help="Pillow 转码/缩图目标像素上限（默认 10000000）")
+    parser.add_argument("--max-decode-pixels", type=int, default=MAX_DECODE_PIXELS, help="超过该像素不做 Pillow 解码（防 OOM，默认 80000000，0 表示不限制）")
 
     parser.add_argument("--workers", type=int, default=8, help="下载并发数")
+    parser.add_argument("--convert-workers", type=int, default=1, help="转码并发槽（默认 1，建议小于等于 workers）")
     parser.add_argument("--download-timeout", type=int, default=45, help="单文件下载超时秒数（默认 45）")
     parser.add_argument("--download-retries", type=int, default=2, help="单文件下载重试次数（默认 2）")
     parser.add_argument("--replace-general-with-wd", action="store_true", help="用 WD-EVA02 结果替换 general tags")
@@ -1475,6 +1512,13 @@ def main():
     if args.convert_to_webp and not PIL_AVAILABLE:
         print("未检测到 Pillow；请先 `pip install pillow` 或关闭 --convert-to-webp", file=sys.stderr)
         sys.exit(1)
+
+    args.max_image_pixels = max(0, int(args.max_image_pixels))
+    args.max_decode_pixels = max(0, int(args.max_decode_pixels))
+    args.convert_workers = max(1, int(args.convert_workers))
+    if PIL_AVAILABLE:
+        Image.MAX_IMAGE_PIXELS = None if args.max_decode_pixels <= 0 else int(args.max_decode_pixels)
+        warnings.simplefilter("error", Image.DecompressionBombWarning)
 
     ensure_dir(args.out)
 
@@ -1560,6 +1604,7 @@ def main():
                 tag_type_cache=tag_type_cache,
                 enable_tag_type_lookup=not args.no_tag_type_lookup,
                 general_tagger=general_tagger,
+                max_decode_pixels=args.max_decode_pixels,
             )
 
             if not items:
@@ -1580,6 +1625,9 @@ def main():
                 download_timeout=max(5, args.download_timeout),
                 download_retries=max(0, args.download_retries),
                 general_tagger=general_tagger,
+                max_image_pixels=args.max_image_pixels,
+                max_decode_pixels=args.max_decode_pixels,
+                convert_workers=args.convert_workers,
             )
             total_ok += ok
             print(f">> {canonical} 完成：{ok}/{len(items)}")
@@ -1625,6 +1673,7 @@ def main():
         tag_type_cache=tag_type_cache,
         enable_tag_type_lookup=not args.no_tag_type_lookup,
         general_tagger=general_tagger,
+        max_decode_pixels=args.max_decode_pixels,
     )
 
     if not items:
@@ -1645,6 +1694,9 @@ def main():
         download_timeout=max(5, args.download_timeout),
         download_retries=max(0, args.download_retries),
         general_tagger=general_tagger,
+        max_image_pixels=args.max_image_pixels,
+        max_decode_pixels=args.max_decode_pixels,
+        convert_workers=args.convert_workers,
     )
     print(f">> 完成：{ok}/{len(items)}")
     if state_path:

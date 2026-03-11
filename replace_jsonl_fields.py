@@ -7,14 +7,15 @@ replace_jsonl_fields.py
 Replace selected fields in base JSONL using another JSONL as an update source,
 matched by a key (default: "path").
 
+Added:
+- Preserve specific tags for a tag-string field (e.g. general) when replacing:
+    --preserve-field general --preserve-tags no_bra,no_pantsu
+
 Example:
   python replace_jsonl_fields.py \
     --base file1.jsonl --update file2.jsonl -o out.jsonl \
-    --key path --fields general
-
-Notes:
-- JSONL = one JSON object per line.
-- By default, duplicate keys in update file: keep the last occurrence.
+    --key path --fields general \
+    --preserve-field general --preserve-tags no_bra
 """
 
 from __future__ import annotations
@@ -25,7 +26,7 @@ import os
 import sqlite3
 import sys
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple, Any
 
 
 @dataclass
@@ -38,6 +39,7 @@ class Stats:
     matched: int = 0
     changed_records: int = 0
     field_replacements: int = 0
+    preserved_tags_appended: int = 0
     skipped_empty_updates: int = 0
     skipped_missing_fields: int = 0
 
@@ -77,6 +79,77 @@ def is_empty_value(v) -> bool:
     return False
 
 
+def _dedup_keep_order(items: List[str]) -> List[str]:
+    seen = set()
+    out = []
+    for x in items:
+        if x not in seen:
+            seen.add(x)
+            out.append(x)
+    return out
+
+
+def parse_tags(value: Any) -> List[str]:
+    """
+    Parse tags from a field value.
+    Supports:
+      - "a, b, c"
+      - "a b c" (fallback if no commas)
+      - ["a","b"]
+    """
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(x).strip() for x in value if str(x).strip()]
+    if isinstance(value, str):
+        s = value.strip()
+        if not s:
+            return []
+        if "," in s:
+            parts = [p.strip() for p in s.split(",")]
+            return [p for p in parts if p]
+        # fallback: whitespace split
+        parts = [p.strip() for p in s.split()]
+        return [p for p in parts if p]
+    # other types: treat as single token
+    t = str(value).strip()
+    return [t] if t else []
+
+
+def format_tags(tags: List[str], original_value: Any) -> Any:
+    """
+    Format tags back to the same style as original_value.
+    If original was a list, return list.
+    Otherwise return comma+space string.
+    """
+    tags = _dedup_keep_order(tags)
+    if isinstance(original_value, list):
+        return tags
+    return ", ".join(tags)
+
+
+def merge_preserved_tags(
+    old_value: Any,
+    new_value: Any,
+    preserve_set: set,
+) -> Tuple[Any, int]:
+    """
+    Keep tags that exist in old_value AND in preserve_set, even after replacement.
+    Returns (merged_value, appended_count).
+    """
+    old_tags = parse_tags(old_value)
+    new_tags = parse_tags(new_value)
+
+    keep = [t for t in old_tags if t in preserve_set]
+    # append those not already in new
+    appended = [t for t in keep if t not in set(new_tags)]
+    if appended:
+        merged_tags = new_tags + appended
+        # Keep output style based on new_value (so replace result remains consistent)
+        return format_tags(merged_tags, new_value), len(appended)
+    return new_value, 0
+
+
 class UpdateIndexMemory:
     def __init__(self):
         self._map: Dict[str, dict] = {}
@@ -87,8 +160,7 @@ class UpdateIndexMemory:
                 return
             if on_duplicate == "error":
                 raise ValueError(f"Duplicate key in update: {key}")
-            # default: last
-        self._map[key] = obj
+        self._map[key] = obj  # last
 
     def get(self, key: str) -> Optional[dict]:
         return self._map.get(key)
@@ -127,7 +199,6 @@ class UpdateIndexSqlite:
                 (key, payload),
             )
         else:
-            # last
             self.conn.execute(
                 "INSERT INTO updates(k, payload) VALUES(?, ?) "
                 "ON CONFLICT(k) DO UPDATE SET payload=excluded.payload;",
@@ -207,8 +278,12 @@ def replace_fields(
     skip_empty_update: bool,
     ignore_errors: bool,
     encoding: str,
+    preserve_field: Optional[str],
+    preserve_tags: List[str],
     stats: Stats,
 ):
+    preserve_set = set([t.strip() for t in preserve_tags if t.strip()])
+
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
 
     with open(out_path, "w", encoding=encoding) as out:
@@ -228,7 +303,6 @@ def replace_fields(
 
                 k = obj.get(key_field)
                 if not isinstance(k, str) or not k:
-                    # base line without key: just write as-is
                     out.write(json.dumps(obj, ensure_ascii=False) + "\n")
                     continue
 
@@ -244,13 +318,27 @@ def replace_fields(
                     if f not in upd:
                         stats.skipped_missing_fields += 1
                         continue
-                    new_v = upd.get(f)
 
+                    new_v = upd.get(f)
                     if skip_empty_update and is_empty_value(new_v):
                         stats.skipped_empty_updates += 1
                         continue
 
                     old_v = obj.get(f, None)
+
+                    # Preserve tags only when:
+                    # - preserve_field matches current field
+                    # - preserve_tags provided
+                    if preserve_set and preserve_field and f == preserve_field:
+                        merged_v, appended_cnt = merge_preserved_tags(
+                            old_value=old_v,
+                            new_value=new_v,
+                            preserve_set=preserve_set,
+                        )
+                        if appended_cnt:
+                            stats.preserved_tags_appended += appended_cnt
+                        new_v = merged_v
+
                     if old_v != new_v:
                         obj[f] = new_v
                         stats.field_replacements += 1
@@ -267,7 +355,6 @@ def replace_fields(
                     raise RuntimeError(
                         f"[base] parse/replace error at {base_path}:{lineno}: {ex}\nLINE: {line}"
                     ) from ex
-                # ignore error: write original line back
                 out.write(line + "\n")
 
 
@@ -313,8 +400,21 @@ def main():
     )
     ap.add_argument("--encoding", default="utf-8", help="File encoding. Default: utf-8")
 
+    # NEW: preserve tags on a specific field
+    ap.add_argument(
+        "--preserve-field",
+        default=None,
+        help="Field name to apply tag-preserve behavior (e.g. general). Default: disabled",
+    )
+    ap.add_argument(
+        "--preserve-tags",
+        default="",
+        help='Comma-separated tags to preserve from base when replacing preserve-field (e.g. "no_bra,no_pantsu").',
+    )
+
     args = ap.parse_args()
     fields = parse_fields(args.fields)
+    preserve_tags = [t.strip() for t in args.preserve_tags.split(",") if t.strip()]
 
     stats = Stats()
 
@@ -331,6 +431,9 @@ def main():
     eprint(f"  indexed keys: {stats.update_indexed:,} (update lines: {stats.update_lines:,}, bad: {stats.update_bad_lines:,})")
 
     eprint(f"[2/2] Replacing fields {fields} in: {args.base} -> {args.out}")
+    if args.preserve_field and preserve_tags:
+        eprint(f"  preserve tags on field '{args.preserve_field}': {preserve_tags}")
+
     replace_fields(
         base_path=args.base,
         out_path=args.out,
@@ -340,6 +443,8 @@ def main():
         skip_empty_update=args.skip_empty_update,
         ignore_errors=args.ignore_errors,
         encoding=args.encoding,
+        preserve_field=args.preserve_field,
+        preserve_tags=preserve_tags,
         stats=stats,
     )
 
@@ -351,6 +456,8 @@ def main():
     eprint(f"matched records:   {stats.matched:,}")
     eprint(f"changed records:   {stats.changed_records:,}")
     eprint(f"field replacements:{stats.field_replacements:,}")
+    if stats.preserved_tags_appended:
+        eprint(f"preserved tags appended: {stats.preserved_tags_appended:,}")
     if stats.skipped_empty_updates:
         eprint(f"skipped empty upd: {stats.skipped_empty_updates:,}")
     if stats.skipped_missing_fields:
