@@ -331,7 +331,7 @@ def _load_and_filter_index_dataset(
         general_tags = _split_clean_comma_list(general)
         artist = example.get("artist", "") or ""
         artists = _split_clean_comma_list(artist)
-        if any(word in general for word in exclude_word_list):
+        if any(word in general_tags for word in exclude_word_list):
             return False
         if (type_ == "game cg"
             and any(bg in general_tags for bg in ["transparent_background", "simple_background", "black_background", "white_background", "tachi-e"])
@@ -2155,16 +2155,29 @@ def main(args):
             exclude_word_list = [
                 "no_humans",
                 "chibi",
+                "chibi_only",
+                "chibi_inset",
                 "character_profile",
                 "lineart",
+                "no_lineart",
                 "sketch",
                 "monochrome",
+                "multiple_monochrome",
                 "comic",
+                "silent_comic",
+                "western_comics_(style)",
+                "segmented_comic",
                 "text_focus",
                 "1990s",
+                "1990s_(style)",
                 "1980s",
+                "1980s_(style)",
                 "retro_artstyle",
                 "abstract",
+                "abstract_background",
+                "index_page",
+                "text",
+                "negative_space",
             ]
             exclude_artist_entries = _load_filter_list("exclude_artists.txt")
             exclude_danbooru_entries = _load_filter_list("exclude_danbooru_artists.txt")
