@@ -2178,6 +2178,7 @@ def main(args):
                 "index_page",
                 "text",
                 "negative_space",
+                "credits_page",
             ]
             exclude_artist_entries = _load_filter_list("exclude_artists.txt")
             exclude_danbooru_entries = _load_filter_list("exclude_danbooru_artists.txt")
