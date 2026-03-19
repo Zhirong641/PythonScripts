@@ -97,7 +97,8 @@ def _split_clean_comma_list(s: str):
 
 def _normalize_artist_tags(artist_tags):
     rename_map = {"any": "annie",
-                  "kino": "konomi",
+                  "kino": "kinokonomi",
+                  "konomi": "kinokonomi",
                   "anapon": "anapom",
                   "fumi": "fummy",
                   "narumi yu": "narumi yuu",
@@ -113,8 +114,11 @@ def _normalize_artist_tags(artist_tags):
                   "yuuma": "mizuki yuuma",
                   "ohara_tometa": "qp:flapper",
                   "sakura_koharu": "qp:flapper",
+                  "ohara tometa": "qp:flapper",
+                  "sakura koharu": "qp:flapper",
                   "twinbox": "sousouman",
                   "buuta": "booota",
+                  "mafuyu_(chibi21)": "mafuyu_chibi21",
                   "fuzichoko": "fuzichoco",}
     normalized = []
     seen = set()
@@ -2179,6 +2183,7 @@ def main(args):
                 "text",
                 "negative_space",
                 "credits_page",
+                "collage"
             ]
             exclude_artist_entries = _load_filter_list("exclude_artists.txt")
             exclude_danbooru_entries = _load_filter_list("exclude_danbooru_artists.txt")
