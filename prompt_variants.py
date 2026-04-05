@@ -510,6 +510,10 @@ _BLACKLIST = {
     # 你也可以用正则整体拦截：^year_\d{4}$
 }
 
+_AESTHETIC_TAGS = {
+    "very aesthetic", "aesthetic", "displeasing", "very displeasing",
+}
+
 
 def _trim_to_budget(text: str, budget: int) -> str:
     if _tok_len(text) <= budget:
@@ -569,11 +573,15 @@ def generate_phrase_variants(
     groups: Optional[List[str]] = None,
     type: Optional[str] = None,
 ) -> List[str]:
-    # 预清洗 general
+    # 预清洗 general；第一个美学 tag 单独提取为强制锚点
     g0 = []
+    aesthetic_anchor = ""
     for tg in general_tags:
         t = _normalize(tg)
         if not t or t in _BLACKLIST:
+            continue
+        if not aesthetic_anchor and t in _AESTHETIC_TAGS:
+            aesthetic_anchor = t
             continue
         g0.append(t)
 
@@ -590,8 +598,10 @@ def generate_phrase_variants(
     variants = []
     for _ in range(max(k, 1)):
         shuffled_head = random.sample(head, k=len(head)) if head else []
-        # 1) 固定锚点：角色 + 艺术家（优先占预算）
+        # 1) 固定锚点：美学 tag + 角色 + 艺术家（优先占预算）
         parts = []
+        if aesthetic_anchor and random.random() >= 0.10:
+            parts.append(aesthetic_anchor)
         char_phrase = _character_phrase(characters or [], max_chars=max_chars)
         if char_phrase:
             parts.append(char_phrase)
@@ -693,6 +703,12 @@ def generate_variants_with_nl_list(
     if seed is not None:
         random.seed(seed)
     include_all_artists = (type or "").lower() in {"danbooru", "multi_artist"}
+    _nl_aesthetic_anchor = ""
+    for _tg in general_tags:
+        _t = _normalize(_tg)
+        if _t in _AESTHETIC_TAGS:
+            _nl_aesthetic_anchor = _t
+            break
 
     # 1) 先生成短语式
     n_phrase = max(1, int(round(k * phrase_ratio)))
@@ -717,6 +733,8 @@ def generate_variants_with_nl_list(
                 continue
             # 与 artist 锚定（50/50 放头或尾）
             anchors = []
+            if _nl_aesthetic_anchor and random.random() >= 0.10:
+                anchors.append(_nl_aesthetic_anchor)
             char_anchor = _character_phrase(characters or [], max_chars=6)
             if char_anchor:
                 anchors.append(char_anchor)

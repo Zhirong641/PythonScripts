@@ -96,6 +96,11 @@ def parse_args() -> argparse.Namespace:
         default="discard_image",
         help="超过 discard-threshold 时使用的标签名",
     )
+    p.add_argument(
+        "--resume",
+        action="store_true",
+        help="跳过已在 --output-jsonl 中存在且含 aesthetic_tag 的记录",
+    )
     return p.parse_args()
 
 
@@ -412,6 +417,24 @@ def build_output_record(
     return new_rec
 
 
+def load_done_paths(jsonl_path: Path) -> set:
+    done: set = set()
+    if not jsonl_path.exists():
+        return done
+    with jsonl_path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+                if isinstance(obj, dict) and obj.get("aesthetic_tag") and "path" in obj:
+                    done.add(str(obj["path"]))
+            except Exception:
+                pass
+    return done
+
+
 def count_records_if_possible(input_path: Path, recursive: bool) -> Optional[int]:
     try:
         if input_path.is_dir():
@@ -462,17 +485,30 @@ def main() -> None:
     err_count = 0
     batch_idx = 0
 
+    done_paths: set = set()
+    if args.resume and args.output_jsonl:
+        done_paths = load_done_paths(Path(args.output_jsonl))
+        if done_paths:
+            print(f"[INFO] resume 模式：已跳过 {len(done_paths)} 条已处理记录")
+    elif args.resume and not args.output_jsonl:
+        print("[WARN] --resume 需要配合 --output-jsonl 使用，已忽略")
+
     record_iter = iter_records(input_path, args.recursive)
+    if done_paths:
+        record_iter = (rec for rec in record_iter if str(rec["path"]) not in done_paths)
     batch_iter = batched_iter(record_iter, args.batch_size)
 
-    with open(args.output_csv, "w", encoding="utf-8", newline="") as csv_fp:
+    csv_mode = "a" if (args.resume and Path(args.output_csv).exists()) else "w"
+    with open(args.output_csv, csv_mode, encoding="utf-8", newline="") as csv_fp:
         csv_writer = csv.writer(csv_fp)
-        write_csv_header(csv_writer)
+        if csv_mode == "w":
+            write_csv_header(csv_writer)
 
         jsonl_fp = None
         try:
             if args.output_jsonl:
-                jsonl_fp = open(args.output_jsonl, "w", encoding="utf-8")
+                jsonl_mode = "a" if (args.resume and Path(args.output_jsonl).exists()) else "w"
+                jsonl_fp = open(args.output_jsonl, jsonl_mode, encoding="utf-8")
 
             total_batches = None if total is None else (total + args.batch_size - 1) // args.batch_size
 

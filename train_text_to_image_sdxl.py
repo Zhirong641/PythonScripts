@@ -372,6 +372,9 @@ def _load_and_filter_index_dataset(
             return False
         if (type_ != "danbooru" and "ko-cha" in artists and rng.random() < 0.9):
             return False
+        aesthetic_score = example.get("aesthetic_score")
+        if aesthetic_score is not None and aesthetic_score < 0.1:
+            return False
         return True
 
     dataset["train"] = dataset["train"].filter(_filter_index_entry)
@@ -450,6 +453,9 @@ class LatentDataset(torch.utils.data.Dataset):
                         if years and min(years) < 2005:
                             return False
                     return True
+                aesthetic_score = j.get("aesthetic_score")
+                if aesthetic_score is not None and aesthetic_score < 0.1:
+                    continue
                 fp = os.path.join(data_dir, fname)
                 if os.path.isfile(fp):
                     sample = (
