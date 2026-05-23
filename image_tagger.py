@@ -219,6 +219,7 @@ def main():
     ap.add_argument("--out-jsonl", type=str, default=None, help="Write results to JSONL file")
     ap.add_argument("--repo", type=str, default=HF_REPO, help="Hugging Face repo id")
     ap.add_argument("--exts", type=str, default=",".join(DEFAULT_EXTS), help="Comma-separated file extensions")
+    ap.add_argument("--resume", action="store_true", help="Skip already-processed images if output file exists")
     args = ap.parse_args()
 
     # download artifacts
@@ -250,15 +251,42 @@ def main():
         print("No images found.", file=sys.stderr)
         sys.exit(1)
 
+    # collect already-processed paths for resume
+    done_paths: set = set()
+    if args.resume:
+        if args.out_jsonl and Path(args.out_jsonl).exists():
+            with open(args.out_jsonl, "r", encoding="utf-8") as _f:
+                for _line in _f:
+                    _line = _line.strip()
+                    if _line:
+                        try:
+                            done_paths.add(json.loads(_line)["path"])
+                        except Exception:
+                            pass
+        elif args.out_csv and Path(args.out_csv).exists():
+            with open(args.out_csv, "r", encoding="utf-8") as _f:
+                for _row in csv.DictReader(_f):
+                    done_paths.add(_row.get("path", ""))
+    if done_paths:
+        _total = len(inputs)
+        inputs = [p for p in inputs if str(p) not in done_paths]
+        print(f"> Resuming: {_total - len(inputs)} already done, {len(inputs)} remaining.")
+
     # outputs
     csv_writer = None
     csv_fp = None
     if args.out_csv:
-        csv_fp = open(args.out_csv, "w", newline="", encoding="utf-8")
+        _csv_exists = args.resume and Path(args.out_csv).exists()
+        csv_fp = open(args.out_csv, "a" if _csv_exists else "w", newline="", encoding="utf-8")
         csv_writer = csv.writer(csv_fp)
-        csv_writer.writerow(["path", "rating", "general", "character"])
+        if not _csv_exists:
+            csv_writer.writerow(["path", "rating", "general", "character"])
 
-    jsonl_fp = open(args.out_jsonl, "w", encoding="utf-8") if args.out_jsonl else None
+    if args.out_jsonl:
+        _jsonl_exists = args.resume and Path(args.out_jsonl).exists()
+        jsonl_fp = open(args.out_jsonl, "a" if _jsonl_exists else "w", encoding="utf-8")
+    else:
+        jsonl_fp = None
 
     # buffers
     batch_imgs: List[np.ndarray] = []
