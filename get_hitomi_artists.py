@@ -16,12 +16,14 @@ from datetime import datetime
 from CSVProcessor import CSVProcessor
 # base_url = "https://hitomi.la/group/unisonshift-all.html"
 base_urls = [
-    "https://hitomi.la/search.html?jewel%20princess%20reincarnation",
-    "https://hitomi.la/search.html?angelic%20link",
-    "https://hitomi.la/search.html?girls%20creation",
-    "https://hitomi.la/search.html?muv-luv%20girls",
-    "https://hitomi.la/search.html?fruits%20fulcute",
-    "https://hitomi.la/search.html?twinkle%20star%20knights"
+    "https://hitomi.la/group/crystalia-all.html",
+    "https://hitomi.la/group/escude-all.html",
+    "https://hitomi.la/group/asa%20project-all.html",
+    "https://hitomi.la/search.html?artist%3Ago-1%20amane",
+    "https://hitomi.la/search.html?artist%3Ago-1%20riruka",
+    "https://hitomi.la/artist/k-ko-all.html",
+    "https://hitomi.la/artist/bekotarou-all.html",
+    "https://hitomi.la/group/monako-all.html",
 ]
 
 allowded_type_list = ["Game CG", "Image Set", "Artist CG"]
@@ -171,7 +173,7 @@ for base_url in base_urls:
                     name = get_text(artist)
                     if name != "...":
                         artist_names += name + ", "
-            artist_names = artist_names.strip(", ")
+            artist_names = artist_names.strip(", ").lower()
             title = get_text(item)  # 获取项目标题
             if not title:
                 title = (item.get_attribute("title") or item.get_attribute("data-title") or "").strip()

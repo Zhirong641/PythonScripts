@@ -12,7 +12,6 @@ nini
 acorn
 asanagi
 aldehyde
-murakami_suigun
 kichihachi
 kusaka_souji
 harada_takehito
@@ -41,7 +40,6 @@ sawada_yuusuke
 asahina_hikage
 b-ginga
 sakurazawa_izumi
-uonuma_yuu
 cccpo
 ukyo_rst
 popqn
@@ -70,7 +68,6 @@ kibii_mocha
 mame_denkyuu
 nishiki_yoshimune
 onigirikun
-saeki_hokuto
 sin-go
 taicho
 takemori_shintarou
@@ -85,14 +82,11 @@ wazakita
 yoshiron
 hamashima_shigeo
 takeya_masami
-kazami_haruki
 akabi
 shiratama_yomogi
 kawahara_makoto
-higuchi_isami
 orinze
 aona_masao
-kunai_uri
 shinjou_satomi
 panta
 takahero
@@ -103,7 +97,6 @@ akinoko
 togami_masaki
 nekomugi
 hanataka_retomo
-umetori_uriri
 kusakami_akira
 sumeragi_yuusuke
 mizutama
@@ -142,7 +135,6 @@ kinosaki_reisui
 himukai_kyousuke
 sakura_mikan
 fujiwara_warawara
-ozawa_akifumi
 izumi_makoto
 kuraha
 amane
@@ -152,7 +144,6 @@ haga_yui
 aozora_remina
 unun
 ikuta_takanon
-goma_satoshi
 muku
 henreader
 ichihaya
@@ -197,14 +188,11 @@ nauribon
 kazuki_hiyori
 haoto_luna
 yunagi_amane
-sakai_minato
 ginta
-sekiya_asami
 aboshi_mako
 minase_lin
 mizukimaru
 yoshino_keiko
-ibu_moina
 oyari_ashito
 kotobuki_hajime
 onomesin
