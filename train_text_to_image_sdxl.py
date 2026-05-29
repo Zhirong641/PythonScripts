@@ -1489,9 +1489,7 @@ def main(args):
     elif accelerator.mixed_precision == "bf16":
         weight_dtype = torch.bfloat16
 
-    text_encoder_dtype = (
-        torch.float32 if args.train_text_encoder and accelerator.mixed_precision == "fp16" else weight_dtype
-    )
+    text_encoder_dtype = torch.float32 if args.train_text_encoder else weight_dtype
 
     # Move unet, vae and text_encoder to device and cast to weight_dtype
     # The VAE is in float32 to avoid NaN losses.
