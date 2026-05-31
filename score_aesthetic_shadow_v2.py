@@ -428,7 +428,7 @@ def load_done_paths(jsonl_path: Path) -> set:
                 continue
             try:
                 obj = json.loads(line)
-                if isinstance(obj, dict) and obj.get("aesthetic_tag") and "path" in obj:
+                if isinstance(obj, dict) and "path" in obj and "aesthetic_tag" in obj:
                     done.add(str(obj["path"]))
             except Exception:
                 pass

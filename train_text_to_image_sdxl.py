@@ -119,7 +119,8 @@ def _normalize_artist_tags(artist_tags):
                   "twinbox": "sousouman",
                   "buuta": "booota",
                   "mafuyu_(chibi21)": "mafuyu_chibi21",
-                  "fuzichoko": "fuzichoco",}
+                  "fuzichoko": "fuzichoco",
+                  "hellrun": "herurun",}
     normalized = []
     seen = set()
     for tag in artist_tags or []:
