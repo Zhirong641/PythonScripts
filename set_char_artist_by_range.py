@@ -4975,10 +4975,10 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1228863, 301, 770, "tsukiyono_yuna", "lucie"),
 
     # Kimi to Tsunagaru Koi Flag
-    (1230384, 4, 324, None, "lucie"),
-    (1230384, 325, 667, None, "lucie"),
+    (1230384, 4, 324, "kobayakawa_haruka", "lucie"),
+    (1230384, 325, 667, "kikyou_(kimi_to_tsunagaru_koi_flag)", "lucie"),
     (1230384, 668, 1113, "amano_misaki_(koi_flag) ", "kakao"),
-    (1230384, 1114, 1494, None, "lucie"),
+    (1230384, 1114, 1494, "fukuhara_shiori", "lucie"),
     # Karenai Sekai to Owaru Hana
     (1000105, 3, 114, "haru_(karenai_sekai_to_owaru_hana)", "ameto yuki"),
     (1000105, 115, 231, "kotose_(karenai_sekai_to_owaru_hana)", "ameto yuki"),
@@ -6791,6 +6791,33 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3961355, 291, 504, "patryna", "mango pudding"),
     (3961355, 505, 901, "misumi_uruha", "mango pudding"),
     (3961355, 902, 1248, "okita_waka", "k-ko"),
+    # Omoi o Sasageru Otome no Melody
+    (1146388, 10, 87, "mizusawa_sayaka", "hiten"),
+    (1146388, 88, 206, "sonoya_chika", "kakao"),
+    (1146388, 207, 286, "nonomiya_mia", "shiwasu horio"),
+    (1146388, 289, 319, "nonomiya_mia", "shiwasu horio"),
+    (1146388, 325, 444, "akizuki_mizuho", "hiten"),
+    (1146388, 445, 559, "koishikawa_kotone", "miko"),
+
+    (1043866, 2, 122, "sonoya_chika", "kakao"),
+    (1043866, 123, 125, "mizusawa_sayaka", "hiten"),
+    (1043866, 126, 129, "sonoya_chika", "kakao"),
+    (1043866, 158, 161, "akizuki_mizuho", "hiten"),
+    (1043866, 162, 173, "nonomiya_mia", "shiwasu horio"),
+    (1043866, 200, 202, "koishikawa_kotone", "miko"),
+    (1043866, 203, 218, "mizusawa_sayaka", "hiten"),
+    (1043866, 219, 226, "sonoya_chika", "kakao"),
+    (1043866, 227, 234, "nonomiya_mia", "shiwasu horio"),
+    (1043866, 265, 456, "koishikawa_kotone", "miko"),
+    (1043866, 457, 560, "nonomiya_mia", "shiwasu horio"),
+    (1043866, 561, 660, "akizuki_mizuho", "hiten"),
+    (1043866, 661, 915, "mizusawa_sayaka", "hiten"),
+
+    (1335893, 1, 20, "mizusawa_sayaka", "hiten"),
+    (1335893, 21, 44, "sonoya_chika", "kakao"),
+    (1335893, 45, 69, "nonomiya_mia", "shiwasu horio"),
+    (1335893, 70, 89, "akizuki_mizuho", "hiten"),
+    (1335893, 90, 113, "koishikawa_kotone", "miko"),
 ]
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
 PATH_RE = re.compile(r"/webp/(\d+)/image_(\d+)\.webp$")
