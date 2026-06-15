@@ -120,7 +120,13 @@ def _normalize_artist_tags(artist_tags):
                   "buuta": "booota",
                   "mafuyu_(chibi21)": "mafuyu_chibi21",
                   "fuzichoko": "fuzichoco",
-                  "hellrun": "herurun",}
+                  "miko": "royal_milk",
+                  "miko_(royal_milk)": "royal_milk",
+                  # For yande.re mappings
+                  "hellrun": "herurun",
+                  "amedama_con": "amedamacon",
+                  "shiroki_mochi": "shirosei_mochi",
+                  "yatanuki_kei": "yatanukikey",}
     normalized = []
     seen = set()
     for tag in artist_tags or []:

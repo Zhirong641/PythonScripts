@@ -588,23 +588,30 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (836073, 563, 717, "shiratori_mayu", "satofuji masato"),
     (836073, 718, 887, "orimiya_meru", "satofuji masato"),
     # Ubu na Otome no Ecchi na Onegai
-    (1133866, 3, 116, "nanasato_nene", None),
-    (1133866, 117, 229, "momozono_hozumi", None),
-    (1133866, 230, 352, "hikami_ayame", None),
-    (1133866, 353, 507, "anesaki_mimari", None),
-    (1133866, 508, 654, "hoshimi_kano", None),
+    (1133866, 3, 116, "nanasato_nene", "kimizuka aoi"),
+    (1133866, 117, 125, "nanasato_nene, momozono_hozumi", "kimizuka aoi, miko"),
+    (1133866, 126, 229, "momozono_hozumi", "miko"),
+    (1133866, 230, 352, "hikami_ayame", "saitou tsukasa"),
+    (1133866, 353, 507, "anesaki_mimari", "kaniya shiku"),
+    (1133866, 508, 654, "hoshimi_kano", "sumisuzu"),
 
-    (1135068, 1, 70, "nanasato_nene", None),
-    (1135068, 71, 119, "momozono_hozumi", None),
-    (1135068, 120, 154, "hikami_ayame", None),
-    (1135068, 155, 189, "anesaki_mimari", None),
-    (1135068, 190, 217, "hoshimi_kano", None),
+    (1135068, 1, 70, "nanasato_nene", "kimizuka aoi"),
+    (1135068, 71, 119, "momozono_hozumi", "miko"),
+    (1135068, 120, 154, "hikami_ayame", "saitou tsukasa"),
+    (1135068, 155, 189, "anesaki_mimari", "kaniya shiku"),
+    (1135068, 190, 217, "hoshimi_kano", "sumisuzu"),
 
-    (1512874, 4, 291, "nanasato_nene", None),
-    (1512874, 292, 675, "momozono_hozumi", None),
-    (1512874, 676, 1011, "hikami_ayame", None),
-    (1512874, 1012, 1395, "anesaki_mimari", None),
-    (1512874, 1396, 1724, "hoshimi_kano", None),
+    (1512874, 4, 291, "nanasato_nene", "kimizuka aoi"),
+    (1512874, 292, 675, "momozono_hozumi", "miko"),
+    (1512874, 676, 1011, "hikami_ayame", "saitou tsukasa"),
+    (1512874, 1012, 1395, "anesaki_mimari", "kaniya shiku"),
+    (1512874, 1396, 1724, "hoshimi_kano", "sumisuzu"),
+
+    (1406723, 1, 6, "momozono_hozumi, hoshimi_kano", "miko, sumisuzu"),
+    (1406723, 7, 19, "nanasato_nene, hikami_ayame, anesaki_mimari", "kimizuka aoi, saitou tsukasa, kaniya shiku"),
+    (1406723, 20, 34, "hikami_ayame, hoshimi_kano", "saitou tsukasa, sumisuzu"),
+    (1406723, 35, 58, "nanasato_nene, momozono_hozumi, anesaki_mimari", "kimizuka aoi, miko, kaniya shiku"),
+
     # Otome Kishi Ima Sugu Watashi o Dakishimete
     (1403922, 119, 312, "akatsuki_amane", "yashima takahiro"),
     (1403922, 313, 501, "kuromine_misumi", "haruruyuco"),
@@ -6818,6 +6825,16 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1335893, 45, 69, "nonomiya_mia", "shiwasu horio"),
     (1335893, 70, 89, "akizuki_mizuho", "hiten"),
     (1335893, 90, 113, "koishikawa_kotone", "miko"),
+    # Valkyrie Runabout!
+    (799950, 23, 102, "scana_von_tanim", "mayachi"),
+    (799950, 103, 190, "aika_von_colt", "kinta"),
+    (799950, 191, 197, "flora_alse_norium_neon", "mayachi"),
+    (799950, 198, 203, "ruby_strom", "kinta"),
+
+    (800663, 26, 105, "scana_von_tanim", "mayachi"),
+    (800663, 106, 193, "aika_von_colt", "kinta"),
+    (800663, 194, 269, "flora_alse_norium_neon", "mayachi"),
+    (800663, 270, 349, "ruby_strom", "kinta"),
 ]
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
 PATH_RE = re.compile(r"/webp/(\d+)/image_(\d+)\.webp$")
