@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 
 """
 Tag images with SmilingWolf/wd-eva02-large-tagger-v3 (ONNX).
@@ -21,8 +22,12 @@ from typing import List, Tuple, Dict, Any
 import numpy as np
 from PIL import Image, ImageOps
 from tqdm import tqdm
-import onnxruntime as ort
 from huggingface_hub import hf_hub_download
+
+try:
+    import onnxruntime as ort
+except ImportError:
+    ort = None
 
 HF_REPO = "SmilingWolf/wd-eva02-large-tagger-v3"
 MODEL_FILE = "model.onnx"
@@ -222,6 +227,17 @@ def main():
     ap.add_argument("--resume", action="store_true", help="Skip already-processed images if output file exists")
     args = ap.parse_args()
 
+    if ort is None:
+        pkg = "onnxruntime-gpu" if args.use_gpu else "onnxruntime"
+        extra = " (or install plain onnxruntime to run on CPU)" if args.use_gpu else ""
+        print(
+            f"Missing dependency: onnxruntime.\n"
+            f"Install it with:\n"
+            f"  python3 -m pip install -U {pkg}{extra}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     # download artifacts
     model_path = hf_hub_download(repo_id=args.repo, filename=MODEL_FILE)
     tags_path = hf_hub_download(repo_id=args.repo, filename=TAGS_FILE)
@@ -237,6 +253,13 @@ def main():
         providers = ["CPUExecutionProvider"]
 
     sess_opt = ort.SessionOptions()
+    available_providers = set(ort.get_available_providers())
+    if args.use_gpu and "CUDAExecutionProvider" not in available_providers:
+        print(
+            "[WARN] CUDAExecutionProvider is unavailable in this onnxruntime build; falling back to CPUExecutionProvider.",
+            file=sys.stderr,
+        )
+        providers = ["CPUExecutionProvider"]
     session = ort.InferenceSession(model_path, sess_options=sess_opt, providers=providers)
 
     # detect layout
