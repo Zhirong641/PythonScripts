@@ -1754,6 +1754,21 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3535982, 2, 126, "onami_sora, onami_akane, onami_kohaku, onami_sumi", "k-ko"),
     (3535982, 245, 359, "onami_sora, onami_akane, onami_kohaku, onami_sumi", "k-ko"),
     (3535982, 1, 2000, None, "k-ko"),
+
+    (4033187, 1, 2000, "onami_sora", "k-ko"),
+    (4033209, 1, 2000, "onami_sora", "k-ko"),
+    (4033197, 1, 2000, "onami_akane", "k-ko"),
+    (4033199, 1, 2000, "onami_akane", "k-ko"),
+    (4033210, 1, 2000, "onami_akane", "k-ko"),
+    (4033338, 1, 2000, "onami_akane", "k-ko"),
+    (4033200, 1, 2000, "onami_kohaku", "k-ko"),
+    (4033202, 1, 2000, "onami_kohaku", "k-ko"),
+    (4033339, 1, 2000, "onami_kohaku", "k-ko"),
+    (4033340, 1, 2000, "onami_kohaku", "k-ko"),
+    (4033203, 1, 2000, "onami_sumi", "k-ko"),
+    (4033204, 1, 2000, "onami_sumi", "k-ko"),
+    (4033341, 1, 2000, "onami_sumi", "k-ko"),
+    (4033342, 1, 2000, "onami_sumi", "k-ko"),
     
     # Yakusoku no Natsu, Mahoroba no Yume
     (1230539, 1, 726, "kamiya_rinka", "hisama kumako"),
@@ -2962,6 +2977,18 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1370031, 894, 1170, "seguchi_saya", "sakura misaki"),
 
     (1057065, 1, 2000, "seguchi_youkou", "sakura misaki"),
+    (4033183, 1, 2000, "seguchi_youkou", "sakura misaki"),
+    (4033191, 1, 2000, "seguchi_youkou", "sakura misaki"),
+
+    (4033177, 1, 2000, "seguchi_asahi", "k-ko"),
+    (4033184, 1, 2000, "seguchi_asahi", "k-ko"),
+    (4033178, 1, 2000, "seguchi_saya", "sakura misaki"),
+    (4033180, 1, 2000, "seguchi_saya", "sakura misaki"),
+    (4033186, 1, 2000, "seguchi_saya", "sakura misaki"),
+    (4033181, 1, 2000, "seguchi_mahiru", "k-ko"),
+    (4033188, 1, 2000, "seguchi_mahiru", "k-ko"),
+    (4033182, 1, 2000, "seguchi_yayoi", "sakura misaki"),
+    (4033189, 1, 2000, "seguchi_yayoi", "sakura misaki"),
 
     # uso(campus)
     (878564, 1, 2000, "himeno_satsuki", "riichu"),
@@ -3890,6 +3917,11 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1413861, 440, 443, "aoi_sumire", "nanaroba hana"),
     (1413861, 452, 454, "natsuki_hikari", "nanaroba hana"),
     (1413861, 444, 448, "ayase_touka", "nanaroba hana"),
+
+    (4017598, 1, 2000, "minami_mai", "nanaroba hana"),
+    (4017600, 1, 2000, "aoi_sumire", "nanaroba hana"),
+    (4017597, 1, 2000, "natsuki_hikari", "nanaroba hana"),
+    (4017601, 1, 2000, "ayase_touka", "nanaroba hana"),
     # PRETTY x CATION 2
     (1218763, 10, 268, "himekawa_honami", "asami asami"),
     (1218763, 269, 522, "ashiya_suzuka", "asami asami"),
@@ -3922,6 +3954,11 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
 
     (1413871, 1, 23, "ashiya_suzuka", "asami asami"),
     (1413871, 24, 49, "kurashiki_azusa", "asami asami"),
+
+    (4027986, 1, 2000, "himekawa_honami", "asami asami"),
+    (4027985, 1, 2000, "ashiya_suzuka", "asami asami"),
+    (4027984, 1, 2000, "kurashiki_azusa", "asami asami"),
+    (4027983, 1, 2000, "hayase_chitose", "asami asami"),
     # Hakuchuumu no Aojashin
     (1740823, 10, 447, "yonagi_(hakuchuumu_no_aojashin)", "shimofuri"),
     (1740823, 461, 720, "hatano_rin", "gyokuto_b"),
@@ -5085,7 +5122,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1972589, 240, 381, "karasuba_kotori", "maumen"),
     (1972589, 382, 532, "kamishiro_miko", "maumen"),
     # 2045, Tsuki yori. - The Butterfly Dream
-    (2339354, 74, 363, "elle_(2045, tsuki yori)", "maumen"),
+    (2339354, 74, 363, "elle_(2045_tsuki yori)", "maumen"),
     (2339354, 549, 796, "hina_yui", "maumen"),
     (2339354, 858, 1194, "sakuratsuki_shirabe", "maumen"),
     # Sky Chord
@@ -5417,6 +5454,9 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
 
     (2261821, 2, 230, "fujisaki_haruka", "asami asami"),
     (2261821, 231, 432, "sarashina_yuzuki", "asami asami"),
+
+    (4014976, 1, 312, "fujisaki_haruka", "asami asami"),
+    (4014976, 313, 624, "sarashina_yuzuki", "asami asami"),
     # Koi wa Sotto Saku Hana no You ni
     (1245620, 19, 92, "kotoishi_iori", "gin"),
     (1245620, 93, 185, "hayami_misato", "keisaka"),
@@ -5728,6 +5768,9 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (3881848, 1, 2000, "mirai_asumi", "k-ko"),
     (3854318, 1, 2000, "mirai_asumi", "k-ko"),
     (3823540, 1, 2000, "mirai_asumi", "k-ko"),
+    (4032074, 1, 336, "mirai_asumi", "k-ko"),
+    (4032074, 337, 2000, None, "k-ko"),
+    (4015528, 1, 2000, "mirai_asumi", "k-ko"),
     # Gaman ga Dekinai Doutei Aniki to Sunao ni Narenai Hankou Imouto
     (2281479, 2, 951, "chie_(hankou_imouto)", "k-ko"),
     (2315112, 1, 2000, "chie_(hankou_imouto)", "k-ko"),
@@ -6737,6 +6780,12 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1413795, 1, 111, "kurihara_aiko", "iizuki tasuku"),
     (1413795, 112, 220, "isurugi_yuki", "iizuki tasuku"),
     (1413795, 221, 283, "naruse_nono", "iizuki tasuku"),
+
+    (4013226, 1, 2000, "kurihara_aiko", "iizuki tasuku"),
+    (4013225, 1, 2000, "kurihara_aiko", "iizuki tasuku"),
+    (4013224, 1, 2000, "isurugi_yuki", "iizuki tasuku"),
+    (4013223, 1, 2000, "naruse_nono", "iizuki tasuku"),
+    (4014809, 1, 2000, "naruse_nono", "iizuki tasuku"),
     # Seikishi Melty ☆ Lovers
     (854514, 2, 133, "sefi_raiado", "iizuki tasuku"),
     (854514, 134, 328, "frey_knowles", "iizuki tasuku"),
@@ -6760,6 +6809,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Bishoujo Mangekyou
     (2899450, 1, 707, "shirayuki_hime_(bishoujo_mangekyou)", "happoubi jin"),
     (2899614, 1, 885, "shirayuki_hime_(bishoujo_mangekyou)", "happoubi jin"),
+    (4028159, 1, 843, "shirayuki_hime_(bishoujo_mangekyou)", "happoubi jin"),
     (681572, 31, 267, "inamori_haru", "happoubi jin"),
     # lovely_x_cation
     (893016, 2, 218, "nanasawa_yuni", "iizuki tasuku"),
@@ -6902,6 +6952,26 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (4012243, 87, 470, "utsuka_haru", "mutou kurihito"),
     # Magalumina
     (4012226, 1, 2000, None, "go-1"),
+    # Onee-chan no Yuuwaku
+    (1216999, 1, 358, "kisaragi_maaya", "iizuki tasuku"),
+    (4012554, 1, 2000, "kisaragi_maaya", "iizuki tasuku"),
+    # Hikoukigumo no Mukougawa
+    (688556, 2, 67, "aya_reika", "purin purin"),
+    (688556, 68, 360, "mishio_eiri", "purin purin"),
+    (688556, 361, 384, None, "filter_invalid"),
+    (688556, 385, 625, "ugawara_iroha", "purin purin"),
+    (688556, 661, 691, "hirosaki_mina", "purin purin"),
+    (688556, 722, 895, "hirosaki_mina", "purin purin"),
+    (688556, 896, 915, "satou_risa", "purin purin"),
+    (688556, 923, 1018, "satou_risa", "purin purin"),
+
+
+    (2278017, 1, 396, "ugawara_iroha", "purin purin"),
+    (2278017, 458, 661, "satou_risa", "purin purin"),
+    (2278017, 662, 785, "aya_reika", "purin purin"),
+    (2278017, 786, 1037, "hirosaki_mina", "purin purin"),
+    (2278017, 1086, 1285, "mishio_eiri", "purin purin"),
+    (2278017, 1, 2000, None, "purin purin"),
 ]
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
 PATH_RE = re.compile(r"/webp/(\d+)/image_(\d+)\.webp$")
