@@ -6,6 +6,7 @@
 - 读取每行 JSON，打开 "src" 对应图片，仅读取尺寸（不会完整解码）
 - 计算宽高比，按照模式（gcd / nearest / bin）分桶
 - 统计每桶数量，并把原始 JSON 行写入各桶对应的 JSONL 文件
+- 支持多线程读取图片尺寸（主线程负责写文件）
 - 支持 LRU 文件句柄缓存（避免同时打开过多文件）
 - 对无法打开的图片会写入 error.jsonl，方便后续排查
 
@@ -18,13 +19,12 @@
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import json
-import os
-import sys
 from pathlib import Path
-from collections import Counter, OrderedDict
+from collections import Counter, OrderedDict, deque
 from math import gcd
-from typing import Dict, Tuple, Optional
+from typing import Any, Dict, Optional
 
 from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
@@ -86,7 +86,7 @@ def parse_args():
     ap.add_argument("--mode", choices=["gcd", "nearest", "bin"], default="gcd",
                     help="分桶模式：gcd=精确比例；nearest=就近常见比例；bin=范围分箱")
     ap.add_argument("--tolerance", type=float, default=0.015,
-                    help="nearest 模式下的相对误差阈值（默认 0.015 = 1.5%）")
+                    help="nearest 模式下的相对误差阈值（默认 0.015 = 1.5%%）")
     ap.add_argument("--max-open", type=int, default=64,
                     help="同时打开的桶文件最大数量（默认 64）")
     ap.add_argument("--save-counts", default=None,
@@ -101,6 +101,8 @@ def parse_args():
                     help="只对高度不少于该值的图片进行分桶（默认 0，无下限）")
     ap.add_argument("--min-pixels", type=int, default=0,
                     help="只对像素数量不少于该值（宽x高）的图片进行分桶（默认 0，无下限）")
+    ap.add_argument("--workers", type=int, default=8,
+                    help="读取图片尺寸的线程数（默认 8；设为 1 可禁用多线程）")
     return ap.parse_args()
 
 
@@ -121,7 +123,7 @@ def ratio_label_nearest(w: int, h: int, tolerance: float) -> str:
             best_name = name
     # 若相对误差超出阈值，回落到精确 gcd 比例
     if best_name is None or best_rel_err > tolerance:
-        return  "unknown"  # ratio_label_gcd(w, h)
+        return "unknown"  # ratio_label_gcd(w, h)
     return best_name
 
 
@@ -138,11 +140,95 @@ def sanitize_bucket_name(label: str) -> str:
     return label.replace(":", "x").replace("/", "_")
 
 
+def get_ratio_label(w: int, h: int, mode: str, tolerance: float) -> str:
+    if mode == "gcd":
+        return ratio_label_gcd(w, h)
+    if mode == "nearest":
+        return ratio_label_nearest(w, h, tolerance)
+    return ratio_label_bin(w, h)
+
+
+def process_line(line: str, args: argparse.Namespace) -> Dict[str, Any]:
+    line = line.strip()
+    if not line:
+        return {"status": "blank"}
+
+    try:
+        obj = json.loads(line)
+    except json.JSONDecodeError:
+        return {"status": "error_raw", "line": line}
+
+    src = obj.get("src") or obj.get("path") or ""
+    if not src:
+        return {"status": "error_json", "payload": {"error": "missing src", "line": obj}}
+
+    # 读取图片尺寸（不会完整解码）
+    try:
+        with Image.open(src) as im:
+            w, h = im.size
+            if args.skip_animated and (getattr(im, "is_animated", False) or getattr(im, "n_frames", 1) > 1):
+                return {"status": "skip_animated"}
+    except (FileNotFoundError, UnidentifiedImageError, OSError) as e:
+        return {
+            "status": "error_json",
+            "payload": {"error": f"{type(e).__name__}: {str(e)}", "src": src, "line": obj},
+        }
+    except Exception as e:
+        return {
+            "status": "error_json",
+            "payload": {"error": f"Exception: {str(e)}", "src": src, "line": obj},
+        }
+
+    if w <= 0 or h <= 0:
+        return {
+            "status": "error_json",
+            "payload": {"error": "invalid size", "size": [w, h], "src": src, "line": obj},
+        }
+
+    if w < args.min_width or h < args.min_height:
+        return {"status": "skip_small_dim"}
+
+    if w * h < args.min_pixels:
+        return {"status": "skip_low_pixels"}
+
+    return {
+        "status": "bucket",
+        "label": get_ratio_label(w, h, args.mode, args.tolerance),
+        "line": line,
+    }
+
+
+def iter_processed_lines(fin, args: argparse.Namespace):
+    workers = max(1, args.workers)
+    if workers == 1:
+        for line in fin:
+            yield process_line(line, args)
+        return
+
+    max_pending = workers * 4
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        pending = deque()
+
+        def fill_pending():
+            while len(pending) < max_pending:
+                try:
+                    line = next(fin)
+                except StopIteration:
+                    break
+                pending.append(executor.submit(process_line, line, args))
+
+        fill_pending()
+        while pending:
+            future = pending.popleft()
+            yield future.result()
+            fill_pending()
+
+
 class LRUFileCache:
     """限制同时打开的文件数量，超过则最久未使用的句柄会被关闭。"""
     def __init__(self, capacity: int):
         self.capacity = max(1, capacity)
-        self._cache: "OrderedDict[str, any]" = OrderedDict()
+        self._cache: "OrderedDict[str, Any]" = OrderedDict()
 
     def get(self, path: Path):
         key = str(path)
@@ -172,11 +258,10 @@ class LRUFileCache:
 
 def main():
     args = parse_args()
+    args.workers = max(1, args.workers)
     in_path = Path(args.jsonl)
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
-
-    errors_fp = open(args.errors_file, "w", encoding="utf-8")
 
     # 统计计数
     counts: Counter = Counter()
@@ -187,72 +272,45 @@ def main():
     # LRU 文件缓存
     file_cache = LRUFileCache(capacity=args.max_open)
 
-    # 逐行流式处理
-    total = sum(1 for _ in open(in_path, "r", encoding="utf-8", errors="ignore"))
-    with open(in_path, "r", encoding="utf-8", errors="ignore") as fin, tqdm(total=total, desc="Bucketing") as pbar:
-        for line in fin:
-            line = line.strip()
-            pbar.update(1)
-            if not line:
-                continue
-            try:
-                obj = json.loads(line)
-            except json.JSONDecodeError:
-                # 非法 JSON 行
-                errors_fp.write(line + "\n")
-                continue
+    try:
+        # 逐行流式处理。图片尺寸读取可并发，写 bucket 文件仍由主线程完成。
+        total = sum(1 for _ in open(in_path, "r", encoding="utf-8", errors="ignore"))
+        with open(args.errors_file, "w", encoding="utf-8") as errors_fp, \
+                open(in_path, "r", encoding="utf-8", errors="ignore") as fin, \
+                tqdm(total=total, desc=f"Bucketing ({args.workers} workers)") as pbar:
+            for result in iter_processed_lines(fin, args):
+                pbar.update(1)
+                status = result["status"]
 
-            src = obj.get("src") or obj.get("path") or ""
-            if not src:
-                errors_fp.write(json.dumps({"error": "missing src", "line": obj}, ensure_ascii=False) + "\n")
-                continue
+                if status == "blank":
+                    continue
+                if status == "error_raw":
+                    errors_fp.write(result["line"] + "\n")
+                    continue
+                if status == "error_json":
+                    errors_fp.write(json.dumps(result["payload"], ensure_ascii=False) + "\n")
+                    continue
+                if status == "skip_small_dim":
+                    skipped_small_dim += 1
+                    continue
+                if status == "skip_low_pixels":
+                    skipped_low_pixels += 1
+                    continue
+                if status == "skip_animated":
+                    skipped_animated += 1
+                    continue
 
-            # 读取图片尺寸（不会完整解码）
-            try:
-                with Image.open(src) as im:
-                    w, h = im.size
-                    if args.skip_animated and (getattr(im, "is_animated", False) or getattr(im, "n_frames", 1) > 1):
-                        skipped_animated += 1
-                        continue
-            except (FileNotFoundError, UnidentifiedImageError, OSError) as e:
-                errors_fp.write(json.dumps({"error": f"{type(e).__name__}: {str(e)}", "src": src, "line": obj}, ensure_ascii=False) + "\n")
-                continue
-            except Exception as e:
-                errors_fp.write(json.dumps({"error": f"Exception: {str(e)}", "src": src, "line": obj}, ensure_ascii=False) + "\n")
-                continue
+                label = result["label"]
+                counts[label] += 1
 
-            if w <= 0 or h <= 0:
-                errors_fp.write(json.dumps({"error": "invalid size", "size": [w, h], "src": src, "line": obj}, ensure_ascii=False) + "\n")
-                continue
-
-            if w < args.min_width or h < args.min_height:
-                skipped_small_dim += 1
-                continue
-
-            if w * h < args.min_pixels:
-                skipped_low_pixels += 1
-                continue
-
-            # 生成桶标签
-            if args.mode == "gcd":
-                label = ratio_label_gcd(w, h)
-            elif args.mode == "nearest":
-                label = ratio_label_nearest(w, h, args.tolerance)
-            else:
-                label = ratio_label_bin(w, h)
-
-            counts[label] += 1
-
-            # 写入对应桶的 JSONL
-            bucket_name = f"ratio_{sanitize_bucket_name(label)}.jsonl"
-            bucket_path = outdir / bucket_name
-            fp = file_cache.get(bucket_path)
-            # 原样写入输入行（不改变字段内容）
-            fp.write(line + "\n")
-
-    # 关闭所有文件
-    file_cache.close_all()
-    errors_fp.close()
+                # 写入对应桶的 JSONL，原样写入输入行（不改变字段内容）。
+                bucket_name = f"ratio_{sanitize_bucket_name(label)}.jsonl"
+                bucket_path = outdir / bucket_name
+                fp = file_cache.get(bucket_path)
+                fp.write(result["line"] + "\n")
+    finally:
+        # 关闭所有文件
+        file_cache.close_all()
 
     # 打印统计结果（按数量降序）
     print("\n=== Bucket counts ===")

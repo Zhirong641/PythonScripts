@@ -249,29 +249,29 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1993857, 2, 38, None, "filter_invalid"),
 
     # Magical Marriage Lunatics!!
-    (633524, 2, 141, "luce yami asutarite", "yamakaze ran"),
-    (633524, 142, 277, "julia lin road", "sakurazaka tsuchiyu"),
+    (633524, 2, 141, "luce yami astalite", "yamakaze ran"),
+    (633524, 142, 277, "julia lyn lord", "sakurazaka tsuchiyu"),
     (633524, 278, 405, "mitsu no tama yori hime", "yamakaze ran"),
     (633524, 406, 553, "amagi karin", "yamakaze ran"),
     (633524, 554, 671, "luluna", "yamakaze ran"),
     (633524, 672, 815, "shirahase yuuna", "yamakaze ran"),
 
-    (1217027, 3, 142, "luce yami asutarite", "yamakaze ran"),
-    (1217027, 143, 278, "julia lin road", "sakurazaka tsuchiyu"),
+    (1217027, 3, 142, "luce yami astalite", "yamakaze ran"),
+    (1217027, 143, 278, "julia lyn lord", "sakurazaka tsuchiyu"),
     (1217027, 279, 406, "mitsu no tama yori hime", "yamakaze ran"),
     (1217027, 407, 554, "amagi karin", "yamakaze ran"),
     (1217027, 555, 672, "luluna", "yamakaze ran"),
     (1217027, 673, 816, "shirahase yuuna", "yamakaze ran"),
 
-    (634833, 3, 142, "luce yami asutarite", "yamakaze ran"),
-    (634833, 143, 278, "julia lin road", "sakurazaka tsuchiyu"),
+    (634833, 3, 142, "luce yami astalite", "yamakaze ran"),
+    (634833, 143, 278, "julia lyn lord", "sakurazaka tsuchiyu"),
     (634833, 279, 406, "mitsu no tama yori hime", "yamakaze ran"),
     (634833, 407, 554, "amagi karin", "yamakaze ran"),
     (634833, 555, 672, "luluna", "yamakaze ran"),
     (634833, 673, 816, "shirahase yuuna", "yamakaze ran"),
 
-    (3466476, 1, 672, "luce yami asutarite", "yamakaze ran"),
-    (3466476, 673, 1909, "julia lin road", "sakurazaka tsuchiyu"),
+    (3466476, 1, 672, "luce yami astalite", "yamakaze ran"),
+    (3466476, 673, 1909, "julia lyn lord", "sakurazaka tsuchiyu"),
     (3466477, 1, 600, "amagi karin", "yamakaze ran"),
     (3466477, 605, 1207, "mitsu no tama yori hime", "yamakaze ran"),
     (3466478, 1, 832, "luluna", "yamakaze ran"),
@@ -1553,7 +1553,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Karigurashi Renai
     (1205109, 3, 125, "sakuragibashi_rito", "yuuki rika"),
     (1205109, 126, 240, "aranami_kyou", "fuyuichi monme"),
-    (1205109, 241, 420, "niizuma_hiyori", "fuyuichi monme"),
+    (1205109, 241, 420, "niizuma_miyori", "fuyuichi monme"),
     (1205109, 421, 580, "yohakari_ayaka", "yuuki rika"),
     (1205109, 581, 658, None, "yuunagi seshina"),
 
@@ -3012,8 +3012,8 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2771291, 117, 231, "nase_yaeka", "ryohka"),
 
     # Hanahime * Absolute!
-    (1414902, 1, 305, "nekoyashiki_maher", "kannagi rei"),
-    (1414902, 306, 513, "reina_lilou_lowchen", "kannagi rei"),
+    (1414902, 1, 198, "nekoyashiki_maher", "kannagi rei"),
+    (1414902, 199, 513, "reina_lilou_lowchen", "kannagi rei"),
     (1414902, 514, 686, "polina_mirovna_von_schwarzerhase", "kannagi rei"),
     (1414902, 687, 873, "aiuchi_hiyoko", "kannagi rei"),
     (1414902, 874, 1007, "kamiya_eve", "kannagi rei"),
@@ -3407,7 +3407,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (847945, 831, 955, "lea_granatfeuer_von_wolfsburg", "naenae"),
     (847945, 995, 1191, "oumi_saaya", "matsushita makako"),
     # Koi Suru Amairo Homestay -Ryuugakusei wa Wanko-kei Osananajimi
-    (2254599, 1, 155, "mary_mea_heart", "hiiragi ringo"),
+    (2254599, 1, 155, "mary_mare_hart", "hiiragi ringo"),
     # Namaiki Yume-chan wa Onii to Mechakucha H Shitai
     (2520412, 1, 144, "hinamori_yume", "hiiragi ringo"),
     # The Rising Sun Marriage
@@ -3508,7 +3508,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Emuria ~Ore ga Do-M ni Natta no wa Dou Kangaete mo Omaera ga Warui~
     (878324, 5, 8, "aso_nozomi", "xe"),
     (878324, 13, 24, "aso_nozomi", "xe"),
-    (878324, 71, 211, "tsumadu_fumino", "mitsumomo mam"),
+    (878324, 71, 211, "shimadu_fumino", "mitsumomo mam"),
     (878324, 212, 361, "aso_nozomi", "xe"),
     (878324, 362, 498, "tsumadu_yasuna", "mitsumomo mam"),
     (878324, 499, 636, "sagara_haruka", "xe"),
@@ -5157,9 +5157,30 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1978045, 1, 2000, "yaotome_hanae", "ichiri"),
     # Koi x Mitsu 
     (1900094, 9, 162, "yaeneri_saki", "ichiri"),
+    (1900094, 163, 168, "kinuori_futaba", "shiwasu horio"),
     (1900094, 169, 269, "yaeneri_saki", "ichiri"),
+    (1900094, 270, 280, "senba_shizuku", "kaniya shiku"),
+    (1900094, 281, 282, "yaeneri_saki", "ichiri"),
+    (1900094, 283, 290, "senba_shizuku", "kaniya shiku"),
+    (1900095, 4, 10, "kinuori_futaba", "shiwasu horio"),
     (1900095, 11, 164, "yaeneri_saki", "ichiri"),
+    (1900095, 165, 175, "senba_shizuku", "kaniya shiku"),
+    (1900095, 176, 181, "kinuori_futaba", "shiwasu horio"),
     (1900095, 182, 285, "yaeneri_saki", "ichiri"),
+
+    (1921935, 38, 174, "senba_shizuku", "kaniya shiku"),
+    (1921935, 175, 180, "kinuori_futaba", "shiwasu horio"),
+    (1921935, 181, 187, "yaeneri_saki", "ichiri"),
+    (1921935, 188, 195, "senba_shizuku", "kaniya shiku"),
+    (1921935, 201, 293, "senba_shizuku", "kaniya shiku"),
+
+    (1942075, 3, 154, "kinuori_futaba", "shiwasu horio"),
+    (1942075, 155, 162, "yaeneri_saki", "ichiri"),
+    (1942075, 163, 173, "senba_shizuku", "kaniya shiku"),
+    (1942075, 174, 263, "kinuori_futaba", "shiwasu horio"),
+    (1942075, 264, 270, "yaeneri_saki", "ichiri"),
+    (1942075, 271, 278, "senba_shizuku", "kaniya shiku"),
+
     # Ninja Girl and the Mysterious Army of Urban Legend Monsters!
     (1437787, 1, 2000, "hattori_kiri", "matsumiya kiseri"),
     (1437819, 1, 1894, "hattori_kiri", "matsumiya kiseri"),
