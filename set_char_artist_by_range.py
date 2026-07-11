@@ -3440,12 +3440,12 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2871902, 1, 693, "mamanoue_yuno", "emily"),
     # Golden Marriage
     (705391, 2, 114, "tange_kasumi", "hayakawa halui"),
-    (705391, 115, 126, "ichijouji_toko", "hayakawa halui"),
+    (705391, 115, 126, "ichijouji_touko", "hayakawa halui"),
     (705391, 127, 166, "amaya_rei", "hayakawa halui"),
     (705391, 167, 188, "tange_kasumi", "hayakawa halui"),
     (705391, 213, 341, "amaya_rei", "hayakawa halui"),
     (705391, 342, 464, "shimakage_ruri", "hayakawa halui"),
-    (705391, 465, 612, "ichijouji_toko", "hayakawa halui"),
+    (705391, 465, 612, "ichijouji_touko", "hayakawa halui"),
     (705391, 613, 727, "kasugano_yukariko", "hayakawa halui"),
     (705391, 728, 776, "marika_von_wittelsbach", "hayakawa halui"),
 
@@ -3453,7 +3453,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (799691, 41, 106, "marika_von_wittelsbach", "hayakawa halui"),
     (799691, 107, 169, "amaya_rei", "hayakawa halui"),
     (799691, 170, 206, "shimakage_ruri", "hayakawa halui"),
-    (799691, 207, 250, "ichijouji_toko", "hayakawa halui"),
+    (799691, 207, 250, "ichijouji_touko", "hayakawa halui"),
     (799691, 283, 306, "kasugano_yukariko", "hayakawa halui"),
 
     (799691, 313, 374, "tange_kasumi", "hayakawa halui"),
@@ -3461,7 +3461,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (799691, 438, 466, "marika_von_wittelsbach", "hayakawa halui"),
     (799691, 467, 508, "amaya_rei", "hayakawa halui"),
     (799691, 509, 577, "shimakage_ruri", "hayakawa halui"),
-    (799691, 578, 623, "ichijouji_toko", "hayakawa halui"),
+    (799691, 578, 623, "ichijouji_touko", "hayakawa halui"),
     (799691, 624, 670, "kasugano_yukariko", "hayakawa halui"),
     # HoneDevi! Honey&Devil
     (1068260, 6, 220, "takamiya_ouka", "hayakawa halui"),
@@ -3508,7 +3508,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     # Emuria ~Ore ga Do-M ni Natta no wa Dou Kangaete mo Omaera ga Warui~
     (878324, 5, 8, "aso_nozomi", "xe"),
     (878324, 13, 24, "aso_nozomi", "xe"),
-    (878324, 71, 211, "shimadu_fumino", "mitsumomo mam"),
+    (878324, 71, 211, "shimazu_fumino", "mitsumomo mam"),
     (878324, 212, 361, "aso_nozomi", "xe"),
     (878324, 362, 498, "tsumadu_yasuna", "mitsumomo mam"),
     (878324, 499, 636, "sagara_haruka", "xe"),
@@ -6374,6 +6374,15 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
 
     (2018513, 37, 45, "arimura_romi", "kimishima ao"),
     (2018513, 49, 82, "arimura_romi", "kimishima ao"),
+
+    (1766657, 21, 100, "sakashita_iina", "kimishima ao"),
+    (1766657, 101, 204, "nishino_kasumi", "kimishima ao"),
+    (1766657, 291, 370, "arimura_romi", "kimishima ao"),
+    (1766657, 452, 605, "nitta_shinobu", "kimishima ao"),
+    (1766657, 631, 710, "sakashita_iina", "kimishima ao"),
+    (1766657, 711, 794, "nishino_kasumi", "kimishima ao"),
+    (1766657, 859, 936, "arimura_romi", "kimishima ao"),
+    (1766657, 973, 1127, "nitta_shinobu", "kimishima ao"),
     # Toshishita Kanojo
     (1941963, 1, 336, "ousaka_ayane", "kyou"),
     (3442586, 1, 2000, "ousaka_ayane", "kyou"),
