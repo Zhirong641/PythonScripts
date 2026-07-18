@@ -714,8 +714,15 @@ def parse_args(input_args=None):
     )
     parser.add_argument(
         "--random_flip",
-        action="store_true",
-        help="whether to randomly flip images horizontally",
+        type=float,
+        nargs="?",
+        const=0.5,
+        default=0.0,
+        metavar="PROBABILITY",
+        help=(
+            "Probability of horizontally flipping raw training images. Must be between 0 and 1;"
+            " disabled by default. Passing --random_flip without a value uses 0.5."
+        ),
     )
     parser.add_argument(
         "--train_batch_size", type=int, default=16, help="Batch size (per device) for the training dataloader."
@@ -1077,6 +1084,8 @@ def parse_args(input_args=None):
         )
     if args.proportion_empty_prompts < 0 or args.proportion_empty_prompts > 1:
         raise ValueError("`--proportion_empty_prompts` must be in the range [0, 1].")
+    if args.random_flip < 0 or args.random_flip > 1:
+        raise ValueError("`--random_flip` must be in the range [0, 1].")
 
     if not args.precompute_text_embeddings and args.precompute_vae_latents:
         raise ValueError(
@@ -2404,7 +2413,7 @@ def main(args):
                     interpolation=interpolation,
                     antialias=True,
                 )
-            if args.random_flip and random.random() < 0.5:
+            if random.random() < args.random_flip:
                 image = train_flip(image)
             if args.center_crop:
                 y1 = max(0, int(round((image.height - target_h) / 2.0)))

@@ -124,6 +124,47 @@
   },
 
   {
+    "label": "VN_Standing_3_10",
+    "resolution": "504x1680",
+    "index_file": "/mnt/shared/data/VN_Standing/buckets/ratio_3_10.jsonl"
+  },
+  {
+    "label": "VN_Standing_2_5",
+    "resolution": "608x1520",
+    "index_file": "/mnt/shared/data/VN_Standing/buckets/ratio_2_5.jsonl"
+  },
+  {
+    "label": "VN_Standing_9_16",
+    "resolution": "720x1280",
+    "index_file": "/mnt/shared/data/VN_Standing/buckets/ratio_9_16.jsonl"
+  },
+  {
+    "label": "VN_Standing_2_3",
+    "resolution": "768x1152",
+    "index_file": "/mnt/shared/data/VN_Standing/buckets/ratio_2_3.jsonl"
+  },
+  {
+    "label": "VN_Standing_3_4",
+    "resolution": "768x1024",
+    "index_file": "/mnt/shared/data/VN_Standing/buckets/ratio_3_4.jsonl"
+  },
+  {
+    "label": "VN_Standing_1_1",
+    "resolution": "1024x1024",
+    "index_file": "/mnt/shared/data/VN_Standing/buckets/ratio_1_1.jsonl"
+  },
+  {
+    "label": "VN_Standing_4_3",
+    "resolution": "1024x768",
+    "index_file": "/mnt/shared/data/VN_Standing/buckets/ratio_4_3.jsonl"
+  },
+  {
+    "label": "VN_Standing_16_9",
+    "resolution": "1280x720",
+    "index_file": "/mnt/shared/data/VN_Standing/buckets/ratio_16_9.jsonl"
+  },
+
+  {
     "label": "yandere_3_10",
     "resolution": "504x1680",
     "index_file": "/mnt/shared/data/yandere/buckets/ratio_3_10.jsonl"

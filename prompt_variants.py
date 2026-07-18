@@ -312,7 +312,8 @@ _LOW_DROPOUT_EXACT = {
     "dakimakura (medium)",
     "tachi-e",
     "multiple views",
-    "close-up"
+    "close-up",
+    "letterboxed"
 }
 
 
