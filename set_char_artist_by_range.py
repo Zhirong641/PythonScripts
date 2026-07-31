@@ -225,7 +225,6 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (634594, 107, 220, None, "kinta"),
     (634594, 221, 292, "futaba_hisui", "nanase meruchi"),
     (634594, 367, 369, "futaba_hisui", "nanase meruchi"),
-    (847794, 1, 418, "natsuki rino", None),
     (979189, 1, 53, "mito kohaku", None),
     (979189, 54, 111, "saijou hifumi", None),
     (979189, 228, 250, "mito kohaku", None),
@@ -560,7 +559,7 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1537457, 809, 822, "tsuzuki_haruka", "mizuno sao"),
     # Oshioki Namaiki Gal
     (3417922, 1, 2000, "natsuki rino", "karatabe"),
-    (847794, 1, 2000, "natsuki rino", None),
+    (847794, 1, 2000, "natsuki rino", "karatabe"),
     # Toki o Tsumugu Yakusoku
     (917393, 4, 94, "mizuno koharu", "shiwasu horio"),
     (917393, 95, 166, "usui honoka", "shiwasu horio"),
@@ -3118,8 +3117,11 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1413731, 1, 561, "aizome_kaguya", "sasahiro"),
     # Little Sick Girls
     (1491186, 1, 192, "yoshino_eri", "moriyama shijimi"),
+    (1491186, 193, 2000, None, "filter_invalid"),
     (1536973, 1, 129, "takaido_ruchie", "moriyama shijimi"),
+    (1536973, 130, 2000, None, "filter_invalid"),
     (1689666, 1, 146, "aiba_momo", "moriyama shijimi"),
+    (1689666, 147, 2000, None, "filter_invalid"),
 
     (1809449, 54, 209, "takaido_ruchie", "moriyama shijimi"),
     (1809449, 210, 339, "yoshino_eri", "moriyama shijimi"),
@@ -4339,11 +4341,15 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1410806, 1, 556, "ootsu_rose", "ameto yuki"),
     (1410806, 601, 1752, "handa_sango", "tanihara natsuki"),
     # Amenity's Life
-    (1008880, 30, 173, "itano_kanade", "rinks"),
+    (1008880, 16, 173, "itano_kanade", "rinks"),
     (1008880, 174, 277, "maho", "rinks"),
     (1008880, 278, 462, "nagamine_mikuri", "rinks"),
     (1008880, 463, 656, "toudou_miki", "rinks"),
     (1008880, 657, 779, "kayama_naru", "rinks"),
+
+    (4082379, 1, 1, "itano_kanade, rezona", "rinks"),
+    (4082379, 2, 27, "itano_kanade", "rinks"),
+    (4082379, 28, 74, "rezona", "rinks"),
     # E School Life
     (1423926, 4, 200, "hanazono_mie", "rinks"),
     (1423926, 201, 306, "sayama_erina", "rinks"),
@@ -7002,6 +7008,20 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2278017, 786, 1037, "hirosaki_mina", "purin purin"),
     (2278017, 1086, 1285, "mishio_eiri", "purin purin"),
     (2278017, 1, 2000, None, "purin purin"),
+    # Yandere Imouto ni Aisaresugite Kozukuri Seikatsu
+    (2188914, 1, 160, "nakata_ayane", "moriyama shijimi"),
+    # Kirara Kirara NTR Mahou Shoujo wa Kawatteiku...
+    (1600702, 1, 166, "tomoe_kirara", "ichiyo moka"),
+    # Hoikushi no Himitsu
+    (1785767, 1, 104, "okamoto_kana", "ichiyo moka"),
+    (1785767, 105, 115, None, "filter_invalid"),
+    # Elf no Kuni no Kyuutei Madoushi ni Nareta no de Hime-sama ni Seiteki na Itazura o Shite Mita
+    (2309182, 2, 130, "naia", "soramoti"),
+    (2309182, 210, 231, "naia", "soramoti"),
+    (2309182, 242, 253, "naia", "soramoti"),
+    (2309182, 254, 2000, None, "filter_invalid"),
+    # Yatte mo Derarenai Heya ni Tojikomerareta no de Hikitsuzuki Motto Yaru Hanashi
+    (3216053, 1, 598, "akino_yuna", "taniyama-san"),
 ]
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
 PATH_RE = re.compile(r"/webp/(\d+)/image_(\d+)\.webp$")
