@@ -2,7 +2,128 @@
 # -*- coding: utf-8 -*-
 
 import argparse, json, re, sys, tempfile, os, glob, csv
+from pathlib import Path
 from typing import List, Tuple, Optional
+
+FILTER_LIST_DIR = Path(__file__).resolve().parent / "filter_lists"
+
+# Keep this list aligned with the deterministic raw-dataset filters in
+# train_text_to_image_sdxl.py. Probabilistic filters are intentionally omitted.
+EXCLUDE_WORD_LIST = {
+    "character_profile",
+    "comic",
+    "silent_comic",
+    "western_comics_(style)",
+    "segmented_comic",
+    "text_focus",
+    "1990s",
+    "1990s_(style)",
+    "1980s",
+    "1980s_(style)",
+    "retro_artstyle",
+    "abstract",
+    "abstract_background",
+    "index_page",
+    "text",
+    "negative_space",
+    "credits_page",
+    "collage",
+}
+
+# These tags keep the image in the output, but character/artist attribution is
+# not meaningful and must override any range-based assignment.
+CLEAR_CHARACTER_ARTIST_TAGS = {"no_humans", "chibi", "chibi_only", "lineart",
+                "no_lineart",
+                "sketch",
+                "monochrome",
+                "multiple_monochrome",}
+
+
+def _split_clean_comma_list(value: str) -> List[str]:
+    if not value:
+        return []
+    return [item.strip() for item in value.replace("，", ",").split(",") if item.strip()]
+
+
+def _normalize_artist_tags(artist_tags: List[str]) -> List[str]:
+    rename_map = {
+        "any": "annie",
+        "kino": "kinokonomi",
+        "konomi": "kinokonomi",
+        "anapon": "anapom",
+        "fumi": "fummy",
+        "narumi yu": "narumi yuu",
+        "akizora momidi": "akizora momiji",
+        "moeki yuta": "moeki yuuta",
+        "shira ichigo": "shiraichigo",
+        "hinata momoko": "hinata momo",
+        "yuunagi sesina": "yuunagi seshina",
+        "shuutou haruka": "shuto haruka",
+        "peko": "kani biimu",
+        "tomo": "tomoo_(tomo)",
+        "hadumi rio": "hazumi rio",
+        "yuuma": "mizuki yuuma",
+        "ohara_tometa": "qp:flapper",
+        "sakura_koharu": "qp:flapper",
+        "ohara tometa": "qp:flapper",
+        "sakura koharu": "qp:flapper",
+        "twinbox": "sousouman",
+        "buuta": "booota",
+        "mafuyu_(chibi21)": "mafuyu_chibi21",
+        "fuzichoko": "fuzichoco",
+        "miko": "royal_milk",
+        "miko_(royal_milk)": "royal_milk",
+        # For yande.re mappings
+        "hellrun": "herurun",
+        "amedama_con": "amedamacon",
+        "shiroki_mochi": "shirosei_mochi",
+        "yatanuki_kei": "yatanukikey",
+    }
+    normalized = []
+    seen = set()
+    for tag in artist_tags or []:
+        if not tag:
+            continue
+        tag_norm = rename_map.get(tag.lower(), tag)
+        tag_norm = tag_norm.replace("_", " ").strip()
+        key = tag_norm.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        normalized.append(tag_norm)
+    return normalized
+
+
+def _load_filter_list(filename: str) -> List[str]:
+    file_path = FILTER_LIST_DIR / filename
+    if not file_path.is_file():
+        sys.stderr.write(f"[WARN] Filter list {file_path} not found; no entries loaded.\n")
+        return []
+    entries = []
+    with open(file_path, "r", encoding="utf-8") as filter_file:
+        for line in filter_file:
+            item = line.strip()
+            if item and not item.startswith("#"):
+                entries.append(item)
+    return entries
+
+
+def _build_filter_name_set(entries: List[str]) -> set:
+    names = set()
+    for name in entries:
+        if not name:
+            continue
+        names.add(name)
+        names.add(name.replace("_", " "))
+    return {name for name in names if name}
+
+
+EXCLUDE_ARTIST_SET = _build_filter_name_set(_load_filter_list("exclude_artists.txt"))
+EXCLUDE_DANBOORU_SET = _build_filter_name_set(_load_filter_list("exclude_danbooru_artists.txt"))
+EXCLUDE_SOURCE_ID_SET = {
+    entry for entry in _load_filter_list("exclude_source_ids.txt") if entry
+}
+TOTAL_EXCLUDE_ARTIST_SET = EXCLUDE_ARTIST_SET | EXCLUDE_DANBOORU_SET
 
 # 需要修改的区间（目录ID, 起始序号, 结束序号，角色，画师，均闭区间）
 RANGES: List[Tuple[int, int, int, str, str]] = [
@@ -3241,6 +3362,16 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (1293000, 305, 552, "kanou_minato", "hasune"),
     (1293000, 590, 826, "sakuraba_victoria_ruri", "hasune"),
     (1293000, 845, 1100, "yuzuki_yuu", "hasune"),
+
+    (4086848, 1, 2000, "kaidou_mikoto", "hasune"),
+    (4086826, 1, 2000, "kanou_minato", "hasune"),
+    (4086785, 1, 2000, "kanou_minato", "hasune"),
+    (4086812, 1, 2000, "sakuraba_victoria_ruri", "hasune"),
+    (4086825, 1, 2000, "sakuraba_victoria_ruri", "hasune"),
+    (4086895, 1, 2000, "yuzuki_yuu", "hasune"),
+    (4086932, 1, 2000, "yuzuki_yuu", "hasune"),
+
+    (4086680, 1, 2000, None, "hasune"),
     # Tokeijikake no Ley-Line
     (513772, 126, 149, "shishigatani_ushio", "urabi"),
     (562008, 171, 205, "shishigatani_ushio", "urabi"),
@@ -3603,8 +3734,11 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2390603, 983, 1043, "kamakura_shio", "utsunomiya tsumire"),
 
     (3328453, 10, 356, "hijiri_ririko", "utsunomiya tsumire"),
+    (4087229, 1, 2000, "hijiri_ririko", "utsunomiya tsumire"),
     (3328374, 8, 354, "hijiri_ririko", "utsunomiya tsumire"),
     (3328374, 3, 2000, None, "utsunomiya tsumire"),
+
+    (4088342, 1, 2000, "iida_lina", "utsunomiya tsumire"),
     # Love Commu
     (1389165, 2, 287, "saionji_shouko", "naenae"),
     (1389165, 288, 609, "tsukimiya_rin", "naenae"),
@@ -7022,6 +7156,13 @@ RANGES: List[Tuple[int, int, int, str, str]] = [
     (2309182, 254, 2000, None, "filter_invalid"),
     # Yatte mo Derarenai Heya ni Tojikomerareta no de Hikitsuzuki Motto Yaru Hanashi
     (3216053, 1, 598, "akino_yuna", "taniyama-san"),
+    # Ryouude ga Oreta node H na Osewa o Sareru Hanashi
+    (4088455, 1, 472, "kusunoki_airi", "taniyama-san"),
+    # Nemofilia- We pass each other-
+    (4087525, 4, 32, "hiiragi_chizuru", "shona mitsuishi"),
+    (4087525, 36, 78, "hiiragi_chizuru", "shona mitsuishi"),
+    (4087525, 104, 122, "hiiragi_chizuru", "shona mitsuishi"),
+    (4087525, 141, 142, "hiiragi_chizuru", "shona mitsuishi"),
 ]
 # 提取目录与图片序号：.../webp/<dir>/image_<num>.webp
 PATH_RE = re.compile(r"/webp/(\d+)/image_(\d+)\.webp$")
@@ -7155,8 +7296,84 @@ def export_jsonl_to_csv(input_paths: List[str], out_path: str) -> int:
         writer.writerows((ch, ar, cnt) for (ch, ar), cnt in counts.items())
     return len(counts)
 
-def process_file(in_path: str, out_path: str) -> int:
+
+def _should_keep_output_entry(obj: dict) -> bool:
+    """Apply only deterministic filters mirrored from train_text_to_image_sdxl.py."""
+    src_path = obj.get("src", "") or obj.get("path", "") or ""
+    if not src_path or not os.path.isfile(src_path):
+        return False
+
+    valid_exts = {
+        ".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif",
+        ".tif", ".tiff", ".avif", ".heic",
+    }
+    _, ext = os.path.splitext(src_path)
+    if ext.split("?")[0].lower() not in valid_exts:
+        return False
+
+    path_parts = Path(os.path.normpath(src_path)).parts
+    if EXCLUDE_SOURCE_ID_SET and any(part in EXCLUDE_SOURCE_ID_SET for part in path_parts):
+        return False
+
+    general = obj.get("general", "") or ""
+    general_tags = _split_clean_comma_list(str(general))
+    if any(word in general_tags for word in EXCLUDE_WORD_LIST):
+        return False
+
+    years = []
+    for year_tag in _split_clean_comma_list(str(obj.get("year", "") or "")):
+        if year_tag.startswith("year_") and year_tag[5:].isdigit():
+            years.append(int(year_tag[5:]))
+    if years and min(years) <= 2005:
+        return False
+
+    meta = str(obj.get("meta", "") or "")
+    if "lowres" in meta:
+        return False
+    if any(tag in meta for tag in ("traditional_media", "unfinished", "concept_art", "paper_texture")):
+        return False
+
+    type_ = str(obj.get("type", "") or "").lower()
+    if type_ == "danbooru" and "photo_(medium)" in meta:
+        return False
+
+    artist = str(obj.get("artist", "") or "")
+    artists = _split_clean_comma_list(artist)
+    if EXCLUDE_ARTIST_SET and any(item in EXCLUDE_ARTIST_SET for item in artists):
+        return False
+    if TOTAL_EXCLUDE_ARTIST_SET and artists and all(
+        item in TOTAL_EXCLUDE_ARTIST_SET for item in artists
+    ):
+        return False
+
+    aesthetic_score = obj.get("aesthetic_score")
+    if aesthetic_score is not None:
+        try:
+            if float(aesthetic_score) < 0.1:
+                return False
+        except (TypeError, ValueError):
+            pass
+
+    return True
+
+
+def _normalize_output_artist(obj: dict) -> None:
+    if "artist" not in obj:
+        return
+    artist = str(obj.get("artist", "") or "")
+    obj["artist"] = ", ".join(
+        _normalize_artist_tags(_split_clean_comma_list(artist))
+    )
+
+
+def process_file(
+    in_path: str,
+    out_path: str,
+    stats: Optional[dict] = None,
+    clear_character_artist_tags: bool = True,
+) -> int:
     modified = 0
+    filtered = 0
     with open(in_path, "r", encoding="utf-8") as fin, open(out_path, "w", encoding="utf-8") as fout:
         for lineno, line in enumerate(fin, 1):
             s = line.strip()
@@ -7171,6 +7388,7 @@ def process_file(in_path: str, out_path: str) -> int:
                 fout.write(line)
                 continue
 
+            line_modified = False
             path = obj.get("path", " ")
             m = PATH_RE.search(path)
             if m:
@@ -7195,10 +7413,30 @@ def process_file(in_path: str, out_path: str) -> int:
                                 obj["type"] = "multi_artist"
                             # else:
                             #      obj["type"] = "Game CG"
-                        modified += 1
+                        line_modified = True
+
+            general_tags = set(
+                _split_clean_comma_list(str(obj.get("general", "") or ""))
+            )
+            if clear_character_artist_tags and general_tags & CLEAR_CHARACTER_ARTIST_TAGS:
+                if obj.get("character") or obj.get("artist"):
+                    line_modified = True
+                obj["character"] = ""
+                obj["artist"] = ""
+
+            if line_modified:
+                modified += 1
+
+            if not _should_keep_output_entry(obj):
+                filtered += 1
+                continue
+
+            _normalize_output_artist(obj)
 
             # 紧凑写回，保持一行一个 JSON
             fout.write(json.dumps(obj, ensure_ascii=False) + "\n")
+    if stats is not None:
+        stats["filtered"] = filtered
     return modified
 
 def main():
@@ -7208,6 +7446,15 @@ def main():
     ap.add_argument("--export-ranges", metavar="CSV", help="export unique (character, artist) pairs from RANGES to CSV then exit")
     ap.add_argument("--ranges-fallback-csv", metavar="CSV", help="character/artist CSV used as fallback when exporting ranges and artist is empty")
     ap.add_argument("--export-jsonl", metavar="CSV", help="export unique (character, artist) pairs from JSONL inputs to CSV then exit (artist 可为空)")
+    ap.add_argument(
+        "--clear-character-artist-tags",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "clear character/artist when general contains no_humans, chibi, or "
+            "chibi_only (default: enabled)"
+        ),
+    )
     args = ap.parse_args()
 
     if args.export_ranges and args.export_jsonl:
@@ -7297,12 +7544,17 @@ def main():
     if not args.inplace and len(expanded_inputs) != 1:
         ap.error("OUTPUT 仅能和一个输入文件一起使用。")
 
-    def process_inplace(path: str) -> int:
+    def process_inplace(path: str, stats: Optional[dict] = None) -> int:
         dir_ = os.path.dirname(os.path.abspath(path)) or "."
         fd, tmp_path = tempfile.mkstemp(prefix=".jsonl_tmp_", dir=dir_, text=True)
         os.close(fd)
         try:
-            changed = process_file(path, tmp_path)
+            changed = process_file(
+                path,
+                tmp_path,
+                stats,
+                clear_character_artist_tags=args.clear_character_artist_tags,
+            )
             os.replace(tmp_path, path)
         finally:
             if os.path.exists(tmp_path):
@@ -7313,18 +7565,33 @@ def main():
         return changed
 
     total_modified = 0
+    total_filtered = 0
     if args.inplace:
         for in_path in expanded_inputs:
-            changed = process_inplace(in_path)
+            stats = {}
+            changed = process_inplace(in_path, stats)
+            filtered = stats.get("filtered", 0)
             total_modified += changed
-            print(f"{in_path}: Modified lines {changed}")
+            total_filtered += filtered
+            print(f"{in_path}: Modified lines {changed}, filtered lines {filtered}")
     else:
-        changed = process_file(expanded_inputs[0], output_path)
+        stats = {}
+        changed = process_file(
+            expanded_inputs[0],
+            output_path,
+            stats,
+            clear_character_artist_tags=args.clear_character_artist_tags,
+        )
+        filtered = stats.get("filtered", 0)
         total_modified = changed
-        print(f"{expanded_inputs[0]} -> {output_path}: Modified lines {changed}")
+        total_filtered = filtered
+        print(
+            f"{expanded_inputs[0]} -> {output_path}: "
+            f"Modified lines {changed}, filtered lines {filtered}"
+        )
 
     if len(expanded_inputs) > 1:
-        print(f"Total modified lines: {total_modified}")
+        print(f"Total modified lines: {total_modified}, total filtered lines: {total_filtered}")
 
 if __name__ == "__main__":
     main()
