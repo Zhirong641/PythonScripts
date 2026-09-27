@@ -17,6 +17,7 @@ import json
 import os
 import sys
 import ctypes
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import List, Tuple, Dict, Any
 
@@ -178,9 +179,12 @@ def format_tags_per_category(
 
 def main():
     ap = argparse.ArgumentParser(description="Image tagger using Camais03/camie-tagger-v2 (ONNX)")
-    ap.add_argument("-i", "--input", required=True, help="Image file or directory")
+    input_group = ap.add_mutually_exclusive_group(required=True)
+    input_group.add_argument("-i", "--input", help="Image file or directory")
+    input_group.add_argument("--input-list", help="Text file with one image path per line")
     ap.add_argument("--recursive", action="store_true", help="Recurse into subdirectories when input is a directory")
     ap.add_argument("--batch-size", type=int, default=4, help="Batch size")
+    ap.add_argument("--workers", type=int, default=1, help="Parallel image preprocessing workers")
     ap.add_argument("--use-gpu", action="store_true", help="Use CUDAExecutionProvider if available")
 
     # thresholds
@@ -281,7 +285,16 @@ def main():
 
     # collect images
     exts = tuple([e.strip().lower() for e in args.exts.split(",") if e.strip()])
-    inputs = list_images(Path(args.input), args.recursive, exts)
+    if args.input_list:
+        with open(args.input_list, encoding="utf-8") as source:
+            inputs = [Path(line.strip()) for line in source if line.strip()]
+        if len(inputs) != len(set(inputs)):
+            raise ValueError("Duplicate image paths in --input-list")
+        missing = [p for p in inputs if not p.is_file() or p.suffix.lower() not in exts]
+        if missing:
+            raise ValueError(f"Missing or unsupported images in --input-list: {missing[:3]}")
+    else:
+        inputs = list_images(Path(args.input), args.recursive, exts)
     if not inputs:
         print("No images found.", file=sys.stderr)
         sys.exit(1)
@@ -303,14 +316,27 @@ def main():
     done_paths: set = set()
     if args.resume:
         if args.out_jsonl and Path(args.out_jsonl).exists():
+            with open(args.out_jsonl, "rb+") as output:
+                end = output.seek(0, os.SEEK_END)
+                if end:
+                    output.seek(end - 1)
+                    if output.read(1) != b"\n":
+                        position = end
+                        while position:
+                            size = min(position, 65536)
+                            position -= size
+                            output.seek(position)
+                            last_newline = output.read(size).rfind(b"\n")
+                            if last_newline >= 0:
+                                output.truncate(position + last_newline + 1)
+                                break
+                        else:
+                            output.truncate(0)
             with open(args.out_jsonl, "r", encoding="utf-8") as _f:
                 for _line in _f:
                     _line = _line.strip()
                     if _line:
-                        try:
-                            done_paths.add(json.loads(_line)["path"])
-                        except Exception:
-                            pass
+                        done_paths.add(json.loads(_line)["path"])
         elif args.out_csv and Path(args.out_csv).exists():
             with open(args.out_csv, "r", encoding="utf-8") as _f:
                 for _row in csv.DictReader(_f):
@@ -383,22 +409,34 @@ def main():
                     obj[cat] = per.get(cat, [])
                 jsonl_fp.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
+        if jsonl_fp:
+            jsonl_fp.flush()
+
         batch_imgs.clear()
         batch_paths.clear()
 
-    # iterate
-    for p in tqdm(inputs, desc="Tagging"):
+    def preprocess_path(p):
         try:
             with Image.open(p) as img:
                 arr = preprocess_imagenet_nchw(img, img_size)
-            batch_imgs.append(arr)
-            batch_paths.append(p)
-            if len(batch_imgs) >= args.batch_size:
-                flush()
         except Exception as e:
-            print(f"[WARN] Failed to process {p}: {e}", file=sys.stderr)
+            return p, None, str(e)
+        return p, arr, None
 
-    flush()
+    # Keep each batch bounded so a large manifest does not queue every image at once.
+    if args.batch_size < 1 or args.workers < 1:
+        raise ValueError("--batch-size and --workers must be positive")
+    with ThreadPoolExecutor(max_workers=args.workers) as pool, tqdm(total=len(inputs), desc="Tagging") as progress:
+        for start in range(0, len(inputs), args.batch_size):
+            chunk = inputs[start:start + args.batch_size]
+            for p, arr, error in pool.map(preprocess_path, chunk):
+                if error is not None:
+                    print(f"[WARN] Failed to process {p}: {error}", file=sys.stderr)
+                    continue
+                batch_imgs.append(arr)
+                batch_paths.append(p)
+            flush()
+            progress.update(len(chunk))
 
     if csv_fp:
         csv_fp.close()
